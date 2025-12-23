@@ -9,19 +9,36 @@ const CODEBREAKER_STORAGE_KEY = "cyberpunk_codebreaker";
 let MAX_RAM = 25;
 let USER_ID = null;
 
-// Aguardar SDK do Owlbear estar pronto
-OBR.onReady(async () => {
-  // Obter ID único do usuário
-  const party = await OBR.party.getParty();
-  USER_ID = party.playerId;
-  console.log("✓ Usuário conectado:", USER_ID);
-  
-  // Inicializar plugin
-  inicializarPlugin();
-});
-
 function obterChaveUsuario(chave) {
   return `${USER_ID}_${chave}`;
+}
+
+// Aguardar SDK do Owlbear estar pronto
+async function iniciarPlugin() {
+  try {
+    console.log("✓ Iniciando plugin...");
+    
+    // Obter ID único do usuário
+    const party = await OBR.party.getParty();
+    USER_ID = party.playerId;
+    console.log("✓ Usuário conectado:", USER_ID);
+    
+    // Inicializar o plugin
+    await inicializarPlugin();
+  } catch (error) {
+    console.error("❌ Erro ao iniciar plugin:", error);
+  }
+}
+
+// Chamar quando o DOM e o OBR estiverem prontos
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log("📋 DOM carregado, aguardando OBR...");
+    OBR.onReady(iniciarPlugin);
+  });
+} else {
+  console.log("📋 DOM já carregado, aguardando OBR...");
+  OBR.onReady(iniciarPlugin);
 }
 
 // ============================================
@@ -690,10 +707,6 @@ async function inicializarPlugin() {
     console.error("❌ Erro ao inicializar plugin:", error);
   }
 }
-
-document.addEventListener("DOMContentLoaded", function () {
-  console.log("📋 Aguardando conexão com Owlbear Rodeo...");
-});
 
 // ============================================
 // CODE BREAKER - Sistema de Desbloqueio
