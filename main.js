@@ -13,32 +13,90 @@ function obterChaveUsuario(chave) {
   return `${USER_ID}_${chave}`;
 }
 
-// Aguardar SDK do Owlbear estar pronto
-async function iniciarPlugin() {
+// ============================================
+// INICIALIZAÇÃO - Aguardar OBR pronto
+// ============================================
+
+async function iniciarPluginCompleto() {
   try {
-    console.log("✓ Iniciando plugin...");
+    console.log("🚀 Iniciando plugin completo...");
     
     // Obter ID único do usuário
     const party = await OBR.party.getParty();
     USER_ID = party.playerId;
     console.log("✓ Usuário conectado:", USER_ID);
     
-    // Inicializar o plugin
-    await inicializarPlugin();
+    // Carregar e renderizar tudo
+    console.log("📋 Carregando dados do usuário...");
+    await renderizarHacks();
+    await renderizarRAM();
+    
+    // Configurar interface
+    console.log("🎨 Configurando interface...");
+    configurarInterface();
+    
+    // Renderizar dados iniciais
+    renderizarMercado();
+    renderizarHacksDesbloqueados();
+    
+    // Abrir aba padrão
+    abrirAba("cyberdeck");
+    
+    console.log("✓ Plugin iniciado com sucesso!");
   } catch (error) {
-    console.error("❌ Erro ao iniciar plugin:", error);
+    console.error("❌ Erro crítico ao iniciar plugin:", error);
+    console.error("Stack:", error.stack);
   }
 }
 
-// Chamar quando o DOM e o OBR estiverem prontos
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log("📋 DOM carregado, aguardando OBR...");
-    OBR.onReady(iniciarPlugin);
+function configurarInterface() {
+  // Configurar formulário
+  const form = document.getElementById("hackForm");
+  if (form) {
+    form.addEventListener("submit", adicionarHack);
+    console.log("✓ Formulário configurado");
+  } else {
+    console.warn("⚠️ Formulário não encontrado");
+  }
+
+  // Configurar abas
+  const tabButtons = document.querySelectorAll(".tab-btn");
+  tabButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tabId = btn.getAttribute("data-tab");
+      abrirAba(tabId);
+    });
   });
+  console.log("✓ Abas configuradas:", tabButtons.length);
+
+  // Configurar busca
+  const searchInput = document.getElementById("searchInput");
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      renderizarMercado(e.target.value);
+    });
+    console.log("✓ Busca configurada");
+  }
+}
+
+// Registrar callback quando OBR estiver pronto
+if (typeof OBR !== 'undefined' && OBR.onReady) {
+  console.log("📋 Registrando callback com OBR.onReady()...");
+  OBR.onReady(iniciarPluginCompleto);
 } else {
-  console.log("📋 DOM já carregado, aguardando OBR...");
-  OBR.onReady(iniciarPlugin);
+  console.warn("⚠️ OBR SDK não disponível (modo desenvolvimento?)");
+  // Em desenvolvimento local, inicializar quando DOM estiver pronto
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log("📋 DOM carregado - modo desenvolvimento");
+      // Simular plugin pronto
+      setTimeout(() => {
+        if (typeof OBR !== 'undefined' && OBR.onReady) {
+          OBR.onReady(iniciarPluginCompleto);
+        }
+      }, 500);
+    });
+  }
 }
 
 // ============================================
@@ -637,78 +695,6 @@ function sanitizar(texto) {
   const div = document.createElement("div");
   div.textContent = texto;
   return div.innerHTML;
-}
-
-// ============================================
-// INICIALIZAÇÃO
-// ============================================
-
-async function inicializarPlugin() {
-  console.log("📋 Inicializando Hacks Rápidos...");
-
-  try {
-    // Carregar dados do usuário
-    const ramData = await carregarRAMLocal();
-    MAX_RAM = ramData.max;
-    console.log("✓ MAX_RAM carregado:", MAX_RAM);
-
-    // Obter formulário
-    const form = document.getElementById("hackForm");
-    if (!form) {
-      console.error("❌ Formulário não encontrado no DOM");
-      return;
-    }
-
-    // Adicionar listener do formulário
-    form.addEventListener("submit", adicionarHack);
-
-    // Configurar abas
-    const tabButtons = document.querySelectorAll(".tab-btn");
-    console.log("✓ Botões de abas encontrados:", tabButtons.length);
-    
-    tabButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        const tabId = btn.getAttribute("data-tab");
-        console.log("✓ Clicado na aba:", tabId);
-        abrirAba(tabId);
-      });
-    });
-
-    // Configurar busca de mercado
-    const searchInput = document.getElementById("searchInput");
-    if (searchInput) {
-      console.log("✓ Campo de busca encontrado");
-      searchInput.addEventListener("input", (e) => {
-        console.log("✓ Buscando:", e.target.value);
-        renderizarMercado(e.target.value);
-      });
-    } else {
-      console.warn("⚠️ Campo de busca não encontrado");
-    }
-
-    // Renderizar hacks salvos
-    console.log("✓ Renderizando hacks salvos...");
-    await renderizarHacks();
-
-    // Renderizar mercado inicial
-    console.log("✓ Renderizando mercado inicial...");
-    renderizarMercado();
-
-    // Renderizar RAM inicial
-    console.log("✓ Renderizando RAM...");
-    await renderizarRAM();
-
-    // Renderizar hacks desbloqueados do Code Breaker
-    console.log("✓ Renderizando hacks desbloqueados...");
-    renderizarHacksDesbloqueados();
-
-    // Abrir aba padrão
-    abrirAba("cyberdeck");
-    
-    console.log("✓ Plugin pronto!");
-  } catch (error) {
-    console.error("❌ Erro ao inicializar plugin:", error);
-  }
 }
 
 // ============================================
