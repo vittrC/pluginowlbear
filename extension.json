@@ -8,8 +8,10 @@
   "action": {
     "title": "Hacks Rápidos",
     "icon": "icon.png",
-    "url": "index.html",
-    "width": 400,
-    "height": 600
+    "popover": {
+      "url": "index.html",
+      "width": 400,
+      "height": 600
+    }
   }
 }
