@@ -534,6 +534,35 @@ textarea {
   box-shadow: 0 0 8px rgba(255, 61, 92, 0.25);
 }
 
+.btn-install {
+  border-color: var(--primary-color);
+  color: var(--primary-light);
+  padding: 6px 10px;
+  font-size: 12px;
+  min-width: auto;
+  font-weight: 700;
+}
+
+.btn-install:hover {
+  background: rgba(0, 217, 70, 0.15);
+  box-shadow: 0 0 8px rgba(0, 217, 70, 0.25);
+}
+
+.btn-use-hack {
+  border-color: var(--warning-color);
+  color: var(--warning-color);
+  padding: 4px 6px;
+  font-size: 12px;
+  min-width: auto;
+  margin-left: 6px;
+  font-weight: 700;
+}
+
+.btn-use-hack:hover {
+  background: rgba(255, 184, 0, 0.15);
+  box-shadow: 0 0 8px rgba(255, 184, 0, 0.25);
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;

@@ -608,6 +608,9 @@ function renderizarMercado(filtro = "") {
             <span class="hack-stat">
               <span class="stat-label">DV:</span>
               <span class="stat-value">${hack.dv}</span>
+              <button class="btn btn-use-hack" onclick="usarHack('${hack.id}')" title="Usar este hack (desconta RAM)">
+                ⚡
+              </button>
             </span>
             <span class="hack-category">${sanitizar(hack.categoria)}</span>
           </div>
@@ -804,6 +807,35 @@ async function importarHack(hackId) {
   } else {
     alert("❌ Erro ao importar hack");
   }
+}
+
+async function usarHack(hackId) {
+  console.log("🎯 usarHack chamado com ID:", hackId);
+  
+  // Procurar o hack no sistema
+  const hackOriginal = HACKS_SISTEMA.find(h => h.id === hackId);
+  if (!hackOriginal) {
+    alert("❌ Hack não encontrado");
+    return;
+  }
+
+  // Carregar dados atuais
+  const ramAtual = await carregarRAMLocal();
+  
+  // Validar se tem RAM suficiente
+  if (ramAtual.ram < hackOriginal.custoRAM) {
+    alert(`❌ RAM insuficiente!\nVocê precisa de ${hackOriginal.custoRAM} RAM, mas tem apenas ${ramAtual.ram}.`);
+    return;
+  }
+
+  // Descontar a RAM
+  const novaRAM = ramAtual.ram - hackOriginal.custoRAM;
+  console.log(`💾 Usando hack "${hackOriginal.nome}" - Descontando ${hackOriginal.custoRAM} RAM (${ramAtual.ram} → ${novaRAM})`);
+  
+  await salvarRAMLocal(novaRAM, ramAtual.max);
+  await renderizarRAM();
+  
+  alert(`✓ Hack "${hackOriginal.nome}" usado com sucesso!\n⚡ RAM descontada: ${hackOriginal.custoRAM}\n📊 RAM restante: ${novaRAM}/${ramAtual.max}`);
 }
 
 async function excluirHack(index) {
