@@ -251,7 +251,7 @@ body {
 
 .ram-block {
   width: 80px;
-  height: 100px;
+  height: 60px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: 1px;
@@ -963,15 +963,22 @@ textarea {
   gap: 8px;
 }
 
+.codebreaker-input-group .btn {
+  padding: 12px 18px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 .codebreaker-input {
   flex: 1;
   background: var(--bg-secondary);
   color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  padding: 9px 12px;
+  border: 1.5px solid var(--border-color);
+  padding: 12px 14px;
   border-radius: 4px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 600;
   transition: var(--transition);
   letter-spacing: 0.1em;
 }
