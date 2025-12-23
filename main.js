@@ -99,16 +99,16 @@ async function iniciarPluginFallback() {
   try {
     console.log("🚀 Iniciando em modo FALLBACK (sem OBR)...");
     
-    // Usar ID consistente baseado no navegador (persiste em localStorage)
+    // Usar ID consistente baseado na sessão do navegador (sessionStorage isola por janela/conta)
     const FALLBACK_USER_KEY = "owlbear_demo_user_id";
-    let demoUserId = localStorage.getItem(FALLBACK_USER_KEY);
+    let demoUserId = sessionStorage.getItem(FALLBACK_USER_KEY);
     
     if (!demoUserId) {
       demoUserId = "demo_" + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem(FALLBACK_USER_KEY, demoUserId);
-      console.log("🆕 Novo usuário demo criado:", demoUserId);
+      sessionStorage.setItem(FALLBACK_USER_KEY, demoUserId);
+      console.log("🆕 Novo usuário demo criado (sessionStorage):", demoUserId);
     } else {
-      console.log("♻️ Usuário demo existente:", demoUserId);
+      console.log("♻️ Usuário demo existente (sessionStorage):", demoUserId);
     }
     
     USER_ID = demoUserId;
@@ -286,16 +286,16 @@ async function salvarHacksLocal(hacks) {
         value: JSON.stringify(hacks)
       }]);
     } else {
-      // Fallback para localStorage
-      console.log("💾 Usando localStorage");
-      localStorage.setItem(chave, JSON.stringify(hacks));
+      // Fallback para sessionStorage (isola por navegador/conta/janela)
+      console.log("💾 Usando sessionStorage");
+      sessionStorage.setItem(chave, JSON.stringify(hacks));
       
       // Verificar se foi realmente salvo
-      const verificacao = localStorage.getItem(chave);
+      const verificacao = sessionStorage.getItem(chave);
       if (verificacao) {
-        console.log("✅ localStorage confirmado - dados salvos com sucesso");
+        console.log("✅ sessionStorage confirmado - dados salvos com sucesso");
       } else {
-        console.error("❌ localStorage falhou - dados NÃO foram salvos");
+        console.error("❌ sessionStorage falhou - dados NÃO foram salvos");
       }
     }
     console.log("✓ Hacks salvos com sucesso:", hacks.length, "hacks");
@@ -316,8 +316,8 @@ async function carregarHacksLocal() {
       const dados = await OBR.storage.getItems([chave]);
       hacksData = dados.length > 0 ? dados[0].value : null;
     } else {
-      // Fallback para localStorage
-      hacksData = localStorage.getItem(chave);
+      // Fallback para sessionStorage
+      hacksData = sessionStorage.getItem(chave);
     }
     
     const hacks = hacksData ? JSON.parse(hacksData) : [];
@@ -346,16 +346,16 @@ async function salvarRAMLocal(ramAtual, ramMaximo = MAX_RAM) {
         value: JSON.stringify({ ram: ramAtual, max: ramMaximo })
       }]);
     } else {
-      // Fallback para localStorage
-      console.log("💾 Usando localStorage");
-      localStorage.setItem(chave, JSON.stringify({ ram: ramAtual, max: ramMaximo }));
+      // Fallback para sessionStorage
+      console.log("💾 Usando sessionStorage");
+      sessionStorage.setItem(chave, JSON.stringify({ ram: ramAtual, max: ramMaximo }));
       
       // Verificar se foi realmente salvo
-      const verificacao = localStorage.getItem(chave);
+      const verificacao = sessionStorage.getItem(chave);
       if (verificacao) {
-        console.log("✅ localStorage confirmado - RAM salvo com sucesso");
+        console.log("✅ sessionStorage confirmado - RAM salvo com sucesso");
       } else {
-        console.error("❌ localStorage falhou - RAM NÃO foi salvo");
+        console.error("❌ sessionStorage falhou - RAM NÃO foi salvo");
       }
     }
     console.log("✓ RAM salvo:", ramAtual, "/", ramMaximo);
@@ -376,8 +376,8 @@ async function carregarRAMLocal() {
       const dados = await OBR.storage.getItems([chave]);
       ramData = dados.length > 0 ? JSON.parse(dados[0].value) : { ram: 0, max: 25 };
     } else {
-      // Fallback para localStorage
-      const stored = localStorage.getItem(chave);
+      // Fallback para sessionStorage
+      const stored = sessionStorage.getItem(chave);
       ramData = stored ? JSON.parse(stored) : { ram: 0, max: 25 };
     }
     
@@ -853,8 +853,8 @@ async function carregarCodigosDesbloqueados() {
       const dados = await OBR.storage.getItems([chave]);
       codigos = dados.length > 0 ? JSON.parse(dados[0].value) : [];
     } else {
-      // Fallback para localStorage
-      const stored = localStorage.getItem(chave);
+      // Fallback para sessionStorage
+      const stored = sessionStorage.getItem(chave);
       codigos = stored ? JSON.parse(stored) : [];
     }
     
@@ -875,8 +875,8 @@ async function salvarCodigosDesbloqueados(codigos) {
         value: JSON.stringify(codigos)
       }]);
     } else {
-      // Fallback para localStorage
-      localStorage.setItem(chave, JSON.stringify(codigos));
+      // Fallback para sessionStorage
+      sessionStorage.setItem(chave, JSON.stringify(codigos));
     }
     console.log("✓ Códigos desbloqueados salvos");
     return true;
