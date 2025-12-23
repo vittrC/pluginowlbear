@@ -116,8 +116,8 @@ async function iniciarPluginFallback() {
     
     // Usar localStorage em vez de OBR.storage
     console.log("📋 Carregando dados de demonstração...");
-    renderizarHacks();
-    renderizarRAM();
+    await renderizarHacks();
+    await renderizarRAM();
     
     // Configurar interface
     console.log("🎨 Configurando interface...");
@@ -125,10 +125,10 @@ async function iniciarPluginFallback() {
     
     // Renderizar dados iniciais
     renderizarMercado();
-    renderizarHacksDesbloqueados();
+    await renderizarHacksDesbloqueados();
     
     // Abrir aba padrão
-    abrirAba("tab-cyberdeck");
+    abrirAba("cyberdeck");
     
     // Marcar plugin como pronto
     PLUGIN_READY = true;
@@ -394,20 +394,25 @@ async function carregarRAMLocal() {
 }
 
 function definirMaxRAM(novoMax) {
+  console.log("🎯 definirMaxRAM chamado com:", novoMax, "PLUGIN_READY:", PLUGIN_READY);
+  
   if (!PLUGIN_READY) {
     console.warn("⚠️ Plugin ainda não está pronto");
     return;
   }
   if (!USER_ID) {
+    console.warn("⚠️ USER_ID não definido");
     alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
     return;
   }
   novoMax = Math.max(1, Math.min(parseInt(novoMax) || 25, 100));
   MAX_RAM = novoMax;
+  console.log("📝 Novo MAX_RAM:", novoMax);
   
   // Garantir que RAM atual não exceda o novo máximo
   carregarRAMLocal().then(ramData => {
     let ramAtual = Math.min(ramData.ram, novoMax);
+    console.log("💾 Salvando RAM:", ramAtual, "/", novoMax);
     salvarRAMLocal(ramAtual, novoMax).then(() => {
       renderizarRAM();
       console.log("✓ MAX_RAM definido para:", novoMax);
@@ -416,17 +421,21 @@ function definirMaxRAM(novoMax) {
 }
 
 function aumentarRAM() {
+  console.log("🎯 aumentarRAM chamado, PLUGIN_READY:", PLUGIN_READY);
+  
   if (!PLUGIN_READY) {
     console.warn("⚠️ Plugin ainda não está pronto");
     return;
   }
   if (!USER_ID) {
+    console.warn("⚠️ USER_ID não definido");
     alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
     return;
   }
   carregarRAMLocal().then(ramData => {
     if (ramData.ram < MAX_RAM) {
       ramData.ram++;
+      console.log("📝 Aumentando RAM para:", ramData.ram);
       salvarRAMLocal(ramData.ram, MAX_RAM).then(() => {
         renderizarRAM();
       });
@@ -435,6 +444,8 @@ function aumentarRAM() {
 }
 
 function diminuirRAM() {
+  console.log("🎯 diminuirRAM chamado, PLUGIN_READY:", PLUGIN_READY);
+  
   if (!PLUGIN_READY) {
     console.warn("⚠️ Plugin ainda não está pronto");
     return;
@@ -687,18 +698,25 @@ async function renderizarHacks() {
 // ============================================
 
 async function adicionarHack(event) {
-  event.preventDefault();
+  console.log("🎯 adicionarHack chamado, PLUGIN_READY:", PLUGIN_READY);
+  
+  if (event) {
+    event.preventDefault();
+  }
 
   if (!PLUGIN_READY) {
+    console.warn("⚠️ Plugin ainda não está pronto");
     alert("⚠️ Plugin ainda está inicializando...");
     return;
   }
 
+  console.log("📝 Iniciando adição de novo hack...");
+  
   const nomeInput = document.getElementById("hackName");
   const ramInput = document.getElementById("hackRam");
   const dvInput = document.getElementById("hackDv");
   const effectInput = document.getElementById("hackEffect");
-  const form = event.target;
+  const form = event ? event.target : document.getElementById("hackForm");
 
   // Validar inputs
   if (!nomeInput || !ramInput || !dvInput) {
