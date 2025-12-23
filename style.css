@@ -119,16 +119,16 @@ body {
    ============================================ */
 
 .ram-section {
-  padding: 10px;
+  padding: 6px;
   background: linear-gradient(
     135deg,
     rgba(0, 217, 70, 0.08),
     rgba(0, 217, 70, 0.04)
   );
-  border: 1.5px solid var(--primary-color);
-  border-radius: 6px;
-  box-shadow: 0 0 16px rgba(0, 217, 70, 0.15);
-  margin-bottom: 12px;
+  border: 1px solid var(--primary-color);
+  border-radius: 4px;
+  box-shadow: 0 0 12px rgba(0, 217, 70, 0.12);
+  margin-bottom: 8px;
   animation: ramPulse 2s ease-in-out infinite;
 }
 
@@ -145,8 +145,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
-  gap: 8px;
+  margin-bottom: 4px;
+  gap: 4px;
 }
 
 .ram-label {
@@ -170,11 +170,11 @@ body {
 }
 
 .ram-text {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--primary-light);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
 .ram-setup {
@@ -210,49 +210,54 @@ body {
 .ram-counter {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
+  background: rgba(0, 217, 70, 0.1);
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--primary-color);
 }
 
 .ram-number {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--primary-light);
-  min-width: 20px;
+  min-width: 24px;
   text-align: right;
 }
 
 .ram-slash {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text-muted);
 }
 
 .ram-max-value {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text-muted);
   font-weight: 600;
-  min-width: 20px;
+  min-width: 24px;
 }
 
 .ram-display {
-  margin-bottom: 8px;
+  margin-bottom: 18px;
 }
 
 .ram-blocks {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12px, 1fr));
-  gap: 2px;
+  grid-template-columns: repeat(auto-fit, 80px);
+  gap: 6px;
   max-width: 100%;
+  justify-content: center;
 }
 
 .ram-block {
-  aspect-ratio: 1;
+  width: 80px;
+  height: 100px;
   background: var(--bg-secondary);
-  border: 0.5px solid var(--border-color);
+  border: 1px solid var(--border-color);
   border-radius: 1px;
   transition: all 0.2s ease-out;
   position: relative;
-  min-width: 12px;
-  min-height: 12px;
+  min-width: 3px;
 }
 
 .ram-block.ram-active {
@@ -277,9 +282,8 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
-  border-radius: 1px;
-  opacity: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  border-radius: 0.5px;
   pointer-events: none;
 }
 
@@ -290,16 +294,16 @@ body {
 
 @keyframes ramShine {
   0% {
-    transform: translateX(-100%);
+    left: -100%;
   }
   100% {
-    transform: translateX(100%);
+    left: 100%;
   }
 }
 
 .ram-controls {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   justify-content: center;
 }
 
@@ -609,11 +613,13 @@ textarea {
 }
 
 .hack-name {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
   color: var(--primary-light);
-  margin: 0 0 6px 0;
+  margin: 0 0 8px 0;
   word-break: break-word;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 6px rgba(0, 217, 70, 0.2);
 }
 
 .hack-meta {
@@ -648,14 +654,15 @@ textarea {
 }
 
 .hack-desc {
-  font-size: 12px;
-  color: var(--text-secondary);
+  font-size: 13px;
+  color: var(--text-primary);
   margin: 0;
-  padding: 8px 0;
-  line-height: 1.5;
+  padding: 10px 0;
+  line-height: 1.6;
   word-wrap: break-word;
   border-top: 1px solid var(--border-color);
-  padding-top: 8px;
+  padding-top: 10px;
+  font-weight: 500;
 }
 
 /* Empty State */
@@ -889,6 +896,120 @@ textarea {
 .btn-install:active {
   background: rgba(0, 217, 70, 0.3);
   transform: scale(0.95);
+}
+
+/* ============================================
+   HACKS ESPECIAIS
+   ============================================ */
+
+.hack-special {
+  border: 2px solid #e91e8c;
+  background: rgba(233, 30, 140, 0.08);
+  position: relative;
+}
+
+.hack-special::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #e91e8c, transparent);
+}
+
+.hack-special:hover {
+  border-color: #e91e8c;
+  background: rgba(233, 30, 140, 0.15);
+  box-shadow: 0 0 20px rgba(233, 30, 140, 0.35);
+  transform: translateY(-3px);
+}
+
+.hack-special .hack-name {
+  color: #e91e8c;
+  text-shadow: 0 0 8px rgba(233, 30, 140, 0.3);
+}
+
+.hack-special .hack-category {
+  background: rgba(233, 30, 140, 0.2);
+  color: #e91e8c;
+  border: 1px solid #e91e8c;
+}
+
+/* ============================================
+   CODE BREAKER
+   ============================================ */
+
+.codebreaker-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.codebreaker-description {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.codebreaker-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.codebreaker-input {
+  flex: 1;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 9px 12px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 13px;
+  transition: var(--transition);
+  letter-spacing: 0.1em;
+}
+
+.codebreaker-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  background: var(--bg-primary);
+  box-shadow: 0 0 10px rgba(0, 217, 70, 0.2);
+}
+
+.codebreaker-input::placeholder {
+  color: var(--text-muted);
+}
+
+.codebreaker-message {
+  min-height: 24px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  display: none;
+}
+
+.codebreaker-message:not(:empty) {
+  display: block;
+}
+
+.codebreaker-message.success {
+  background: rgba(0, 217, 70, 0.15);
+  border: 1px solid var(--primary-color);
+  color: var(--primary-light);
+}
+
+.codebreaker-message.error {
+  background: rgba(255, 61, 92, 0.15);
+  border: 1px solid var(--error-color);
+  color: var(--error-color);
 }
 
 /* Print */

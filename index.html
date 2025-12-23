@@ -18,7 +18,7 @@
       <div class="ram-header">
         <div class="ram-label">
           <span class="ram-icon">⚡</span>
-          <span class="ram-text">Neural RAM</span>
+          <span class="ram-text">SUA RAM</span>
         </div>
         <div class="ram-setup">
           <input 
@@ -125,6 +125,9 @@
         <button class="tab-btn" data-tab="market">
           <span class="tab-icon">🔍</span> Pesquisa de Hacks
         </button>
+        <button class="tab-btn" data-tab="codebreaker">
+          <span class="tab-icon">🔐</span> Code Breaker
+        </button>
       </div>
 
       <!-- Aba 1: Seu Cyberdeck (Hacks Salvos) -->
@@ -160,6 +163,32 @@
         </div>
 
         <div id="marketList" class="hack-list"></div>
+      </section>
+
+      <!-- Aba 3: Code Breaker -->
+      <section class="tab-panel" id="tab-codebreaker">
+        <div class="list-header">
+          <h3 class="section-title">Code Breaker</h3>
+        </div>
+
+        <div class="codebreaker-section">
+          <p class="codebreaker-description">Digite um código de 12 caracteres para desbloquear hacks especiais</p>
+          <div class="codebreaker-input-group">
+            <input
+              type="text"
+              id="codeInput"
+              placeholder="Insira o código (12 caracteres)..."
+              class="codebreaker-input"
+              maxlength="12"
+              autocomplete="off"
+            />
+            <button class="btn btn-primary" onclick="tentarDesbloqueio()" title="Tentar desbloquear">
+              🔓 Desbloquear
+            </button>
+          </div>
+          <div id="codeMessage" class="codebreaker-message"></div>
+          <div id="codebredHacksList" class="hack-list"></div>
+        </div>
       </section>
     </div>
   </div>
