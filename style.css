@@ -68,18 +68,20 @@ body {
   font-size: 14px;
   line-height: 1.6;
   padding: 0;
-  overflow: hidden;
-  height: 100vh;
+  margin: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 100vh;
 }
 
 /* Container */
 .container {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  padding: 16px;
   gap: 12px;
-  overflow-y: auto;
+  padding: 16px;
+  padding-bottom: 32px;
+  min-height: 100%;
 }
 
 /* Header */
@@ -119,10 +121,10 @@ body {
 }
 
 .list-wrapper {
-  flex: 1;
+  flex: 0 1 auto;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  gap: 8px;
 }
 
 .section-title {
@@ -302,8 +304,8 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  flex: 1;
-  overflow-y: auto;
+  flex: 0 1 auto;
+  overflow-y: visible;
   padding-right: 4px;
 }
 
