@@ -8,49 +8,80 @@
 </head>
 <body>
   <div class="container">
-    <h2>⚡ Hacks Rápidos</h2>
+    <header class="header">
+      <h1 class="header-title">⚡ Hacks Rápidos</h1>
+      <p class="header-subtitle">Gerenciador de Hacks - Cyberpunk RED</p>
+    </header>
 
-    <form id="hackForm" class="form-section">
-      <input
-        type="text"
-        id="hackName"
-        placeholder="Nome do Hack"
-        required
-        maxlength="50"
-      />
-      <div class="form-row">
-        <input
-          type="number"
-          id="hackRam"
-          placeholder="Custo de RAM"
-          required
-          min="1"
-          max="20"
-        />
-        <input
-          type="number"
-          id="hackDv"
-          placeholder="DV"
-          required
-          min="0"
-          max="20"
-        />
+    <section class="form-wrapper">
+      <h3 class="section-title">Novo Hack</h3>
+      <form id="hackForm" class="form-section">
+        <div class="form-group">
+          <label for="hackName">Nome do Hack</label>
+          <input
+            type="text"
+            id="hackName"
+            placeholder="Ex: Quickhacking"
+            required
+            maxlength="50"
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="hackRam">Custo de RAM</label>
+            <input
+              type="number"
+              id="hackRam"
+              placeholder="1-20"
+              required
+              min="1"
+              max="20"
+            />
+          </div>
+          <div class="form-group">
+            <label for="hackDv">DV</label>
+            <input
+              type="number"
+              id="hackDv"
+              placeholder="0-20"
+              required
+              min="0"
+              max="20"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="hackEffect">Efeito do Hack</label>
+          <textarea
+            id="hackEffect"
+            placeholder="Descreva o efeito e as mecânicas do hack..."
+            maxlength="500"
+            rows="4"
+          ></textarea>
+          <small class="form-hint">Máximo 500 caracteres</small>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-add">
+          <span class="btn-icon">+</span> Adicionar Hack
+        </button>
+      </form>
+    </section>
+
+    <section class="list-wrapper">
+      <div class="list-header">
+        <h3 class="section-title">Hacks Salvos</h3>
+        <span id="hackCount" class="hack-counter">0</span>
       </div>
-      <textarea
-        id="hackEffect"
-        placeholder="Efeito do Hack"
-        maxlength="500"
-        rows="4"
-      ></textarea>
-      <button type="submit" class="btn-add">+ Adicionar Hack</button>
-    </form>
 
-    <hr />
-
-    <div id="hackList" class="hack-list"></div>
-    <div id="emptyState" class="empty-state">
-      <p>Nenhum hack adicionado ainda</p>
-    </div>
+      <div id="hackList" class="hack-list"></div>
+      <div id="emptyState" class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p>Nenhum hack adicionado ainda</p>
+        <small>Crie seu primeiro hack preenchendo o formulário acima</small>
+      </div>
+    </section>
   </div>
 
   <script src="https://unpkg.com/@owlbear-rodeo/sdk@2"></script>
