@@ -702,6 +702,9 @@ async function inicializarPlugin() {
     console.log("✓ Renderizando hacks desbloqueados...");
     renderizarHacksDesbloqueados();
 
+    // Abrir aba padrão
+    abrirAba("cyberdeck");
+    
     console.log("✓ Plugin pronto!");
   } catch (error) {
     console.error("❌ Erro ao inicializar plugin:", error);
@@ -780,20 +783,33 @@ function tentarDesbloqueio() {
 
     // Desbloquear o hack
     codigosDesbloqueados.push(hackEspecial.id);
-    salvarCodigosDesbloqueados(codigosDesbloqueados);
+    salvarCodigosDesbloqueados(codigosDesbloqueados).then(() => {
+      codeMessage.textContent = `✓ Hack desbloqueado com sucesso: "${hackEspecial.nome}"!`;
+      codeMessage.className = "codebreaker-message success";
+      codeInput.value = "";
 
-    codeMessage.textContent = `✓ Hack desbloqueado com sucesso: "${hackEspecial.nome}"!`;
-    codeMessage.className = "codebreaker-message success";
-    codeInput.value = "";
+      // Atualizar a exibição de hacks desbloqueados
+      renderizarHacksDesbloqueados();
 
-    // Atualizar a exibição de hacks desbloqueados
-    renderizarHacksDesbloqueados();
-
-    console.log("✓ Hack especial desbloqueado:", hackEspecial.nome);
+      console.log("✓ Hack especial desbloqueado:", hackEspecial.nome);
+    }).catch(error => {
+      console.error("❌ Erro ao desbloquear hack:", error);
+      codeMessage.textContent = "❌ Erro ao desbloquear hack!";
+      codeMessage.className = "codebreaker-message error";
+    });
+  }).catch(error => {
+    console.error("❌ Erro ao carregar códigos:", error);
+    codeMessage.textContent = "❌ Erro ao processar código!";
+    codeMessage.className = "codebreaker-message error";
   });
 }
 
 function renderizarHacksDesbloqueados() {
+  if (!USER_ID) {
+    console.warn("⚠️ USER_ID não definido ainda");
+    return;
+  }
+  
   carregarCodigosDesbloqueados().then(codigosDesbloqueados => {
     const container = document.getElementById("codebredHacksList");
 
