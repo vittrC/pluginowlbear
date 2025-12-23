@@ -1,0 +1,19 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: #eee;
+  padding: 10px;
+}
+
+button {
+  background: #0ff;
+  border: none;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+li {
+  margin: 10px 0;
+  padding: 8px;
+  background: #222;
+}
