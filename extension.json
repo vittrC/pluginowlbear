@@ -1,15 +1,15 @@
 {
-  "name": "Hacks Rápidos",
+  "name": "Hacks Rápidos Cyberpunk RED",
   "version": "1.0.0",
   "manifest_version": 1,
-  "description": "Gerenciador de hacks rápidos para Cyberpunk RED",
+  "description": "Gerenciador de hacks rápidos para Cyberpunk RED com armazenamento persistente",
   "author": "Vittrc",
   "icon": "icon.png",
   "action": {
     "title": "Hacks Rápidos",
     "icon": "icon.png",
-    "popover": "index.html",
-    "width": 400,
-    "height": 600
+    "popover": "/pluginowlbear/index.html",
+    "width": 450,
+    "height": 650
   }
 }
