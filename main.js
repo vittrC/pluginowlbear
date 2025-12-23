@@ -8,6 +8,7 @@ const RAM_STORAGE_KEY = "cyberpunk_player_ram";
 const CODEBREAKER_STORAGE_KEY = "cyberpunk_codebreaker";
 let MAX_RAM = 25;
 let USER_ID = null;
+let PLUGIN_READY = false;  // Flag para indicar que o plugin está pronto
 
 function obterChaveUsuario(chave) {
   return `${USER_ID}_${chave}`;
@@ -42,6 +43,8 @@ async function iniciarPluginCompleto() {
     // Abrir aba padrão
     abrirAba("cyberdeck");
     
+    // Marcar plugin como pronto
+    PLUGIN_READY = true;
     console.log("✓ Plugin iniciado com sucesso!");
   } catch (error) {
     console.error("❌ Erro crítico ao iniciar plugin:", error);
@@ -291,6 +294,10 @@ async function carregarRAMLocal() {
 }
 
 function definirMaxRAM(novoMax) {
+  if (!PLUGIN_READY) {
+    console.warn("⚠️ Plugin ainda não está pronto");
+    return;
+  }
   if (!USER_ID) {
     alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
     return;
@@ -309,6 +316,10 @@ function definirMaxRAM(novoMax) {
 }
 
 function aumentarRAM() {
+  if (!PLUGIN_READY) {
+    console.warn("⚠️ Plugin ainda não está pronto");
+    return;
+  }
   if (!USER_ID) {
     alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
     return;
@@ -324,6 +335,10 @@ function aumentarRAM() {
 }
 
 function diminuirRAM() {
+  if (!PLUGIN_READY) {
+    console.warn("⚠️ Plugin ainda não está pronto");
+    return;
+  }
   if (!USER_ID) {
     alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
     return;
@@ -339,6 +354,10 @@ function diminuirRAM() {
 }
 
 function resetarRAM() {
+  if (!PLUGIN_READY) {
+    console.warn("⚠️ Plugin ainda não está pronto");
+    return;
+  }
   if (!USER_ID) {
     alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
     return;
@@ -570,6 +589,11 @@ async function renderizarHacks() {
 async function adicionarHack(event) {
   event.preventDefault();
 
+  if (!PLUGIN_READY) {
+    alert("⚠️ Plugin ainda está inicializando...");
+    return;
+  }
+
   const nomeInput = document.getElementById("hackName");
   const ramInput = document.getElementById("hackRam");
   const dvInput = document.getElementById("hackDv");
@@ -728,6 +752,10 @@ async function salvarCodigosDesbloqueados(codigos) {
 }
 
 function tentarDesbloqueio() {
+  if (!PLUGIN_READY) {
+    alert("⚠️ Plugin ainda está inicializando...");
+    return;
+  }
   if (!USER_ID) {
     alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
     return;
