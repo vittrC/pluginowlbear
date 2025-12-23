@@ -82,24 +82,22 @@ function configurarInterface() {
   }
 }
 
-// Registrar callback quando OBR estiver pronto
-if (typeof OBR !== 'undefined' && OBR.onReady) {
-  console.log("📋 Registrando callback com OBR.onReady()...");
-  OBR.onReady(iniciarPluginCompleto);
-} else {
-  console.warn("⚠️ OBR SDK não disponível (modo desenvolvimento?)");
-  // Em desenvolvimento local, inicializar quando DOM estiver pronto
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      console.log("📋 DOM carregado - modo desenvolvimento");
-      // Simular plugin pronto
-      setTimeout(() => {
-        if (typeof OBR !== 'undefined' && OBR.onReady) {
-          OBR.onReady(iniciarPluginCompleto);
-        }
-      }, 500);
-    });
+// Registrar callback quando OBR estiver pronto - ESPERAR DOM estar pronto
+function registrarCallback() {
+  if (typeof OBR !== 'undefined' && OBR.onReady) {
+    console.log("📋 OBR SDK disponível - registrando callback...");
+    OBR.onReady(iniciarPluginCompleto);
+  } else {
+    console.warn("⚠️ OBR SDK não disponível");
   }
+}
+
+// Aguardar DOM estar pronto antes de registrar callback
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', registrarCallback);
+} else {
+  // DOM já está pronto
+  registrarCallback();
 }
 
 // ============================================
