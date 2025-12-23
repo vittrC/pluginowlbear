@@ -99,8 +99,19 @@ async function iniciarPluginFallback() {
   try {
     console.log("🚀 Iniciando em modo FALLBACK (sem OBR)...");
     
-    // Usar ID falso para demonstração
-    USER_ID = "demo_" + Math.random().toString(36).substr(2, 9);
+    // Usar ID consistente baseado no navegador (persiste em localStorage)
+    const FALLBACK_USER_KEY = "owlbear_demo_user_id";
+    let demoUserId = localStorage.getItem(FALLBACK_USER_KEY);
+    
+    if (!demoUserId) {
+      demoUserId = "demo_" + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem(FALLBACK_USER_KEY, demoUserId);
+      console.log("🆕 Novo usuário demo criado:", demoUserId);
+    } else {
+      console.log("♻️ Usuário demo existente:", demoUserId);
+    }
+    
+    USER_ID = demoUserId;
     console.log("✓ Usuário demo:", USER_ID);
     
     // Usar localStorage em vez de OBR.storage
@@ -265,15 +276,27 @@ const HACKS_SISTEMA = [
 async function salvarHacksLocal(hacks) {
   try {
     const chave = obterChaveUsuario(STORAGE_KEY);
+    console.log("💾 Salvando hacks com chave:", chave);
+    
     if (typeof OBR !== 'undefined' && OBR.storage) {
       // Usar OBR.storage em Owlbear
+      console.log("📡 Usando OBR.storage");
       await OBR.storage.setItems([{
         key: chave,
         value: JSON.stringify(hacks)
       }]);
     } else {
       // Fallback para localStorage
+      console.log("💾 Usando localStorage");
       localStorage.setItem(chave, JSON.stringify(hacks));
+      
+      // Verificar se foi realmente salvo
+      const verificacao = localStorage.getItem(chave);
+      if (verificacao) {
+        console.log("✅ localStorage confirmado - dados salvos com sucesso");
+      } else {
+        console.error("❌ localStorage falhou - dados NÃO foram salvos");
+      }
     }
     console.log("✓ Hacks salvos com sucesso:", hacks.length, "hacks");
     return true;
@@ -313,15 +336,27 @@ async function carregarHacksLocal() {
 async function salvarRAMLocal(ramAtual, ramMaximo = MAX_RAM) {
   try {
     const chave = obterChaveUsuario(RAM_STORAGE_KEY);
+    console.log("💾 Salvando RAM com chave:", chave, "valor:", ramAtual, "/", ramMaximo);
+    
     if (typeof OBR !== 'undefined' && OBR.storage) {
       // Usar OBR.storage em Owlbear
+      console.log("📡 Usando OBR.storage");
       await OBR.storage.setItems([{
         key: chave,
         value: JSON.stringify({ ram: ramAtual, max: ramMaximo })
       }]);
     } else {
       // Fallback para localStorage
+      console.log("💾 Usando localStorage");
       localStorage.setItem(chave, JSON.stringify({ ram: ramAtual, max: ramMaximo }));
+      
+      // Verificar se foi realmente salvo
+      const verificacao = localStorage.getItem(chave);
+      if (verificacao) {
+        console.log("✅ localStorage confirmado - RAM salvo com sucesso");
+      } else {
+        console.error("❌ localStorage falhou - RAM NÃO foi salvo");
+      }
     }
     console.log("✓ RAM salvo:", ramAtual, "/", ramMaximo);
     return true;
