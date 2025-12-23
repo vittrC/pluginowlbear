@@ -6,16 +6,17 @@
   "author": "Vittrc",
   "icon": "icon.png",
 
-  "action": {
-    "title": "Hacks Rápidos",
-    "icon": "icon.png",
-
-    "popover": {
+  "actions": [
+    {
       "title": "Hacks Rápidos",
       "icon": "icon.png",
-      "url": "index.html",
-      "width": 400,
-      "height": 600
+      "popover": {
+        "title": "Hacks Rápidos",
+        "icon": "icon.png",
+        "url": "index.html",
+        "width": 400,
+        "height": 600
+      }
     }
-  }
+  ]
 }
