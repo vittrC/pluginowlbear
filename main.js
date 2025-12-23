@@ -88,7 +88,44 @@ function registrarCallback() {
     console.log("📋 OBR SDK disponível - registrando callback...");
     OBR.onReady(iniciarPluginCompleto);
   } else {
-    console.warn("⚠️ OBR SDK não disponível");
+    console.warn("⚠️ OBR SDK não disponível - ativando modo de demonstração");
+    // Modo fallback para testes sem OBR (GitHub Pages)
+    iniciarPluginFallback();
+  }
+}
+
+// Função de inicialização para modo fallback (sem OBR)
+async function iniciarPluginFallback() {
+  try {
+    console.log("🚀 Iniciando em modo FALLBACK (sem OBR)...");
+    
+    // Usar ID falso para demonstração
+    USER_ID = "demo_" + Math.random().toString(36).substr(2, 9);
+    console.log("✓ Usuário demo:", USER_ID);
+    
+    // Usar localStorage em vez de OBR.storage
+    console.log("📋 Carregando dados de demonstração...");
+    renderizarHacks();
+    renderizarRAM();
+    
+    // Configurar interface
+    console.log("🎨 Configurando interface...");
+    configurarInterface();
+    
+    // Renderizar dados iniciais
+    renderizarMercado();
+    renderizarHacksDesbloqueados();
+    
+    // Abrir aba padrão
+    abrirAba("tab-cyberdeck");
+    
+    // Marcar plugin como pronto
+    PLUGIN_READY = true;
+    console.log("✓ Plugin em modo FALLBACK iniciado com sucesso!");
+    console.log("💡 Este é o modo de demonstração. Para uso completo, abra em Owlbear Rodeo.");
+  } catch (error) {
+    console.error("❌ Erro ao iniciar modo fallback:", error);
+    console.error("Stack:", error.stack);
   }
 }
 
@@ -228,10 +265,16 @@ const HACKS_SISTEMA = [
 async function salvarHacksLocal(hacks) {
   try {
     const chave = obterChaveUsuario(STORAGE_KEY);
-    await OBR.storage.setItems([{
-      key: chave,
-      value: JSON.stringify(hacks)
-    }]);
+    if (typeof OBR !== 'undefined' && OBR.storage) {
+      // Usar OBR.storage em Owlbear
+      await OBR.storage.setItems([{
+        key: chave,
+        value: JSON.stringify(hacks)
+      }]);
+    } else {
+      // Fallback para localStorage
+      localStorage.setItem(chave, JSON.stringify(hacks));
+    }
     console.log("✓ Hacks salvos com sucesso:", hacks.length, "hacks");
     return true;
   } catch (error) {
@@ -243,8 +286,17 @@ async function salvarHacksLocal(hacks) {
 async function carregarHacksLocal() {
   try {
     const chave = obterChaveUsuario(STORAGE_KEY);
-    const dados = await OBR.storage.getItems([chave]);
-    const hacksData = dados.length > 0 ? dados[0].value : null;
+    let hacksData = null;
+    
+    if (typeof OBR !== 'undefined' && OBR.storage) {
+      // Usar OBR.storage em Owlbear
+      const dados = await OBR.storage.getItems([chave]);
+      hacksData = dados.length > 0 ? dados[0].value : null;
+    } else {
+      // Fallback para localStorage
+      hacksData = localStorage.getItem(chave);
+    }
+    
     const hacks = hacksData ? JSON.parse(hacksData) : [];
     console.log("✓ Hacks carregados:", hacks.length, "hacks");
     return Array.isArray(hacks) ? hacks : [];
@@ -261,10 +313,16 @@ async function carregarHacksLocal() {
 async function salvarRAMLocal(ramAtual, ramMaximo = MAX_RAM) {
   try {
     const chave = obterChaveUsuario(RAM_STORAGE_KEY);
-    await OBR.storage.setItems([{
-      key: chave,
-      value: JSON.stringify({ ram: ramAtual, max: ramMaximo })
-    }]);
+    if (typeof OBR !== 'undefined' && OBR.storage) {
+      // Usar OBR.storage em Owlbear
+      await OBR.storage.setItems([{
+        key: chave,
+        value: JSON.stringify({ ram: ramAtual, max: ramMaximo })
+      }]);
+    } else {
+      // Fallback para localStorage
+      localStorage.setItem(chave, JSON.stringify({ ram: ramAtual, max: ramMaximo }));
+    }
     console.log("✓ RAM salvo:", ramAtual, "/", ramMaximo);
     return true;
   } catch (error) {
@@ -276,8 +334,17 @@ async function salvarRAMLocal(ramAtual, ramMaximo = MAX_RAM) {
 async function carregarRAMLocal() {
   try {
     const chave = obterChaveUsuario(RAM_STORAGE_KEY);
-    const dados = await OBR.storage.getItems([chave]);
-    const ramData = dados.length > 0 ? JSON.parse(dados[0].value) : { ram: 0, max: 25 };
+    let ramData;
+    
+    if (typeof OBR !== 'undefined' && OBR.storage) {
+      // Usar OBR.storage em Owlbear
+      const dados = await OBR.storage.getItems([chave]);
+      ramData = dados.length > 0 ? JSON.parse(dados[0].value) : { ram: 0, max: 25 };
+    } else {
+      // Fallback para localStorage
+      const stored = localStorage.getItem(chave);
+      ramData = stored ? JSON.parse(stored) : { ram: 0, max: 25 };
+    }
     
     // Atualizar MAX_RAM global
     MAX_RAM = Math.max(1, Math.min(ramData.max, 100));
@@ -726,8 +793,19 @@ function sanitizar(texto) {
 async function carregarCodigosDesbloqueados() {
   try {
     const chave = obterChaveUsuario(CODEBREAKER_STORAGE_KEY);
-    const dados = await OBR.storage.getItems([chave]);
-    return dados.length > 0 ? JSON.parse(dados[0].value) : [];
+    let codigos;
+    
+    if (typeof OBR !== 'undefined' && OBR.storage) {
+      // Usar OBR.storage em Owlbear
+      const dados = await OBR.storage.getItems([chave]);
+      codigos = dados.length > 0 ? JSON.parse(dados[0].value) : [];
+    } else {
+      // Fallback para localStorage
+      const stored = localStorage.getItem(chave);
+      codigos = stored ? JSON.parse(stored) : [];
+    }
+    
+    return Array.isArray(codigos) ? codigos : [];
   } catch (error) {
     console.error("❌ Erro ao carregar códigos desbloqueados:", error);
     return [];
@@ -737,10 +815,16 @@ async function carregarCodigosDesbloqueados() {
 async function salvarCodigosDesbloqueados(codigos) {
   try {
     const chave = obterChaveUsuario(CODEBREAKER_STORAGE_KEY);
-    await OBR.storage.setItems([{
-      key: chave,
-      value: JSON.stringify(codigos)
-    }]);
+    if (typeof OBR !== 'undefined' && OBR.storage) {
+      // Usar OBR.storage em Owlbear
+      await OBR.storage.setItems([{
+        key: chave,
+        value: JSON.stringify(codigos)
+      }]);
+    } else {
+      // Fallback para localStorage
+      localStorage.setItem(chave, JSON.stringify(codigos));
+    }
     console.log("✓ Códigos desbloqueados salvos");
     return true;
   } catch (error) {
