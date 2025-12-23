@@ -7,6 +7,9 @@
   "icon": "icon.png",
 
   "action": {
+    "title": "Hacks Rápidos",
+    "icon": "icon.png",
+
     "popover": {
       "title": "Hacks Rápidos",
       "icon": "icon.png",
