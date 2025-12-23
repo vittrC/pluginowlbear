@@ -6,10 +6,26 @@
 const STORAGE_KEY = "cyberpunk_hacks_rapidos";
 const RAM_STORAGE_KEY = "cyberpunk_player_ram";
 const CODEBREAKER_STORAGE_KEY = "cyberpunk_codebreaker";
-let MAX_RAM = 25;  // Dinâmico, será definido pelo usuário
+let MAX_RAM = 25;
+let USER_ID = null;
+
+// Aguardar SDK do Owlbear estar pronto
+OBR.onReady(async () => {
+  // Obter ID único do usuário
+  const party = await OBR.party.getParty();
+  USER_ID = party.playerId;
+  console.log("✓ Usuário conectado:", USER_ID);
+  
+  // Inicializar plugin
+  inicializarPlugin();
+});
+
+function obterChaveUsuario(chave) {
+  return `${USER_ID}_${chave}`;
+}
 
 // ============================================
-// HACKS ESPECIAIS (Code Breaker)
+// SISTEMA DE HACKS (Banco de Dados)
 // ============================================
 
 const HACKS_ESPECIAIS = [
@@ -130,12 +146,16 @@ const HACKS_SISTEMA = [
 ];
 
 // ============================================
-// STORAGE - Gerenciar dados localmente
+// STORAGE - Gerenciar dados com Owlbear Rodeo
 // ============================================
 
-function salvarHacksLocal(hacks) {
+async function salvarHacksLocal(hacks) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(hacks));
+    const chave = obterChaveUsuario(STORAGE_KEY);
+    await OBR.storage.setItems([{
+      key: chave,
+      value: JSON.stringify(hacks)
+    }]);
     console.log("✓ Hacks salvos com sucesso:", hacks.length, "hacks");
     return true;
   } catch (error) {
@@ -144,10 +164,12 @@ function salvarHacksLocal(hacks) {
   }
 }
 
-function carregarHacksLocal() {
+async function carregarHacksLocal() {
   try {
-    const dados = localStorage.getItem(STORAGE_KEY);
-    const hacks = dados ? JSON.parse(dados) : [];
+    const chave = obterChaveUsuario(STORAGE_KEY);
+    const dados = await OBR.storage.getItems([chave]);
+    const hacksData = dados.length > 0 ? dados[0].value : null;
+    const hacks = hacksData ? JSON.parse(hacksData) : [];
     console.log("✓ Hacks carregados:", hacks.length, "hacks");
     return Array.isArray(hacks) ? hacks : [];
   } catch (error) {
@@ -160,9 +182,13 @@ function carregarHacksLocal() {
 // SISTEMA DE RAM DO JOGADOR
 // ============================================
 
-function salvarRAMLocal(ramAtual, ramMaximo = MAX_RAM) {
+async function salvarRAMLocal(ramAtual, ramMaximo = MAX_RAM) {
   try {
-    localStorage.setItem(RAM_STORAGE_KEY, JSON.stringify({ ram: ramAtual, max: ramMaximo }));
+    const chave = obterChaveUsuario(RAM_STORAGE_KEY);
+    await OBR.storage.setItems([{
+      key: chave,
+      value: JSON.stringify({ ram: ramAtual, max: ramMaximo })
+    }]);
     console.log("✓ RAM salvo:", ramAtual, "/", ramMaximo);
     return true;
   } catch (error) {
@@ -171,10 +197,11 @@ function salvarRAMLocal(ramAtual, ramMaximo = MAX_RAM) {
   }
 }
 
-function carregarRAMLocal() {
+async function carregarRAMLocal() {
   try {
-    const dados = localStorage.getItem(RAM_STORAGE_KEY);
-    const ramData = dados ? JSON.parse(dados) : { ram: 0, max: 25 };
+    const chave = obterChaveUsuario(RAM_STORAGE_KEY);
+    const dados = await OBR.storage.getItems([chave]);
+    const ramData = dados.length > 0 ? JSON.parse(dados[0].value) : { ram: 0, max: 25 };
     
     // Atualizar MAX_RAM global
     MAX_RAM = Math.max(1, Math.min(ramData.max, 100));
@@ -193,30 +220,32 @@ function definirMaxRAM(novoMax) {
   MAX_RAM = novoMax;
   
   // Garantir que RAM atual não exceda o novo máximo
-  let ramData = carregarRAMLocal();
-  let ramAtual = Math.min(ramData.ram, novoMax);
-  
-  salvarRAMLocal(ramAtual, novoMax);
-  renderizarRAM();
-  console.log("✓ MAX_RAM definido para:", novoMax);
+  carregarRAMLocal().then(ramData => {
+    let ramAtual = Math.min(ramData.ram, novoMax);
+    salvarRAMLocal(ramAtual, novoMax);
+    renderizarRAM();
+    console.log("✓ MAX_RAM definido para:", novoMax);
+  });
 }
 
 function aumentarRAM() {
-  let ramData = carregarRAMLocal();
-  if (ramData.ram < MAX_RAM) {
-    ramData.ram++;
-    salvarRAMLocal(ramData.ram, MAX_RAM);
-    renderizarRAM();
-  }
+  carregarRAMLocal().then(ramData => {
+    if (ramData.ram < MAX_RAM) {
+      ramData.ram++;
+      salvarRAMLocal(ramData.ram, MAX_RAM);
+      renderizarRAM();
+    }
+  });
 }
 
 function diminuirRAM() {
-  let ramData = carregarRAMLocal();
-  if (ramData.ram > 0) {
-    ramData.ram--;
-    salvarRAMLocal(ramData.ram, MAX_RAM);
-    renderizarRAM();
-  }
+  carregarRAMLocal().then(ramData => {
+    if (ramData.ram > 0) {
+      ramData.ram--;
+      salvarRAMLocal(ramData.ram, MAX_RAM);
+      renderizarRAM();
+    }
+  });
 }
 
 function resetarRAM() {
@@ -224,8 +253,8 @@ function resetarRAM() {
   renderizarRAM();
 }
 
-function renderizarRAM() {
-  let ramData = carregarRAMLocal();
+async function renderizarRAM() {
+  const ramData = await carregarRAMLocal();
   const ramAtual = ramData.ram;
   const ramMax = ramData.max;
   const container = document.getElementById("ramDisplay");
@@ -378,8 +407,8 @@ function renderizarMercado(filtro = "") {
 // UI - Renderizar lista de hacks
 // ============================================
 
-function renderizarHacks() {
-  const hacks = carregarHacksLocal();
+async function renderizarHacks() {
+  const hacks = await carregarHacksLocal();
   const container = document.getElementById("hackList");
   const emptyState = document.getElementById("emptyState");
   const counter = document.getElementById("hackCount");
@@ -443,7 +472,7 @@ function renderizarHacks() {
 // AÇÕES - Adicionar e excluir hacks
 // ============================================
 
-function adicionarHack(event) {
+async function adicionarHack(event) {
   event.preventDefault();
 
   const nomeInput = document.getElementById("hackName");
@@ -490,10 +519,10 @@ function adicionarHack(event) {
   };
 
   // Salvar
-  const hacks = carregarHacksLocal();
+  const hacks = await carregarHacksLocal();
   hacks.push(novoHack);
   
-  if (salvarHacksLocal(hacks)) {
+  if (await salvarHacksLocal(hacks)) {
     console.log("✓ Novo hack adicionado:", nome);
     form.reset();
     renderizarHacks();
@@ -502,11 +531,11 @@ function adicionarHack(event) {
   }
 }
 
-function importarHack(hackId) {
+async function importarHack(hackId) {
   // Primeiro verificar se é um hack especial
   const hackEspecial = HACKS_ESPECIAIS.find(h => h.id === hackId);
   if (hackEspecial) {
-    return importarHackEspecial(hackId);
+    return await importarHackEspecial(hackId);
   }
 
   // Procurar no banco de hacks do sistema
@@ -527,12 +556,12 @@ function importarHack(hackId) {
     criadoEm: new Date().toISOString()
   };
 
-  const hacks = carregarHacksLocal();
+  const hacks = await carregarHacksLocal();
   hacks.push(novoHack);
   
-  if (salvarHacksLocal(hacks)) {
+  if (await salvarHacksLocal(hacks)) {
     console.log("✓ Hack importado:", hackOriginal.nome);
-    renderizarHacks();
+    await renderizarHacks();
     abrirAba("cyberdeck");
     alert(`✓ "${hackOriginal.nome}" adicionado ao seu cyberdeck!`);
   } else {
@@ -540,12 +569,12 @@ function importarHack(hackId) {
   }
 }
 
-function excluirHack(index) {
+async function excluirHack(index) {
   if (!confirm("Tem certeza que deseja excluir este hack?")) {
     return;
   }
 
-  const hacks = carregarHacksLocal();
+  const hacks = await carregarHacksLocal();
   
   if (index < 0 || index >= hacks.length) {
     alert("❌ Hack não encontrado");
@@ -555,9 +584,9 @@ function excluirHack(index) {
   const nomeDeletado = hacks[index].nome;
   hacks.splice(index, 1);
 
-  if (salvarHacksLocal(hacks)) {
+  if (await salvarHacksLocal(hacks)) {
     console.log("✓ Hack excluído:", nomeDeletado);
-    renderizarHacks();
+    await renderizarHacks();
   } else {
     alert("❌ Erro ao excluir hack");
   }
@@ -577,87 +606,93 @@ function sanitizar(texto) {
 // INICIALIZAÇÃO
 // ============================================
 
-document.addEventListener("DOMContentLoaded", function () {
+async function inicializarPlugin() {
   console.log("📋 Inicializando Hacks Rápidos...");
 
-  // Aguardar um pouco para garantir que o DOM está totalmente pronto
-  setTimeout(() => {
-    // Carregar MAX_RAM do localStorage
-    let ramData = carregarRAMLocal();
-    MAX_RAM = ramData.max;
-    console.log("✓ MAX_RAM carregado:", MAX_RAM);
+  // Carregar dados do usuário
+  const ramData = await carregarRAMLocal();
+  MAX_RAM = ramData.max;
+  console.log("✓ MAX_RAM carregado:", MAX_RAM);
 
-    // Obter formulário
-    const form = document.getElementById("hackForm");
-    if (!form) {
-      console.error("❌ Formulário não encontrado no DOM");
-      return;
-    }
+  // Obter formulário
+  const form = document.getElementById("hackForm");
+  if (!form) {
+    console.error("❌ Formulário não encontrado no DOM");
+    return;
+  }
 
-    // Adicionar listener do formulário
-    form.addEventListener("submit", adicionarHack);
+  // Adicionar listener do formulário
+  form.addEventListener("submit", adicionarHack);
 
-    // Configurar abas
-    const tabButtons = document.querySelectorAll(".tab-btn");
-    console.log("✓ Botões de abas encontrados:", tabButtons.length);
-    
-    tabButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        const tabId = btn.getAttribute("data-tab");
-        console.log("✓ Clicado na aba:", tabId);
-        abrirAba(tabId);
-      });
+  // Configurar abas
+  const tabButtons = document.querySelectorAll(".tab-btn");
+  console.log("✓ Botões de abas encontrados:", tabButtons.length);
+  
+  tabButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tabId = btn.getAttribute("data-tab");
+      console.log("✓ Clicado na aba:", tabId);
+      abrirAba(tabId);
     });
+  });
 
-    // Configurar busca de mercado
-    const searchInput = document.getElementById("searchInput");
-    if (searchInput) {
-      console.log("✓ Campo de busca encontrado");
-      searchInput.addEventListener("input", (e) => {
-        console.log("✓ Buscando:", e.target.value);
-        renderizarMercado(e.target.value);
-      });
-    } else {
-      console.warn("⚠️ Campo de busca não encontrado");
-    }
+  // Configurar busca de mercado
+  const searchInput = document.getElementById("searchInput");
+  if (searchInput) {
+    console.log("✓ Campo de busca encontrado");
+    searchInput.addEventListener("input", (e) => {
+      console.log("✓ Buscando:", e.target.value);
+      renderizarMercado(e.target.value);
+    });
+  } else {
+    console.warn("⚠️ Campo de busca não encontrado");
+  }
 
-    // Renderizar hacks salvos
-    console.log("✓ Renderizando hacks salvos...");
-    renderizarHacks();
+  // Renderizar hacks salvos
+  console.log("✓ Renderizando hacks salvos...");
+  renderizarHacks();
 
-    // Renderizar mercado inicial
-    console.log("✓ Renderizando mercado inicial...");
-    renderizarMercado();
+  // Renderizar mercado inicial
+  console.log("✓ Renderizando mercado inicial...");
+  renderizarMercado();
 
-    // Renderizar RAM inicial
-    console.log("✓ Renderizando RAM...");
-    renderizarRAM();
+  // Renderizar RAM inicial
+  console.log("✓ Renderizando RAM...");
+  renderizarRAM();
 
-    // Renderizar hacks desbloqueados do Code Breaker
-    console.log("✓ Renderizando hacks desbloqueados...");
-    renderizarHacksDesbloqueados();
+  // Renderizar hacks desbloqueados do Code Breaker
+  console.log("✓ Renderizando hacks desbloqueados...");
+  renderizarHacksDesbloqueados();
 
-    console.log("✓ Plugin pronto!");
-  }, 100);
+  console.log("✓ Plugin pronto!");
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("📋 Aguardando conexão com Owlbear Rodeo...");
 });
 
 // ============================================
 // CODE BREAKER - Sistema de Desbloqueio
 // ============================================
 
-function carregarCodigosDesbloqueados() {
+async function carregarCodigosDesbloqueados() {
   try {
-    const dados = localStorage.getItem(CODEBREAKER_STORAGE_KEY);
-    return dados ? JSON.parse(dados) : [];
+    const chave = obterChaveUsuario(CODEBREAKER_STORAGE_KEY);
+    const dados = await OBR.storage.getItems([chave]);
+    return dados.length > 0 ? JSON.parse(dados[0].value) : [];
   } catch (error) {
     console.error("❌ Erro ao carregar códigos desbloqueados:", error);
     return [];
   }
 }
 
-function salvarCodigosDesbloqueados(codigos) {
+async function salvarCodigosDesbloqueados(codigos) {
   try {
-    localStorage.setItem(CODEBREAKER_STORAGE_KEY, JSON.stringify(codigos));
+    const chave = obterChaveUsuario(CODEBREAKER_STORAGE_KEY);
+    await OBR.storage.setItems([{
+      key: chave,
+      value: JSON.stringify(codigos)
+    }]);
     console.log("✓ Códigos desbloqueados salvos");
     return true;
   } catch (error) {
@@ -694,87 +729,89 @@ function tentarDesbloqueio() {
   }
 
   // Verificar se já foi desbloqueado
-  const codigosDesbloqueados = carregarCodigosDesbloqueados();
-  if (codigosDesbloqueados.includes(hackEspecial.id)) {
-    codeMessage.textContent = "✓ Este hack já foi desbloqueado!";
+  carregarCodigosDesbloqueados().then(codigosDesbloqueados => {
+    if (codigosDesbloqueados.includes(hackEspecial.id)) {
+      codeMessage.textContent = "✓ Este hack já foi desbloqueado!";
+      codeMessage.className = "codebreaker-message success";
+      codeInput.value = "";
+      return;
+    }
+
+    // Desbloquear o hack
+    codigosDesbloqueados.push(hackEspecial.id);
+    salvarCodigosDesbloqueados(codigosDesbloqueados);
+
+    codeMessage.textContent = `✓ Hack desbloqueado com sucesso: "${hackEspecial.nome}"!`;
     codeMessage.className = "codebreaker-message success";
     codeInput.value = "";
-    return;
-  }
 
-  // Desbloquear o hack
-  codigosDesbloqueados.push(hackEspecial.id);
-  salvarCodigosDesbloqueados(codigosDesbloqueados);
+    // Atualizar a exibição de hacks desbloqueados
+    renderizarHacksDesbloqueados();
 
-  codeMessage.textContent = `✓ Hack desbloqueado com sucesso: "${hackEspecial.nome}"!`;
-  codeMessage.className = "codebreaker-message success";
-  codeInput.value = "";
-
-  // Atualizar a exibição de hacks desbloqueados
-  renderizarHacksDesbloqueados();
-
-  console.log("✓ Hack especial desbloqueado:", hackEspecial.nome);
+    console.log("✓ Hack especial desbloqueado:", hackEspecial.nome);
+  });
 }
 
 function renderizarHacksDesbloqueados() {
-  const codigosDesbloqueados = carregarCodigosDesbloqueados();
-  const container = document.getElementById("codebredHacksList");
+  carregarCodigosDesbloqueados().then(codigosDesbloqueados => {
+    const container = document.getElementById("codebredHacksList");
 
-  if (!container) {
-    console.warn("⚠️ Container de hacks desbloqueados não encontrado");
-    return;
-  }
+    if (!container) {
+      console.warn("⚠️ Container de hacks desbloqueados não encontrado");
+      return;
+    }
 
-  container.innerHTML = "";
+    container.innerHTML = "";
 
-  // Encontrar os hacks desbloqueados
-  const hacksParaExibir = HACKS_ESPECIAIS.filter(h => codigosDesbloqueados.includes(h.id));
+    // Encontrar os hacks desbloqueados
+    const hacksParaExibir = HACKS_ESPECIAIS.filter(h => codigosDesbloqueados.includes(h.id));
 
-  if (hacksParaExibir.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">🔒</div>
-        <p>Nenhum hack desbloqueado</p>
-        <small>Digite um código válido para desbloquear hacks especiais</small>
-      </div>
-    `;
-    return;
-  }
-
-  // Renderizar hacks desbloqueados
-  hacksParaExibir.forEach((hack) => {
-    const hackElement = document.createElement("div");
-    hackElement.className = "hack-item hack-item-market hack-special";
-    hackElement.innerHTML = `
-      <div class="hack-header">
-        <div class="hack-info">
-          <h4 class="hack-name">🔓 ${sanitizar(hack.nome)}</h4>
-          <div class="hack-meta">
-            <span class="hack-stat">
-              <span class="stat-label">RAM:</span>
-              <span class="stat-value">${hack.custoRAM}</span>
-            </span>
-            <span class="hack-stat">
-              <span class="stat-label">DV:</span>
-              <span class="stat-value">${hack.dv}</span>
-            </span>
-            <span class="hack-category">${sanitizar(hack.categoria)}</span>
-          </div>
+    if (hacksParaExibir.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🔒</div>
+          <p>Nenhum hack desbloqueado</p>
+          <small>Digite um código válido para desbloquear hacks especiais</small>
         </div>
-        <button class="btn btn-install" onclick="importarHack('${hack.id}')" title="Adicionar ao Cyberdeck">
-          <span>+</span>
-        </button>
-      </div>
-      ${hack.descricao ? `<p class="hack-desc">${sanitizar(hack.descricao)}</p>` : ""}
-    `;
-    container.appendChild(hackElement);
-  });
+      `;
+      return;
+    }
 
-  console.log("✓ Hacks desbloqueados renderizados:", hacksParaExibir.length);
+    // Renderizar hacks desbloqueados
+    hacksParaExibir.forEach((hack) => {
+      const hackElement = document.createElement("div");
+      hackElement.className = "hack-item hack-item-market hack-special";
+      hackElement.innerHTML = `
+        <div class="hack-header">
+          <div class="hack-info">
+            <h4 class="hack-name">🔓 ${sanitizar(hack.nome)}</h4>
+            <div class="hack-meta">
+              <span class="hack-stat">
+                <span class="stat-label">RAM:</span>
+                <span class="stat-value">${hack.custoRAM}</span>
+              </span>
+              <span class="hack-stat">
+                <span class="stat-label">DV:</span>
+                <span class="stat-value">${hack.dv}</span>
+              </span>
+              <span class="hack-category">${sanitizar(hack.categoria)}</span>
+            </div>
+          </div>
+          <button class="btn btn-install" onclick="importarHack('${hack.id}')" title="Adicionar ao Cyberdeck">
+            <span>+</span>
+          </button>
+        </div>
+        ${hack.descricao ? `<p class="hack-desc">${sanitizar(hack.descricao)}</p>` : ""}
+      `;
+      container.appendChild(hackElement);
+    });
+
+    console.log("✓ Hacks desbloqueados renderizados:", hacksParaExibir.length);
+  });
 }
 
 // Modificar a função importarHack para suportar hacks especiais
-function importarHackEspecial(hackId) {
+async function importarHackEspecial(hackId) {
   const hackOriginal = HACKS_ESPECIAIS.find(h => h.id === hackId);
   if (!hackOriginal) {
     alert("❌ Hack não encontrado");
@@ -791,12 +828,12 @@ function importarHackEspecial(hackId) {
     criadoEm: new Date().toISOString()
   };
 
-  const hacks = carregarHacksLocal();
+  const hacks = await carregarHacksLocal();
   hacks.push(novoHack);
 
-  if (salvarHacksLocal(hacks)) {
+  if (await salvarHacksLocal(hacks)) {
     console.log("✓ Hack especial importado:", hackOriginal.nome);
-    renderizarHacks();
+    await renderizarHacks();
     abrirAba("cyberdeck");
     alert(`✓ "${hackOriginal.nome}" adicionado ao seu cyberdeck!`);
   } else {
