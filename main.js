@@ -6,6 +6,37 @@
 const STORAGE_KEY = "cyberpunk_hacks_rapidos";
 
 // ============================================
+// SISTEMA DE HACKS (Banco de Dados)
+// ============================================
+
+const HACKS_SISTEMA = [
+  {
+    id: "sys_quickhack_1",
+    nome: "Quickhack - Shut Down",
+    custoRAM: 4,
+    dv: 12,
+    descricao: "Força o alvo a desligar todos os sistemas por 1 rodada. O alvo não pode agir durante este tempo.",
+    categoria: "Desativação"
+  },
+  {
+    id: "sys_quickhack_2",
+    nome: "Quickhack - Distract Enemies",
+    custoRAM: 3,
+    dv: 10,
+    descricao: "Cria ruído nos sensores do alvo, aplicando -2 na próxima ação. Efeito dura 1 rodada.",
+    categoria: "Perturbação"
+  },
+  {
+    id: "sys_quickhack_3",
+    nome: "Quickhack - Breach Protocol",
+    custoRAM: 5,
+    dv: 14,
+    descricao: "Abre acesso avançado ao sistema neural do alvo, permitindo um segundo hacking na próxima rodada sem custo de RAM.",
+    categoria: "Infiltração"
+  }
+];
+
+// ============================================
 // STORAGE - Gerenciar dados localmente
 // ============================================
 
@@ -30,6 +61,108 @@ function carregarHacksLocal() {
     console.error("❌ Erro ao carregar hacks:", error);
     return [];
   }
+}
+
+// ============================================
+// UI - ABAS
+// ============================================
+
+function abrirAba(abaId) {
+  // Remover aba ativa de todos os painéis e botões
+  document.querySelectorAll(".tab-panel").forEach(panel => {
+    panel.classList.remove("tab-panel-active");
+  });
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.classList.remove("tab-btn-active");
+  });
+
+  // Ativar aba selecionada
+  const painel = document.getElementById(`tab-${abaId}`);
+  const botao = document.querySelector(`[data-tab="${abaId}"]`);
+
+  if (painel) painel.classList.add("tab-panel-active");
+  if (botao) botao.classList.add("tab-btn-active");
+
+  console.log(`✓ Aba aberta: ${abaId}`);
+}
+
+// ============================================
+// UI - Renderizar Mercado de Hacks
+// ============================================
+
+function renderizarMercado(filtro = "") {
+  const container = document.getElementById("marketList");
+  
+  if (!container) {
+    console.error("❌ Elemento marketList não encontrado no DOM");
+    return;
+  }
+
+  console.log("📊 Renderizando mercado com filtro:", filtro);
+
+  container.innerHTML = "";
+
+  let hacksExibidos = HACKS_SISTEMA;
+
+  // Aplicar filtro de busca
+  if (filtro.trim()) {
+    const filtroLower = filtro.toLowerCase();
+    hacksExibidos = HACKS_SISTEMA.filter(hack =>
+      hack.nome.toLowerCase().includes(filtroLower) ||
+      hack.descricao.toLowerCase().includes(filtroLower) ||
+      hack.categoria.toLowerCase().includes(filtroLower)
+    );
+    console.log("🔍 Hacks encontrados após filtro:", hacksExibidos.length);
+  } else {
+    console.log("📊 Exibindo todos os hacks:", hacksExibidos.length);
+  }
+
+  // Se nenhum hack encontrado
+  if (hacksExibidos.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">❌</div>
+        <p>Nenhum hack encontrado</p>
+        <small>Tente refinar sua busca</small>
+      </div>
+    `;
+    return;
+  }
+
+  // Renderizar hacks do sistema
+  hacksExibidos.forEach((hack) => {
+    const hackElement = document.createElement("div");
+    hackElement.className = "hack-item hack-item-market";
+    hackElement.innerHTML = `
+      <div class="hack-header">
+        <div class="hack-info">
+          <h4 class="hack-name">${sanitizar(hack.nome)}</h4>
+          <div class="hack-meta">
+            <span class="hack-stat">
+              <span class="stat-label">RAM:</span>
+              <span class="stat-value">${hack.custoRAM}</span>
+            </span>
+            <span class="hack-stat">
+              <span class="stat-label">DV:</span>
+              <span class="stat-value">${hack.dv}</span>
+            </span>
+            <span class="hack-category">${sanitizar(hack.categoria)}</span>
+          </div>
+        </div>
+        <button class="btn btn-install" onclick="importarHack('${hack.id}')" title="Adicionar ao Cyberdeck">
+          <span>+</span>
+        </button>
+      </div>
+      ${
+        hack.descricao
+          ? `<p class="hack-desc">${sanitizar(hack.descricao)}</p>`
+          : ""
+      }
+    `;
+    container.appendChild(hackElement);
+  });
+  
+  console.log("✓ Mercado renderizado com", hacksExibidos.length, "hacks");
 }
 
 // ============================================
@@ -159,6 +292,37 @@ function adicionarHack(event) {
   }
 }
 
+function importarHack(hackId) {
+  const hackOriginal = HACKS_SISTEMA.find(h => h.id === hackId);
+  if (!hackOriginal) {
+    alert("❌ Hack não encontrado");
+    return;
+  }
+
+  // Criar cópia do hack do sistema para o cyberdeck
+  const novoHack = {
+    id: Date.now().toString(),
+    nome: hackOriginal.nome,
+    custoRAM: hackOriginal.custoRAM,
+    dv: hackOriginal.dv,
+    descricao: hackOriginal.descricao,
+    origem: "sistema",
+    criadoEm: new Date().toISOString()
+  };
+
+  const hacks = carregarHacksLocal();
+  hacks.push(novoHack);
+  
+  if (salvarHacksLocal(hacks)) {
+    console.log("✓ Hack importado:", hackOriginal.nome);
+    renderizarHacks();
+    abrirAba("cyberdeck");
+    alert(`✓ "${hackOriginal.nome}" adicionado ao seu cyberdeck!`);
+  } else {
+    alert("❌ Erro ao importar hack");
+  }
+}
+
 function excluirHack(index) {
   if (!confirm("Tem certeza que deseja excluir este hack?")) {
     return;
@@ -199,18 +363,50 @@ function sanitizar(texto) {
 document.addEventListener("DOMContentLoaded", function () {
   console.log("📋 Inicializando Hacks Rápidos...");
 
-  // Obter formulário
-  const form = document.getElementById("hackForm");
-  if (!form) {
-    console.error("❌ Formulário não encontrado no DOM");
-    return;
-  }
+  // Aguardar um pouco para garantir que o DOM está totalmente pronto
+  setTimeout(() => {
+    // Obter formulário
+    const form = document.getElementById("hackForm");
+    if (!form) {
+      console.error("❌ Formulário não encontrado no DOM");
+      return;
+    }
 
-  // Adicionar listener do formulário
-  form.addEventListener("submit", adicionarHack);
+    // Adicionar listener do formulário
+    form.addEventListener("submit", adicionarHack);
 
-  // Renderizar hacks salvos
-  renderizarHacks();
+    // Configurar abas
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    console.log("✓ Botões de abas encontrados:", tabButtons.length);
+    
+    tabButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const tabId = btn.getAttribute("data-tab");
+        console.log("✓ Clicado na aba:", tabId);
+        abrirAba(tabId);
+      });
+    });
 
-  console.log("✓ Plugin pronto!");
+    // Configurar busca de mercado
+    const searchInput = document.getElementById("searchInput");
+    if (searchInput) {
+      console.log("✓ Campo de busca encontrado");
+      searchInput.addEventListener("input", (e) => {
+        console.log("✓ Buscando:", e.target.value);
+        renderizarMercado(e.target.value);
+      });
+    } else {
+      console.warn("⚠️ Campo de busca não encontrado");
+    }
+
+    // Renderizar hacks salvos
+    console.log("✓ Renderizando hacks salvos...");
+    renderizarHacks();
+
+    // Renderizar mercado inicial
+    console.log("✓ Renderizando mercado inicial...");
+    renderizarMercado();
+
+    console.log("✓ Plugin pronto!");
+  }, 100);
 });

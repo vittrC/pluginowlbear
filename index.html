@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hacks Rápidos - Cyberpunk RED</title>
-  <link rel="stylesheet" href="https://vittrc.github.io/pluginowlbear/style.css" />
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <div class="container">
@@ -79,21 +79,54 @@
       </form>
     </section>
 
-    <section class="list-wrapper">
-      <div class="list-header">
-        <h3 class="section-title">Hacks Salvos</h3>
-        <span id="hackCount" class="hack-counter">0</span>
+    <!-- Sistema de Abas -->
+    <div class="tabs-wrapper">
+      <div class="tabs-header">
+        <button class="tab-btn tab-btn-active" data-tab="cyberdeck">
+          <span class="tab-icon">💾</span> Seu Cyberdeck
+        </button>
+        <button class="tab-btn" data-tab="market">
+          <span class="tab-icon">🔍</span> Pesquisa de Hacks
+        </button>
       </div>
 
-      <div id="hackList" class="hack-list"></div>
-      <div id="emptyState" class="empty-state">
-        <div class="empty-icon">📋</div>
-        <p>Nenhum hack adicionado ainda</p>
-        <small>Crie seu primeiro hack preenchendo o formulário acima</small>
-      </div>
-    </section>
+      <!-- Aba 1: Seu Cyberdeck (Hacks Salvos) -->
+      <section class="tab-panel tab-panel-active" id="tab-cyberdeck">
+        <div class="list-header">
+          <h3 class="section-title">Seu Cyberdeck</h3>
+          <span id="hackCount" class="hack-counter">0</span>
+        </div>
+
+        <div id="hackList" class="hack-list"></div>
+        <div id="emptyState" class="empty-state">
+          <div class="empty-icon">💾</div>
+          <p>Seu cyberdeck está vazio</p>
+          <small>Crie seu primeiro hack preenchendo o formulário acima</small>
+        </div>
+      </section>
+
+      <!-- Aba 2: Pesquisa de Hacks (Sistema) -->
+      <section class="tab-panel" id="tab-market">
+        <div class="list-header">
+          <h3 class="section-title">Hacks Disponíveis</h3>
+          <span class="hack-counter" style="background: #ffb800;">3</span>
+        </div>
+
+        <div class="search-box">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Buscar hacks do sistema..."
+            class="search-input"
+            autocomplete="off"
+          />
+        </div>
+
+        <div id="marketList" class="hack-list"></div>
+      </section>
+    </div>
   </div>
 
-  <script src="https://vittrc.github.io/pluginowlbear/main.js"></script>
+  <script src="./main.js"></script>
 </body>
 </html>

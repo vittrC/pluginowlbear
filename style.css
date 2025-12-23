@@ -214,8 +214,8 @@ textarea {
 /* Buttons */
 .btn {
   padding: 9px 14px;
-  border: 1px solid var(--border-color);
-  background: transparent;
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-secondary);
   color: var(--text-secondary);
   border-radius: 4px;
   cursor: pointer;
@@ -226,6 +226,7 @@ textarea {
   transition: var(--transition);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   white-space: nowrap;
 }
@@ -304,9 +305,11 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  flex: 0 1 auto;
-  overflow-y: visible;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding-right: 4px;
+  max-height: 350px;
 }
 
 .hack-list::-webkit-scrollbar {
@@ -483,6 +486,158 @@ textarea {
 
 .hack-item {
   animation: slideIn 0.3s ease-out;
+}
+
+/* ============================================
+   SISTEMA DE ABAS
+   ============================================ */
+
+.tabs-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 0 1 auto;
+  overflow: hidden;
+}
+
+.tabs-header {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 0 6px 0;
+}
+
+.tab-btn {
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: var(--transition);
+  border-bottom: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.tab-icon {
+  font-size: 14px;
+}
+
+.tab-btn:hover {
+  color: var(--text-secondary);
+}
+
+.tab-btn-active {
+  color: var(--primary-light);
+  border-bottom-color: var(--primary-color);
+}
+
+.tab-panel {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  flex: 0 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.tab-panel-active {
+  display: flex;
+}
+
+/* ============================================
+   MERCADO DE HACKS
+   ============================================ */
+
+.search-box {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.search-input {
+  flex: 1;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 9px 12px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 13px;
+  transition: var(--transition);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  background: var(--bg-primary);
+  box-shadow: 0 0 10px rgba(0, 217, 70, 0.2);
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Hack Item - Variação Mercado */
+.hack-item-market {
+  border: 1.5px solid var(--warning-color);
+  background: rgba(255, 184, 0, 0.05);
+  opacity: 1;
+  position: relative;
+}
+
+.hack-item-market::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--warning-color), transparent);
+}
+
+.hack-item-market:hover {
+  border-color: var(--warning-color);
+  background: rgba(255, 184, 0, 0.1);
+  box-shadow: 0 0 16px rgba(255, 184, 0, 0.25);
+  transform: translateY(-2px);
+}
+
+.hack-category {
+  font-size: 11px;
+  color: var(--warning-color);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  background: rgba(255, 184, 0, 0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.btn-install {
+  border-color: var(--success-color);
+  color: var(--primary-light);
+  padding: 6px 8px;
+  font-size: 11px;
+  min-width: auto;
+  background: rgba(0, 217, 70, 0.1);
+}
+
+.btn-install:hover {
+  background: rgba(0, 217, 70, 0.2);
+  box-shadow: 0 0 12px rgba(0, 217, 70, 0.25);
+  border-color: var(--primary-light);
+}
+
+.btn-install:active {
+  background: rgba(0, 217, 70, 0.3);
+  transform: scale(0.95);
 }
 
 /* Print */
