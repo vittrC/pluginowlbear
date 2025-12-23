@@ -2,7 +2,7 @@
   "name": "Hacks Rápidos Cyberpunk RED",
   "version": "1.0.0",
   "manifest_version": 1,
-  "description": "Gerenciador de hacks rápidos para Cyberpunk RED",
+  "description": "Gerenciador de hacks rápidos para Cyberpunk RED / homebrew",
   "author": "Vittrc",
   "icon": "https://vittrc.github.io/pluginowlbear/icon.png",
   "action": {
