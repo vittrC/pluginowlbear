@@ -4,11 +4,11 @@
   "manifest_version": 1,
   "description": "Gerenciador de hacks rápidos para Cyberpunk RED / homebrew",
   "author": "Vittrc",
-  "icon": "https://vittrc.github.io/pluginowlbear/icon.png",
+  "icon": "https://vittrC.github.io/pluginowlbear/icon.png",
   "action": {
     "title": "Hacks Rápidos",
-    "icon": "https://vittrc.github.io/pluginowlbear/icon.png",
-    "popover": "https://vittrc.github.io/pluginowlbear/index.html",
+    "icon": "https://vittrC.github.io/pluginowlbear/icon.png",
+    "popover": "https://vittrC.github.io/pluginowlbear/index.html",
     "width": 450,
     "height": 650
   }
