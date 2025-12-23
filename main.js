@@ -216,6 +216,10 @@ async function carregarRAMLocal() {
 }
 
 function definirMaxRAM(novoMax) {
+  if (!USER_ID) {
+    alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
+    return;
+  }
   novoMax = Math.max(1, Math.min(parseInt(novoMax) || 25, 100));
   MAX_RAM = novoMax;
   
@@ -230,6 +234,10 @@ function definirMaxRAM(novoMax) {
 }
 
 function aumentarRAM() {
+  if (!USER_ID) {
+    alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
+    return;
+  }
   carregarRAMLocal().then(ramData => {
     if (ramData.ram < MAX_RAM) {
       ramData.ram++;
@@ -241,6 +249,10 @@ function aumentarRAM() {
 }
 
 function diminuirRAM() {
+  if (!USER_ID) {
+    alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
+    return;
+  }
   carregarRAMLocal().then(ramData => {
     if (ramData.ram > 0) {
       ramData.ram--;
@@ -252,6 +264,10 @@ function diminuirRAM() {
 }
 
 function resetarRAM() {
+  if (!USER_ID) {
+    alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
+    return;
+  }
   salvarRAMLocal(MAX_RAM, MAX_RAM).then(() => {
     renderizarRAM();
   });
@@ -710,6 +726,10 @@ async function salvarCodigosDesbloqueados(codigos) {
 }
 
 function tentarDesbloqueio() {
+  if (!USER_ID) {
+    alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
+    return;
+  }
   const codeInput = document.getElementById("codeInput");
   const codeMessage = document.getElementById("codeMessage");
   
