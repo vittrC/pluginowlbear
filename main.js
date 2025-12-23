@@ -4,6 +4,8 @@
  */
 
 const STORAGE_KEY = "cyberpunk_hacks_rapidos";
+const RAM_STORAGE_KEY = "cyberpunk_player_ram";
+let MAX_RAM = 25;  // Dinâmico, será definido pelo usuário
 
 // ============================================
 // SISTEMA DE HACKS (Banco de Dados)
@@ -12,7 +14,7 @@ const STORAGE_KEY = "cyberpunk_hacks_rapidos";
 const HACKS_SISTEMA = [
   {
     id: "sys_quickhack_1",
-    nome: "Quickhack - Shut Down",
+    nome: "Hack Rápido - Shut Down",
     custoRAM: 4,
     dv: 12,
     descricao: "Força o alvo a desligar todos os sistemas por 1 rodada. O alvo não pode agir durante este tempo.",
@@ -61,6 +63,122 @@ function carregarHacksLocal() {
     console.error("❌ Erro ao carregar hacks:", error);
     return [];
   }
+}
+
+// ============================================
+// SISTEMA DE RAM DO JOGADOR
+// ============================================
+
+function salvarRAMLocal(ramAtual, ramMaximo = MAX_RAM) {
+  try {
+    localStorage.setItem(RAM_STORAGE_KEY, JSON.stringify({ ram: ramAtual, max: ramMaximo }));
+    console.log("✓ RAM salvo:", ramAtual, "/", ramMaximo);
+    return true;
+  } catch (error) {
+    console.error("❌ Erro ao salvar RAM:", error);
+    return false;
+  }
+}
+
+function carregarRAMLocal() {
+  try {
+    const dados = localStorage.getItem(RAM_STORAGE_KEY);
+    const ramData = dados ? JSON.parse(dados) : { ram: 0, max: 25 };
+    
+    // Atualizar MAX_RAM global
+    MAX_RAM = Math.max(1, Math.min(ramData.max, 100));
+    
+    const ramAtual = Math.max(0, Math.min(ramData.ram, MAX_RAM));
+    console.log("✓ RAM carregado:", ramAtual, "/", MAX_RAM);
+    return { ram: ramAtual, max: MAX_RAM };
+  } catch (error) {
+    console.error("❌ Erro ao carregar RAM:", error);
+    return { ram: 0, max: 25 };
+  }
+}
+
+function definirMaxRAM(novoMax) {
+  novoMax = Math.max(1, Math.min(parseInt(novoMax) || 25, 100));
+  MAX_RAM = novoMax;
+  
+  // Garantir que RAM atual não exceda o novo máximo
+  let ramData = carregarRAMLocal();
+  let ramAtual = Math.min(ramData.ram, novoMax);
+  
+  salvarRAMLocal(ramAtual, novoMax);
+  renderizarRAM();
+  console.log("✓ MAX_RAM definido para:", novoMax);
+}
+
+function aumentarRAM() {
+  let ramData = carregarRAMLocal();
+  if (ramData.ram < MAX_RAM) {
+    ramData.ram++;
+    salvarRAMLocal(ramData.ram, MAX_RAM);
+    renderizarRAM();
+  }
+}
+
+function diminuirRAM() {
+  let ramData = carregarRAMLocal();
+  if (ramData.ram > 0) {
+    ramData.ram--;
+    salvarRAMLocal(ramData.ram, MAX_RAM);
+    renderizarRAM();
+  }
+}
+
+function resetarRAM() {
+  salvarRAMLocal(0, MAX_RAM);
+  renderizarRAM();
+}
+
+function renderizarRAM() {
+  let ramData = carregarRAMLocal();
+  const ramAtual = ramData.ram;
+  const ramMax = ramData.max;
+  const container = document.getElementById("ramDisplay");
+  
+  if (!container) {
+    console.warn("⚠️ Elemento ramDisplay não encontrado");
+    return;
+  }
+
+  // Atualizar contador
+  const ramValue = document.getElementById("ramValue");
+  if (ramValue) {
+    ramValue.textContent = ramAtual;
+  }
+
+  const ramMaxDisplay = document.getElementById("ramMax");
+  if (ramMaxDisplay) {
+    ramMaxDisplay.textContent = ramMax;
+  }
+
+  // Atualizar input de máximo
+  const ramInput = document.getElementById("ramMaxInput");
+  if (ramInput) {
+    ramInput.value = ramMax;
+  }
+
+  // Atualizar visualizador de blocos
+  const ramBlocks = document.getElementById("ramBlocks");
+  if (ramBlocks) {
+    ramBlocks.innerHTML = "";
+    
+    for (let i = 0; i < ramMax; i++) {
+      const bloco = document.createElement("div");
+      bloco.className = "ram-block";
+      
+      if (i < ramAtual) {
+        bloco.classList.add("ram-active");
+      }
+      
+      ramBlocks.appendChild(bloco);
+    }
+  }
+
+  console.log("✓ RAM visualizado:", ramAtual, "/", ramMax);
 }
 
 // ============================================
@@ -365,6 +483,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Aguardar um pouco para garantir que o DOM está totalmente pronto
   setTimeout(() => {
+    // Carregar MAX_RAM do localStorage
+    let ramData = carregarRAMLocal();
+    MAX_RAM = ramData.max;
+    console.log("✓ MAX_RAM carregado:", MAX_RAM);
+
     // Obter formulário
     const form = document.getElementById("hackForm");
     if (!form) {
@@ -406,6 +529,10 @@ document.addEventListener("DOMContentLoaded", function () {
     // Renderizar mercado inicial
     console.log("✓ Renderizando mercado inicial...");
     renderizarMercado();
+
+    // Renderizar RAM inicial
+    console.log("✓ Renderizando RAM...");
+    renderizarRAM();
 
     console.log("✓ Plugin pronto!");
   }, 100);

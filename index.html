@@ -13,6 +13,43 @@
       <p class="header-subtitle">Gerenciador de Hacks - Cyberpunk RED</p>
     </header>
 
+    <!-- Display de RAM do Jogador -->
+    <section class="ram-section">
+      <div class="ram-header">
+        <div class="ram-label">
+          <span class="ram-icon">⚡</span>
+          <span class="ram-text">Neural RAM</span>
+        </div>
+        <div class="ram-setup">
+          <input 
+            type="number" 
+            id="ramMaxInput" 
+            min="1" 
+            max="100" 
+            value="25" 
+            placeholder="Max RAM"
+            onchange="definirMaxRAM(this.value)"
+            title="Defina seu máximo de RAM (1-100)"
+          />
+          <span class="ram-counter">
+            <span id="ramValue" class="ram-number">0</span>
+            <span class="ram-slash">/</span>
+            <span id="ramMax" class="ram-max-value">25</span>
+          </span>
+        </div>
+      </div>
+      
+      <div id="ramDisplay" class="ram-display">
+        <div id="ramBlocks" class="ram-blocks"></div>
+      </div>
+
+      <div class="ram-controls">
+        <button class="ram-btn ram-btn-minus" onclick="diminuirRAM()" title="Diminuir 1 RAM">−</button>
+        <button class="ram-btn ram-btn-reset" onclick="resetarRAM()" title="Resetar RAM">⟲</button>
+        <button class="ram-btn ram-btn-plus" onclick="aumentarRAM()" title="Aumentar 1 RAM">+</button>
+      </div>
+    </section>
+
     <section class="form-wrapper">
       <h3 class="section-title">Novo Hack</h3>
       <form id="hackForm" class="form-section" autocomplete="off">
