@@ -222,9 +222,10 @@ function definirMaxRAM(novoMax) {
   // Garantir que RAM atual não exceda o novo máximo
   carregarRAMLocal().then(ramData => {
     let ramAtual = Math.min(ramData.ram, novoMax);
-    salvarRAMLocal(ramAtual, novoMax);
-    renderizarRAM();
-    console.log("✓ MAX_RAM definido para:", novoMax);
+    salvarRAMLocal(ramAtual, novoMax).then(() => {
+      renderizarRAM();
+      console.log("✓ MAX_RAM definido para:", novoMax);
+    });
   });
 }
 
@@ -232,8 +233,9 @@ function aumentarRAM() {
   carregarRAMLocal().then(ramData => {
     if (ramData.ram < MAX_RAM) {
       ramData.ram++;
-      salvarRAMLocal(ramData.ram, MAX_RAM);
-      renderizarRAM();
+      salvarRAMLocal(ramData.ram, MAX_RAM).then(() => {
+        renderizarRAM();
+      });
     }
   });
 }
@@ -242,15 +244,17 @@ function diminuirRAM() {
   carregarRAMLocal().then(ramData => {
     if (ramData.ram > 0) {
       ramData.ram--;
-      salvarRAMLocal(ramData.ram, MAX_RAM);
-      renderizarRAM();
+      salvarRAMLocal(ramData.ram, MAX_RAM).then(() => {
+        renderizarRAM();
+      });
     }
   });
 }
 
 function resetarRAM() {
-  salvarRAMLocal(MAX_RAM, MAX_RAM);
-  renderizarRAM();
+  salvarRAMLocal(MAX_RAM, MAX_RAM).then(() => {
+    renderizarRAM();
+  });
 }
 
 async function renderizarRAM() {
@@ -525,7 +529,7 @@ async function adicionarHack(event) {
   if (await salvarHacksLocal(hacks)) {
     console.log("✓ Novo hack adicionado:", nome);
     form.reset();
-    renderizarHacks();
+    await renderizarHacks();
   } else {
     alert("❌ Erro ao salvar hack");
   }
@@ -609,62 +613,66 @@ function sanitizar(texto) {
 async function inicializarPlugin() {
   console.log("📋 Inicializando Hacks Rápidos...");
 
-  // Carregar dados do usuário
-  const ramData = await carregarRAMLocal();
-  MAX_RAM = ramData.max;
-  console.log("✓ MAX_RAM carregado:", MAX_RAM);
+  try {
+    // Carregar dados do usuário
+    const ramData = await carregarRAMLocal();
+    MAX_RAM = ramData.max;
+    console.log("✓ MAX_RAM carregado:", MAX_RAM);
 
-  // Obter formulário
-  const form = document.getElementById("hackForm");
-  if (!form) {
-    console.error("❌ Formulário não encontrado no DOM");
-    return;
-  }
+    // Obter formulário
+    const form = document.getElementById("hackForm");
+    if (!form) {
+      console.error("❌ Formulário não encontrado no DOM");
+      return;
+    }
 
-  // Adicionar listener do formulário
-  form.addEventListener("submit", adicionarHack);
+    // Adicionar listener do formulário
+    form.addEventListener("submit", adicionarHack);
 
-  // Configurar abas
-  const tabButtons = document.querySelectorAll(".tab-btn");
-  console.log("✓ Botões de abas encontrados:", tabButtons.length);
-  
-  tabButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      const tabId = btn.getAttribute("data-tab");
-      console.log("✓ Clicado na aba:", tabId);
-      abrirAba(tabId);
+    // Configurar abas
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    console.log("✓ Botões de abas encontrados:", tabButtons.length);
+    
+    tabButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const tabId = btn.getAttribute("data-tab");
+        console.log("✓ Clicado na aba:", tabId);
+        abrirAba(tabId);
+      });
     });
-  });
 
-  // Configurar busca de mercado
-  const searchInput = document.getElementById("searchInput");
-  if (searchInput) {
-    console.log("✓ Campo de busca encontrado");
-    searchInput.addEventListener("input", (e) => {
-      console.log("✓ Buscando:", e.target.value);
-      renderizarMercado(e.target.value);
-    });
-  } else {
-    console.warn("⚠️ Campo de busca não encontrado");
+    // Configurar busca de mercado
+    const searchInput = document.getElementById("searchInput");
+    if (searchInput) {
+      console.log("✓ Campo de busca encontrado");
+      searchInput.addEventListener("input", (e) => {
+        console.log("✓ Buscando:", e.target.value);
+        renderizarMercado(e.target.value);
+      });
+    } else {
+      console.warn("⚠️ Campo de busca não encontrado");
+    }
+
+    // Renderizar hacks salvos
+    console.log("✓ Renderizando hacks salvos...");
+    await renderizarHacks();
+
+    // Renderizar mercado inicial
+    console.log("✓ Renderizando mercado inicial...");
+    renderizarMercado();
+
+    // Renderizar RAM inicial
+    console.log("✓ Renderizando RAM...");
+    await renderizarRAM();
+
+    // Renderizar hacks desbloqueados do Code Breaker
+    console.log("✓ Renderizando hacks desbloqueados...");
+    renderizarHacksDesbloqueados();
+
+    console.log("✓ Plugin pronto!");
+  } catch (error) {
+    console.error("❌ Erro ao inicializar plugin:", error);
   }
-
-  // Renderizar hacks salvos
-  console.log("✓ Renderizando hacks salvos...");
-  renderizarHacks();
-
-  // Renderizar mercado inicial
-  console.log("✓ Renderizando mercado inicial...");
-  renderizarMercado();
-
-  // Renderizar RAM inicial
-  console.log("✓ Renderizando RAM...");
-  renderizarRAM();
-
-  // Renderizar hacks desbloqueados do Code Breaker
-  console.log("✓ Renderizando hacks desbloqueados...");
-  renderizarHacksDesbloqueados();
-
-  console.log("✓ Plugin pronto!");
 }
 
 document.addEventListener("DOMContentLoaded", function () {
