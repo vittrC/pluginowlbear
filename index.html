@@ -15,15 +15,17 @@
 
     <section class="form-wrapper">
       <h3 class="section-title">Novo Hack</h3>
-      <form id="hackForm" class="form-section">
+      <form id="hackForm" class="form-section" autocomplete="off">
         <div class="form-group">
           <label for="hackName">Nome do Hack</label>
           <input
             type="text"
             id="hackName"
+            name="hackName"
             placeholder="Ex: Quickhacking"
             required
             maxlength="50"
+            autocomplete="off"
           />
         </div>
 
@@ -33,10 +35,13 @@
             <input
               type="number"
               id="hackRam"
+              name="hackRam"
               placeholder="1-20"
               required
               min="1"
               max="20"
+              value=""
+              autocomplete="off"
             />
           </div>
           <div class="form-group">
@@ -44,10 +49,13 @@
             <input
               type="number"
               id="hackDv"
+              name="hackDv"
               placeholder="0-20"
               required
               min="0"
               max="20"
+              value=""
+              autocomplete="off"
             />
           </div>
         </div>
@@ -56,9 +64,11 @@
           <label for="hackEffect">Efeito do Hack</label>
           <textarea
             id="hackEffect"
+            name="hackEffect"
             placeholder="Descreva o efeito e as mecânicas do hack..."
             maxlength="500"
             rows="4"
+            autocomplete="off"
           ></textarea>
           <small class="form-hint">Máximo 500 caracteres</small>
         </div>
@@ -84,8 +94,6 @@
     </section>
   </div>
 
-  <script src="https://unpkg.com/@owlbear-rodeo/sdk@2"></script>
-  <script src="storage.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
