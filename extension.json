@@ -5,18 +5,11 @@
   "description": "Gerenciador de hacks rápidos para Cyberpunk RED",
   "author": "Vittrc",
   "icon": "icon.png",
-
-  "actions": [
-    {
-      "title": "Hacks Rápidos",
-      "icon": "icon.png",
-      "popover": {
-        "title": "Hacks Rápidos",
-        "icon": "icon.png",
-        "url": "index.html",
-        "width": 400,
-        "height": 600
-      }
-    }
-  ]
+  "action": {
+    "title": "Hacks Rápidos",
+    "icon": "icon.png",
+    "popover": "index.html",
+    "width": 400,
+    "height": 600
+  }
 }
