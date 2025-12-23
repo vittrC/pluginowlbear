@@ -1,19 +1,16 @@
 body {
-  font-family: Arial, sans-serif;
   background: #111;
   color: #eee;
-  padding: 10px;
+  font-family: sans-serif;
 }
 
-button {
-  background: #0ff;
-  border: none;
-  padding: 6px 10px;
-  cursor: pointer;
+input, textarea, button {
+  width: 100%;
+  margin-bottom: 6px;
 }
 
 li {
-  margin: 10px 0;
-  padding: 8px;
-  background: #222;
+  border: 1px solid #333;
+  padding: 6px;
+  margin-bottom: 6px;
 }

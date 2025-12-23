@@ -1,22 +1,54 @@
-async function init() {
-  await OBR.onReady();
-  renderizarLista();
+const storageKey = "hacksRapidos";
+
+async function loadHacks() {
+  return (await OBR.storage.local.get(storageKey)) || [];
 }
 
-document.getElementById("btnNovo").onclick = async () => {
-  const hacks = await carregarHacks();
+async function saveHacks(hacks) {
+  await OBR.storage.local.set({ [storageKey]: hacks });
+}
 
-  hacks.push({
-    id: crypto.randomUUID(),
-    nome: "Novo Hack",
-    custoRAM: 1,
-    dv: 12,
-    tipo: "utilitário",
-    descricao: "Edite este hack."
+async function renderHacks() {
+  const list = document.getElementById("hackList");
+  list.innerHTML = "";
+
+  const hacks = await loadHacks();
+
+  hacks.forEach((hack, index) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <strong>${hack.name}</strong><br>
+      RAM: ${hack.ram} | DV: ${hack.dv}<br>
+      <em>${hack.effect}</em><br>
+      <button onclick="deleteHack(${index})">Excluir</button>
+    `;
+    list.appendChild(li);
   });
+}
 
-  await salvarHacks(hacks);
-  renderizarLista();
-};
+async function deleteHack(index) {
+  const hacks = await loadHacks();
+  hacks.splice(index, 1);
+  await saveHacks(hacks);
+  renderHacks();
+}
 
-init();
+document.getElementById("hackForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const hack = {
+    name: name.value,
+    ram: ram.value,
+    dv: dv.value,
+    effect: effect.value
+  };
+
+  const hacks = await loadHacks();
+  hacks.push(hack);
+  await saveHacks(hacks);
+
+  e.target.reset();
+  renderHacks();
+});
+
+renderHacks();

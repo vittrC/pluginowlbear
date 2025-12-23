@@ -1,19 +1,27 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Hacks Rápidos</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #111;
-      color: #eee;
-      padding: 10px;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
   <h2>Hacks Rápidos</h2>
-  <p>Plugin carregado com sucesso.</p>
+
+  <form id="hackForm">
+    <input type="text" id="name" placeholder="Nome do Hack" required />
+    <input type="number" id="ram" placeholder="Custo de RAM" required />
+    <input type="number" id="dv" placeholder="DV" required />
+    <textarea id="effect" placeholder="Efeito do Hack"></textarea>
+    <button type="submit">Adicionar Hack</button>
+  </form>
+
+  <hr />
+
+  <ul id="hackList"></ul>
+
+  <script src="https://unpkg.com/@owlbear-rodeo/sdk@2"></script>
+  <script src="main.js"></script>
 </body>
 </html>
