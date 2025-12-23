@@ -679,6 +679,9 @@ async function renderizarHacks() {
             <span class="hack-stat">
               <span class="stat-label">DV:</span>
               <span class="stat-value">${hack.dv}</span>
+              <button class="btn btn-use-hack" onclick="usarHackCyberdeck(${hack.custoRAM}, '${sanitizar(hack.nome)}')" title="Usar este hack (desconta RAM)">
+                ⚡
+              </button>
             </span>
           </div>
         </div>
@@ -836,6 +839,28 @@ async function usarHack(hackId) {
   await renderizarRAM();
   
   alert(`✓ Hack "${hackOriginal.nome}" usado com sucesso!\n⚡ RAM descontada: ${hackOriginal.custoRAM}\n📊 RAM restante: ${novaRAM}/${ramAtual.max}`);
+}
+
+async function usarHackCyberdeck(custoRAM, nomeHack) {
+  console.log("🎯 usarHackCyberdeck chamado:", nomeHack, "custo:", custoRAM);
+  
+  // Carregar dados atuais
+  const ramAtual = await carregarRAMLocal();
+  
+  // Validar se tem RAM suficiente
+  if (ramAtual.ram < custoRAM) {
+    alert(`❌ RAM insuficiente!\nVocê precisa de ${custoRAM} RAM, mas tem apenas ${ramAtual.ram}.`);
+    return;
+  }
+
+  // Descontar a RAM
+  const novaRAM = ramAtual.ram - custoRAM;
+  console.log(`💾 Usando hack "${nomeHack}" - Descontando ${custoRAM} RAM (${ramAtual.ram} → ${novaRAM})`);
+  
+  await salvarRAMLocal(novaRAM, ramAtual.max);
+  await renderizarRAM();
+  
+  alert(`✓ Hack "${nomeHack}" usado com sucesso!\n⚡ RAM descontada: ${custoRAM}\n📊 RAM restante: ${novaRAM}/${ramAtual.max}`);
 }
 
 async function excluirHack(index) {
