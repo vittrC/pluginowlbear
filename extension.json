@@ -1,14 +1,15 @@
 {
   "name": "Hacks Rápidos",
   "version": "1.0.0",
-  "manifest_version": 2,
+  "manifest_version": 1,
   "description": "Gerenciador de hacks rápidos para Cyberpunk RED",
   "author": "Vittrc",
   "icon": "icon.png",
+
   "action": {
-    "title": "Hacks Rápidos",
-    "icon": "icon.png",
     "popover": {
+      "title": "Hacks Rápidos",
+      "icon": "icon.png",
       "url": "index.html",
       "width": 400,
       "height": 600
