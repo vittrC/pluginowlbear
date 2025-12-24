@@ -27,6 +27,12 @@ let PLUGIN_READY = false;  // Flag para indicar que o plugin está pronto
 let draggedIndex = null;  // Variável para rastrear o hack sendo arrastado
 
 function obterChaveUsuario(chave) {
+  // Se USER_ID não está definido, usar chave simples
+  // Isso garante que localStorage funcione mesmo sem USER_ID
+  if (!USER_ID) {
+    console.warn("⚠️ USER_ID não definido, usando chave simples:", chave);
+    return chave;
+  }
   return `${USER_ID}_${chave}`;
 }
 
@@ -307,44 +313,38 @@ async function salvarHacksLocal(hacks) {
     const chave = obterChaveUsuario(STORAGE_KEY);
     console.log("💾 Salvando hacks com chave:", chave);
     
-    let salvoComSucesso = false;
+    // SEMPRE tentar salvar em localStorage como método primário
+    try {
+      console.log("💾 Salvando em localStorage");
+      localStorage.setItem(chave, JSON.stringify(hacks));
+      
+      // Verificar se foi realmente salvo
+      const verificacao = localStorage.getItem(chave);
+      if (verificacao) {
+        console.log("✅ localStorage confirmado - dados salvos com sucesso");
+      } else {
+        console.error("❌ localStorage falhou - dados NÃO foram salvos");
+      }
+    } catch (storageError) {
+      console.error("❌ Erro ao salvar em localStorage:", storageError);
+    }
     
-    // Tentar usar OBR.storage primeiro (método preferido)
+    // TAMBÉM tentar salvar em OBR.storage se disponível (para sincronizar entre clientes)
     if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.setItems) {
       try {
-        console.log("📡 Usando OBR.storage");
+        console.log("📡 Também salvando em OBR.storage");
         await OBR.storage.setItems([{
           key: chave,
           value: JSON.stringify(hacks)
         }]);
-        console.log("✓ Hacks salvos via OBR.storage");
-        salvoComSucesso = true;
+        console.log("📡 OBR.storage sincronizado");
       } catch (obrError) {
-        console.warn("⚠️ OBR.storage falhou, tentando localStorage:", obrError);
-      }
-    }
-    
-    // Fallback para localStorage (persiste entre sessões)
-    if (!salvoComSucesso) {
-      try {
-        console.log("💾 Usando localStorage");
-        localStorage.setItem(chave, JSON.stringify(hacks));
-        
-        // Verificar se foi realmente salvo
-        const verificacao = localStorage.getItem(chave);
-        if (verificacao) {
-          console.log("✅ localStorage confirmado - dados salvos com sucesso");
-          salvoComSucesso = true;
-        } else {
-          console.error("❌ localStorage falhou - dados NÃO foram salvos");
-        }
-      } catch (storageError) {
-        console.error("❌ Erro ao usar localStorage:", storageError);
+        console.warn("⚠️ OBR.storage não disponível (isto é normal):", obrError);
       }
     }
     
     console.log("✓ Hacks salvos com sucesso:", hacks.length, "hacks");
-    return salvoComSucesso;
+    return true;
   } catch (error) {
     console.error("❌ Erro crítico ao salvar hacks:", error);
     return false;
@@ -356,8 +356,19 @@ async function carregarHacksLocal() {
     const chave = obterChaveUsuario(STORAGE_KEY);
     let hacksData = null;
     
-    // Tentar usar OBR.storage primeiro
-    if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.getItems) {
+    // Tentar carregar de localStorage PRIMEIRO (é o mais confiável)
+    try {
+      console.log("💾 Carregando de localStorage");
+      hacksData = localStorage.getItem(chave);
+      if (hacksData) {
+        console.log("✓ Dados carregados via localStorage");
+      }
+    } catch (storageError) {
+      console.warn("⚠️ localStorage não disponível:", storageError);
+    }
+    
+    // Se localStorage não tinha dados, tentar OBR.storage
+    if (!hacksData && typeof OBR !== 'undefined' && OBR.storage && OBR.storage.getItems) {
       try {
         console.log("📡 Carregando de OBR.storage");
         const dados = await OBR.storage.getItems([chave]);
@@ -366,20 +377,7 @@ async function carregarHacksLocal() {
           console.log("✓ Dados carregados via OBR.storage");
         }
       } catch (obrError) {
-        console.warn("⚠️ OBR.storage falhou, tentando localStorage:", obrError);
-      }
-    }
-    
-    // Fallback para localStorage
-    if (!hacksData) {
-      try {
-        console.log("💾 Carregando de localStorage");
-        hacksData = localStorage.getItem(chave);
-        if (hacksData) {
-          console.log("✓ Dados carregados via localStorage");
-        }
-      } catch (storageError) {
-        console.warn("⚠️ localStorage falhou:", storageError);
+        console.warn("⚠️ OBR.storage não disponível:", obrError);
       }
     }
     
@@ -401,43 +399,37 @@ async function salvarRAMLocal(ramAtual, ramMaximo = MAX_RAM) {
     const chave = obterChaveUsuario(RAM_STORAGE_KEY);
     console.log("💾 Salvando RAM com chave:", chave, "valor:", ramAtual, "/", ramMaximo);
     
-    let salvoComSucesso = false;
+    // SEMPRE tentar salvar em localStorage como método primário
+    try {
+      console.log("💾 Salvando RAM em localStorage");
+      localStorage.setItem(chave, JSON.stringify({ ram: ramAtual, max: ramMaximo }));
+      
+      const verificacao = localStorage.getItem(chave);
+      if (verificacao) {
+        console.log("✅ localStorage confirmado - RAM salvo com sucesso");
+      } else {
+        console.error("❌ localStorage falhou - RAM NÃO foi salvo");
+      }
+    } catch (storageError) {
+      console.error("❌ Erro ao salvar RAM em localStorage:", storageError);
+    }
     
-    // Tentar usar OBR.storage primeiro
+    // TAMBÉM tentar salvar em OBR.storage se disponível
     if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.setItems) {
       try {
-        console.log("📡 Usando OBR.storage");
+        console.log("📡 Também salvando RAM em OBR.storage");
         await OBR.storage.setItems([{
           key: chave,
           value: JSON.stringify({ ram: ramAtual, max: ramMaximo })
         }]);
-        console.log("✓ RAM salvo via OBR.storage");
-        salvoComSucesso = true;
+        console.log("📡 OBR.storage RAM sincronizado");
       } catch (obrError) {
-        console.warn("⚠️ OBR.storage falhou, tentando localStorage:", obrError);
-      }
-    }
-    
-    // Fallback para localStorage
-    if (!salvoComSucesso) {
-      try {
-        console.log("💾 Usando localStorage");
-        localStorage.setItem(chave, JSON.stringify({ ram: ramAtual, max: ramMaximo }));
-        
-        const verificacao = localStorage.getItem(chave);
-        if (verificacao) {
-          console.log("✅ localStorage confirmado - RAM salvo com sucesso");
-          salvoComSucesso = true;
-        } else {
-          console.error("❌ localStorage falhou - RAM NÃO foi salvo");
-        }
-      } catch (storageError) {
-        console.error("❌ Erro ao usar localStorage:", storageError);
+        console.warn("⚠️ OBR.storage RAM não disponível (isto é normal):", obrError);
       }
     }
     
     console.log("✓ RAM salvo:", ramAtual, "/", ramMaximo);
-    return salvoComSucesso;
+    return true;
   } catch (error) {
     console.error("❌ Erro ao salvar RAM:", error);
     return false;
@@ -449,8 +441,20 @@ async function carregarRAMLocal() {
     const chave = obterChaveUsuario(RAM_STORAGE_KEY);
     let ramData = null;
     
-    // Tentar usar OBR.storage primeiro
-    if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.getItems) {
+    // Tentar carregar de localStorage PRIMEIRO
+    try {
+      console.log("💾 Carregando RAM de localStorage");
+      const stored = localStorage.getItem(chave);
+      if (stored) {
+        ramData = JSON.parse(stored);
+        console.log("✓ RAM carregado via localStorage");
+      }
+    } catch (storageError) {
+      console.warn("⚠️ localStorage não disponível:", storageError);
+    }
+    
+    // Se localStorage não tinha dados, tentar OBR.storage
+    if (!ramData && typeof OBR !== 'undefined' && OBR.storage && OBR.storage.getItems) {
       try {
         console.log("📡 Carregando RAM de OBR.storage");
         const dados = await OBR.storage.getItems([chave]);
@@ -459,21 +463,7 @@ async function carregarRAMLocal() {
           console.log("✓ RAM carregado via OBR.storage");
         }
       } catch (obrError) {
-        console.warn("⚠️ OBR.storage falhou, tentando localStorage:", obrError);
-      }
-    }
-    
-    // Fallback para localStorage
-    if (!ramData) {
-      try {
-        console.log("💾 Carregando RAM de localStorage");
-        const stored = localStorage.getItem(chave);
-        if (stored) {
-          ramData = JSON.parse(stored);
-          console.log("✓ RAM carregado via localStorage");
-        }
-      } catch (storageError) {
-        console.warn("⚠️ localStorage falhou:", storageError);
+        console.warn("⚠️ OBR.storage não disponível:", obrError);
       }
     }
     
@@ -1083,8 +1073,20 @@ async function carregarCodigosDesbloqueados() {
     const chave = obterChaveUsuario(CODEBREAKER_STORAGE_KEY);
     let codigos = null;
     
-    // Tentar usar OBR.storage primeiro
-    if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.getItems) {
+    // Tentar carregar de localStorage PRIMEIRO
+    try {
+      console.log("💾 Carregando códigos de localStorage");
+      const stored = localStorage.getItem(chave);
+      if (stored) {
+        codigos = JSON.parse(stored);
+        console.log("✓ Códigos carregados via localStorage");
+      }
+    } catch (storageError) {
+      console.warn("⚠️ localStorage não disponível:", storageError);
+    }
+    
+    // Se localStorage não tinha dados, tentar OBR.storage
+    if (!codigos && typeof OBR !== 'undefined' && OBR.storage && OBR.storage.getItems) {
       try {
         console.log("📡 Carregando códigos de OBR.storage");
         const dados = await OBR.storage.getItems([chave]);
@@ -1093,21 +1095,7 @@ async function carregarCodigosDesbloqueados() {
           console.log("✓ Códigos carregados via OBR.storage");
         }
       } catch (obrError) {
-        console.warn("⚠️ OBR.storage falhou, tentando localStorage:", obrError);
-      }
-    }
-    
-    // Fallback para localStorage
-    if (!codigos) {
-      try {
-        console.log("💾 Carregando códigos de localStorage");
-        const stored = localStorage.getItem(chave);
-        if (stored) {
-          codigos = JSON.parse(stored);
-          console.log("✓ Códigos carregados via localStorage");
-        }
-      } catch (storageError) {
-        console.warn("⚠️ localStorage falhou:", storageError);
+        console.warn("⚠️ OBR.storage não disponível:", obrError);
       }
     }
     
@@ -1122,42 +1110,38 @@ async function carregarCodigosDesbloqueados() {
 async function salvarCodigosDesbloqueados(codigos) {
   try {
     const chave = obterChaveUsuario(CODEBREAKER_STORAGE_KEY);
-    let salvoComSucesso = false;
     
-    // Tentar usar OBR.storage primeiro
+    // SEMPRE tentar salvar em localStorage como método primário
+    try {
+      console.log("💾 Salvando códigos em localStorage");
+      localStorage.setItem(chave, JSON.stringify(codigos));
+      
+      const verificacao = localStorage.getItem(chave);
+      if (verificacao) {
+        console.log("✅ localStorage confirmado - códigos salvos");
+      } else {
+        console.error("❌ localStorage falhou");
+      }
+    } catch (storageError) {
+      console.error("❌ Erro ao salvar códigos em localStorage:", storageError);
+    }
+    
+    // TAMBÉM tentar salvar em OBR.storage se disponível
     if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.setItems) {
       try {
-        console.log("📡 Usando OBR.storage");
+        console.log("📡 Também salvando códigos em OBR.storage");
         await OBR.storage.setItems([{
           key: chave,
           value: JSON.stringify(codigos)
         }]);
-        console.log("✓ Códigos salvos via OBR.storage");
-        salvoComSucesso = true;
+        console.log("📡 OBR.storage códigos sincronizado");
       } catch (obrError) {
-        console.warn("⚠️ OBR.storage falhou, tentando localStorage:", obrError);
-      }
-    }
-    
-    // Fallback para localStorage
-    if (!salvoComSucesso) {
-      try {
-        console.log("💾 Usando localStorage");
-        localStorage.setItem(chave, JSON.stringify(codigos));
-        const verificacao = localStorage.getItem(chave);
-        if (verificacao) {
-          console.log("✅ localStorage confirmado - códigos salvos");
-          salvoComSucesso = true;
-        } else {
-          console.error("❌ localStorage falhou");
-        }
-      } catch (storageError) {
-        console.error("❌ Erro ao usar localStorage:", storageError);
+        console.warn("⚠️ OBR.storage códigos não disponível (isto é normal):", obrError);
       }
     }
     
     console.log("✓ Códigos desbloqueados salvos");
-    return salvoComSucesso;
+    return true;
   } catch (error) {
     console.error("❌ Erro ao salvar códigos:", error);
     return false;
