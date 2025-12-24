@@ -468,6 +468,30 @@ textarea {
   margin-top: -2px;
 }
 
+select {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  background: var(--bg-primary);
+  box-shadow: 0 0 10px rgba(0, 217, 70, 0.2);
+}
+
+select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
 /* Buttons */
 .btn {
   padding: 9px 14px;
@@ -622,6 +646,8 @@ textarea {
   border-radius: 4px;
   padding: 12px;
   transition: var(--transition);
+  cursor: move;
+  user-select: none;
 }
 
 .hack-item:hover {
@@ -629,6 +655,17 @@ textarea {
   background: rgba(0, 217, 70, 0.04);
   box-shadow: var(--shadow-glow);
   transform: translateX(2px);
+}
+
+.hack-item.dragging {
+  opacity: 0.5;
+  background: rgba(0, 217, 70, 0.1);
+  border: 2px dashed var(--primary-color);
+}
+
+.hack-item.drag-over {
+  border-top: 3px solid var(--primary-color);
+  padding-top: 9px;
 }
 
 .hack-header {
@@ -929,6 +966,67 @@ textarea {
   background: rgba(255, 184, 0, 0.1);
   padding: 2px 6px;
   border-radius: 3px;
+}
+
+.hack-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 3px;
+  margin-right: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.hack-badge-quickhacking {
+  background: rgba(0, 217, 70, 0.15);
+  color: var(--primary-light);
+  border: 1px solid var(--primary-color);
+}
+
+.hack-badge-intrusion {
+  background: rgba(233, 30, 140, 0.15);
+  color: #e91e8c;
+  border: 1px solid #e91e8c;
+}
+
+.hack-badge-stealth {
+  background: rgba(100, 200, 255, 0.15);
+  color: #64c8ff;
+  border: 1px solid #64c8ff;
+}
+
+.hack-badge-combat {
+  background: rgba(255, 61, 92, 0.15);
+  color: var(--error-color);
+  border: 1px solid var(--error-color);
+}
+
+.hack-badge-control {
+  background: rgba(255, 184, 0, 0.15);
+  color: var(--warning-color);
+  border: 1px solid var(--warning-color);
+}
+
+.hack-badge-utility {
+  background: rgba(100, 255, 200, 0.15);
+  color: #64ffc8;
+  border: 1px solid #64ffc8;
+}
+
+.hack-badge-reconnaissance {
+  background: rgba(200, 150, 255, 0.15);
+  color: #c896ff;
+  border: 1px solid #c896ff;
+}
+
+.hack-badge-damage {
+  background: rgba(255, 100, 50, 0.15);
+  color: #ff6432;
+  border: 1px solid #ff6432;
 }
 
 .btn-install {

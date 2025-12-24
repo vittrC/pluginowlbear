@@ -98,17 +98,38 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="hackEffect">Efeito do Hack</label>
-          <textarea
-            id="hackEffect"
-            name="hackEffect"
-            placeholder="Descreva o efeito e as mecânicas do hack..."
-            maxlength="500"
-            rows="4"
-            autocomplete="off"
-          ></textarea>
-          <small class="form-hint">Máximo 500 caracteres</small>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="hackType">Tipo de Hack</label>
+            <select
+              id="hackType"
+              name="hackType"
+              required
+              autocomplete="off"
+            >
+              <option value="">Selecione um tipo...</option>
+              <option value="quickhacking">⚡ Quickhacking</option>
+              <option value="intrusion">🔓 Infiltração</option>
+              <option value="stealth">🥷 Furtividade</option>
+              <option value="combat">⚔️ Combate</option>
+              <option value="control">🎮 Controle</option>
+              <option value="utility">🔧 Utilitário</option>
+              <option value="reconnaissance">🔍 Reconhecimento</option>
+              <option value="damage">💥 Dano</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="hackEffect">Efeito do Hack</label>
+            <textarea
+              id="hackEffect"
+              name="hackEffect"
+              placeholder="Descreva o efeito e as mecânicas do hack..."
+              maxlength="500"
+              rows="3"
+              autocomplete="off"
+            ></textarea>
+            <small class="form-hint">Máximo 500 caracteres</small>
+          </div>
         </div>
 
         <button type="submit" class="btn btn-primary btn-add">

@@ -3,12 +3,28 @@
  * Sistema completo de gerenciamento de hacks
  */
 
+// ============================================
+// MAPEAMENTO DE TIPOS DE HACKS
+// ============================================
+
+const HACK_TYPES = {
+  quickhacking: { icon: "⚡", nome: "Quickhacking", color: "#00d946" },
+  intrusion: { icon: "🔓", nome: "Infiltração", color: "#e91e8c" },
+  stealth: { icon: "🥷", nome: "Furtividade", color: "#64c8ff" },
+  combat: { icon: "⚔️", nome: "Combate", color: "#ff3d5c" },
+  control: { icon: "🎮", nome: "Controle", color: "#ffb800" },
+  utility: { icon: "🔧", nome: "Utilitário", color: "#64ffc8" },
+  reconnaissance: { icon: "🔍", nome: "Reconhecimento", color: "#c896ff" },
+  damage: { icon: "💥", nome: "Dano", color: "#ff6432" }
+};
+
 const STORAGE_KEY = "cyberpunk_hacks_rapidos";
 const RAM_STORAGE_KEY = "cyberpunk_player_ram";
 const CODEBREAKER_STORAGE_KEY = "cyberpunk_codebreaker";
 let MAX_RAM = 25;
 let USER_ID = null;
 let PLUGIN_READY = false;  // Flag para indicar que o plugin está pronto
+let draggedIndex = null;  // Variável para rastrear o hack sendo arrastado
 
 function obterChaveUsuario(chave) {
   return `${USER_ID}_${chave}`;
@@ -158,6 +174,7 @@ const HACKS_ESPECIAIS = [
     nome: "Hack Rápido - Benção da Lua",
     custoRAM: 4,
     dv: 15,
+    tipo: "utility",
     descricao: "Uma vez por dia você pode ter visão da lua para te auxiliar a encontrar lugares, objetos.. etc. lhe dando +10 no próximo teste das perícias de Atenção.",
     categoria: "Visão Especial",
     codigo: "bençãodalua0"
@@ -167,6 +184,7 @@ const HACKS_ESPECIAIS = [
     nome: "Hack Rápido - Corrente Fantasma",
     custoRAM: 5,
     dv: 14,
+    tipo: "stealth",
     descricao: "Você apaga temporariamente sua assinatura digital do campo. Nenhum efeito pode rastrear o netrunner e contra-hacks contra você falham automaticamente. Dura até o fim da cena ou até você executar outro hack. Falha: RAM é gasta normalmente e você é marcado.",
     categoria: "Ofuscação",
     codigo: "fantasma4040"
@@ -176,6 +194,7 @@ const HACKS_ESPECIAIS = [
     nome: "Hack Rápido - Protocolo Redqueen",
     custoRAM: 7,
     dv: 16,
+    tipo: "damage",
     descricao: "Uma explosão de ruído eletromagnético digital se espalha. Todos em um raio curto sofrem -4 em todos os testes, perdem -6 de RAM atual e aparelhos sofrem interferência. Dura 1d6 turnos.",
     categoria: "Área de Efeito",
     codigo: "redqueen1122"
@@ -192,6 +211,7 @@ const HACKS_SISTEMA = [
     nome: "Hack Rápido - Shut Down",
     custoRAM: 4,
     dv: 12,
+    tipo: "combat",
     descricao: "Força o alvo a desligar todos os sistemas por 1 rodada. O alvo não pode agir durante este tempo.",
     categoria: "Desativação"
   },
@@ -200,6 +220,7 @@ const HACKS_SISTEMA = [
     nome: "Hack Rápido - Distrair Inimigos",
     custoRAM: 3,
     dv: 10,
+    tipo: "control",
     descricao: "Cria ruído nos sensores do alvo, aplicando -2 de REF na próxima ação. Efeito dura 1 rodada.",
     categoria: "Perturbação"
   },
@@ -208,6 +229,7 @@ const HACKS_SISTEMA = [
     nome: "Hack Rápido - Protocolo de Invasão",
     custoRAM: 5,
     dv: 14,
+    tipo: "intrusion",
     descricao: "Abre acesso avançado ao sistema neural do alvo, permitindo um segundo hacking na próxima rodada sem custo de RAM.",
     categoria: "Infiltração"
   },
@@ -216,6 +238,7 @@ const HACKS_SISTEMA = [
     nome: "Hack Rápido - Zap",
     custoRAM: 3,
     dv: 13,
+    tipo: "damage",
     descricao: "Causa 1d8 de dano cerebral e remove ações no próximo turno.",
     categoria: "Dano Cerebral"
   },
@@ -224,6 +247,7 @@ const HACKS_SISTEMA = [
     nome: "Hack Rápido - Ping",
     custoRAM: 1,
     dv: 10,
+    tipo: "reconnaissance",
     descricao: "Revela todos os dispositivos conectados na rede local.",
     categoria: "Reconhecimento"
   },
@@ -232,6 +256,7 @@ const HACKS_SISTEMA = [
     nome: "Hack Rápido - Overheat",
     custoRAM: 6,
     dv: 15,
+    tipo: "damage",
     descricao: "Deixa o alvo queimando por 2d4 rodadas, pode espalhar o efeito para alvos próximos.",
     categoria: "Dano Contínuo"
   },
@@ -240,6 +265,7 @@ const HACKS_SISTEMA = [
     nome: "Hack Rápido - Crash",
     custoRAM: 2,
     dv: 12,
+    tipo: "combat",
     descricao: "Derruba um drone ou veículo remoto.",
     categoria: "Desativação"
   },
@@ -248,6 +274,7 @@ const HACKS_SISTEMA = [
     nome: "Hack Rápido - Spike",
     custoRAM: 4,
     dv: 14,
+    tipo: "control",
     descricao: "Toma controle de um sistema ou câmera por 2 turnos.",
     categoria: "Controle"
   },
@@ -256,6 +283,7 @@ const HACKS_SISTEMA = [
     nome: "Hack Rápido - Eye Burn",
     custoRAM: 5,
     dv: 14,
+    tipo: "stealth",
     descricao: "Causa ofuscamento temporário. Alvo sofre -6 em ataques à distância por 1 turno.",
     categoria: "Incapacidade"
   },
@@ -264,6 +292,7 @@ const HACKS_SISTEMA = [
     nome: "Hack Rápido - Flicker",
     custoRAM: 3,
     dv: 14,
+    tipo: "stealth",
     descricao: "Alvo perde o próximo movimento.",
     categoria: "Incapacidade"
   }
@@ -666,12 +695,20 @@ async function renderizarHacks() {
   hacks.forEach((hack, index) => {
     const hackElement = document.createElement("div");
     const isEspecial = hack.origem === "especial";
+    const tipoInfo = HACK_TYPES[hack.tipo] || HACK_TYPES.quickhacking;
+    
     hackElement.className = `hack-item ${isEspecial ? "hack-special" : ""}`;
+    hackElement.draggable = true;
+    hackElement.setAttribute("data-hack-index", index);
+    
+    const badgeHTML = hack.tipo ? `<span class="hack-badge hack-badge-${hack.tipo}">${tipoInfo.icon} ${tipoInfo.nome}</span>` : "";
+    
     hackElement.innerHTML = `
       <div class="hack-header">
         <div class="hack-info">
           <h4 class="hack-name">${isEspecial ? "🔓 " : ""}${sanitizar(hack.nome)}</h4>
           <div class="hack-meta">
+            ${badgeHTML}
             <span class="hack-stat">
               <span class="stat-label">RAM:</span>
               <span class="stat-value">${hack.custoRAM}</span>
@@ -695,6 +732,42 @@ async function renderizarHacks() {
           : ""
       }
     `;
+    
+    // Adicionar event listeners para drag-and-drop
+    hackElement.addEventListener("dragstart", (e) => {
+      draggedIndex = index;
+      hackElement.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    });
+    
+    hackElement.addEventListener("dragend", (e) => {
+      hackElement.classList.remove("dragging");
+      document.querySelectorAll(".hack-item").forEach(item => {
+        item.classList.remove("drag-over");
+      });
+    });
+    
+    hackElement.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      if (draggedIndex !== null && draggedIndex !== index) {
+        hackElement.classList.add("drag-over");
+      }
+    });
+    
+    hackElement.addEventListener("dragleave", (e) => {
+      hackElement.classList.remove("drag-over");
+    });
+    
+    hackElement.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      if (draggedIndex !== null && draggedIndex !== index) {
+        await reordenarHacks(draggedIndex, index);
+      }
+      hackElement.classList.remove("drag-over");
+      draggedIndex = null;
+    });
+    
     container.appendChild(hackElement);
   });
 }
@@ -721,11 +794,12 @@ async function adicionarHack(event) {
   const nomeInput = document.getElementById("hackName");
   const ramInput = document.getElementById("hackRam");
   const dvInput = document.getElementById("hackDv");
+  const typeInput = document.getElementById("hackType");
   const effectInput = document.getElementById("hackEffect");
   const form = event ? event.target : document.getElementById("hackForm");
 
   // Validar inputs
-  if (!nomeInput || !ramInput || !dvInput) {
+  if (!nomeInput || !ramInput || !dvInput || !typeInput) {
     alert("❌ Erro ao acessar formulário");
     return;
   }
@@ -733,6 +807,7 @@ async function adicionarHack(event) {
   const nome = nomeInput.value.trim();
   const ram = parseInt(ramInput.value);
   const dv = parseInt(dvInput.value);
+  const tipo = typeInput.value.trim();
   const descricao = effectInput ? effectInput.value.trim() : "";
 
   // Validações
@@ -751,12 +826,18 @@ async function adicionarHack(event) {
     return;
   }
 
+  if (!tipo || !HACK_TYPES[tipo]) {
+    alert("⚠ Tipo de hack é obrigatório");
+    return;
+  }
+
   // Criar hack
   const novoHack = {
     id: Date.now().toString(),
     nome: nome,
     custoRAM: ram,
     dv: dv,
+    tipo: tipo,
     descricao: descricao,
     criadoEm: new Date().toISOString()
   };
@@ -794,6 +875,7 @@ async function importarHack(hackId) {
     nome: hackOriginal.nome,
     custoRAM: hackOriginal.custoRAM,
     dv: hackOriginal.dv,
+    tipo: hackOriginal.tipo || "quickhacking",
     descricao: hackOriginal.descricao,
     origem: "sistema",
     criadoEm: new Date().toISOString()
@@ -861,6 +943,32 @@ async function usarHackCyberdeck(custoRAM, nomeHack) {
   await renderizarRAM();
   
   alert(`✓ Hack "${nomeHack}" usado com sucesso!\n⚡ RAM descontada: ${custoRAM}\n📊 RAM restante: ${novaRAM}/${ramAtual.max}`);
+}
+
+async function reordenarHacks(indexDe, indexPara) {
+  console.log(`🔄 Reordenando hacks: ${indexDe} → ${indexPara}`);
+  
+  const hacks = await carregarHacksLocal();
+  
+  // Validar índices
+  if (indexDe < 0 || indexDe >= hacks.length || indexPara < 0 || indexPara >= hacks.length) {
+    console.error("❌ Índices inválidos para reordenação");
+    return;
+  }
+  
+  // Remover hack do índice original
+  const hackMovido = hacks.splice(indexDe, 1)[0];
+  
+  // Inserir hack no novo índice
+  hacks.splice(indexPara, 0, hackMovido);
+  
+  // Salvar nova ordem
+  if (await salvarHacksLocal(hacks)) {
+    console.log("✓ Hacks reordenados com sucesso");
+    await renderizarHacks();
+  } else {
+    console.error("❌ Erro ao salvar reordenação");
+  }
 }
 
 async function excluirHack(index) {
@@ -1086,6 +1194,7 @@ async function importarHackEspecial(hackId) {
     nome: hackOriginal.nome,
     custoRAM: hackOriginal.custoRAM,
     dv: hackOriginal.dv,
+    tipo: hackOriginal.tipo || "quickhacking",
     descricao: hackOriginal.descricao,
     origem: "especial",
     criadoEm: new Date().toISOString()
