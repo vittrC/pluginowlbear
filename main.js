@@ -121,16 +121,20 @@ async function iniciarPluginFallback() {
   try {
     console.log("🚀 Iniciando em modo FALLBACK (sem OBR)...");
     
-    // Usar ID consistente baseado na sessão do navegador (sessionStorage isola por janela/conta)
+    // Usar ID consistente baseado em localStorage (persiste entre sessões)
     const FALLBACK_USER_KEY = "owlbear_demo_user_id";
-    let demoUserId = sessionStorage.getItem(FALLBACK_USER_KEY);
+    let demoUserId = localStorage.getItem(FALLBACK_USER_KEY);
     
     if (!demoUserId) {
       demoUserId = "demo_" + Math.random().toString(36).substr(2, 9);
-      sessionStorage.setItem(FALLBACK_USER_KEY, demoUserId);
-      console.log("🆕 Novo usuário demo criado (sessionStorage):", demoUserId);
+      try {
+        localStorage.setItem(FALLBACK_USER_KEY, demoUserId);
+        console.log("🆕 Novo usuário demo criado (localStorage):", demoUserId);
+      } catch (e) {
+        console.error("❌ Erro ao salvar demo user ID em localStorage:", e);
+      }
     } else {
-      console.log("♻️ Usuário demo existente (sessionStorage):", demoUserId);
+      console.log("♻️ Usuário demo existente (localStorage):", demoUserId);
     }
     
     USER_ID = demoUserId;
@@ -310,40 +314,44 @@ const HACKS_SISTEMA = [
 
 async function salvarHacksLocal(hacks) {
   try {
-    const chave = obterChaveUsuario(STORAGE_KEY);
-    console.log("💾 Salvando hacks com chave:", chave);
+    // Use chave simples e consistente para localStorage
+    const chaveLoja = "cyberpunk_hacks_rapidos_local";
+    console.log("💾 Salvando hacks para localStorage com chave:", chaveLoja);
     
-    // SEMPRE tentar salvar em localStorage como método primário
+    // Salvar em localStorage (método primário - mais confiável)
     try {
-      console.log("💾 Salvando em localStorage");
-      localStorage.setItem(chave, JSON.stringify(hacks));
+      const dataStr = JSON.stringify(hacks);
+      localStorage.setItem(chaveLoja, dataStr);
       
-      // Verificar se foi realmente salvo
-      const verificacao = localStorage.getItem(chave);
+      // Verificar imediatamente se foi salvo
+      const verificacao = localStorage.getItem(chaveLoja);
       if (verificacao) {
-        console.log("✅ localStorage confirmado - dados salvos com sucesso");
+        console.log("✅ localStorage verificado - dados salvos com sucesso:", hacks.length, "hacks");
       } else {
         console.error("❌ localStorage falhou - dados NÃO foram salvos");
       }
     } catch (storageError) {
       console.error("❌ Erro ao salvar em localStorage:", storageError);
+      return false;
     }
     
-    // TAMBÉM tentar salvar em OBR.storage se disponível (para sincronizar entre clientes)
-    if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.setItems) {
-      try {
-        console.log("📡 Também salvando em OBR.storage");
-        await OBR.storage.setItems([{
-          key: chave,
-          value: JSON.stringify(hacks)
-        }]);
-        console.log("📡 OBR.storage sincronizado");
-      } catch (obrError) {
-        console.warn("⚠️ OBR.storage não disponível (isto é normal):", obrError);
+    // Também tentar salvar com chave do usuário em OBR.storage (opcional)
+    if (USER_ID) {
+      const chaveOBR = `${USER_ID}_${STORAGE_KEY}`;
+      if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.setItems) {
+        try {
+          console.log("📡 Também sincronizando com OBR.storage:", chaveOBR);
+          await OBR.storage.setItems([{
+            key: chaveOBR,
+            value: JSON.stringify(hacks)
+          }]);
+        } catch (obrError) {
+          console.warn("⚠️ OBR.storage não disponível (pode ignorar):", obrError.message);
+        }
       }
     }
     
-    console.log("✓ Hacks salvos com sucesso:", hacks.length, "hacks");
+    console.log("✓ Hacks salvos com sucesso");
     return true;
   } catch (error) {
     console.error("❌ Erro crítico ao salvar hacks:", error);
@@ -353,36 +361,43 @@ async function salvarHacksLocal(hacks) {
 
 async function carregarHacksLocal() {
   try {
-    const chave = obterChaveUsuario(STORAGE_KEY);
+    // Use chave simples e consistente para localStorage
+    const chaveLoja = "cyberpunk_hacks_rapidos_local";
+    console.log("📂 Carregando hacks de localStorage com chave:", chaveLoja);
+    
     let hacksData = null;
     
-    // Tentar carregar de localStorage PRIMEIRO (é o mais confiável)
+    // Tentar carregar de localStorage (método primário)
     try {
-      console.log("💾 Carregando de localStorage");
-      hacksData = localStorage.getItem(chave);
+      hacksData = localStorage.getItem(chaveLoja);
       if (hacksData) {
-        console.log("✓ Dados carregados via localStorage");
+        console.log("✓ Dados encontrados em localStorage");
+      } else {
+        console.warn("⚠️ Nenhum dado encontrado em localStorage, tentando OBR.storage...");
       }
     } catch (storageError) {
-      console.warn("⚠️ localStorage não disponível:", storageError);
+      console.warn("⚠️ Erro ao carregar de localStorage:", storageError);
     }
     
-    // Se localStorage não tinha dados, tentar OBR.storage
-    if (!hacksData && typeof OBR !== 'undefined' && OBR.storage && OBR.storage.getItems) {
-      try {
-        console.log("📡 Carregando de OBR.storage");
-        const dados = await OBR.storage.getItems([chave]);
-        hacksData = dados.length > 0 ? dados[0].value : null;
-        if (hacksData) {
-          console.log("✓ Dados carregados via OBR.storage");
+    // Se localStorage não encontrou, tentar OBR.storage
+    if (!hacksData && USER_ID) {
+      const chaveOBR = `${USER_ID}_${STORAGE_KEY}`;
+      if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.getItems) {
+        try {
+          console.log("📡 Tentando carregar de OBR.storage:", chaveOBR);
+          const dados = await OBR.storage.getItems([chaveOBR]);
+          if (dados.length > 0) {
+            hacksData = dados[0].value;
+            console.log("✓ Dados carregados via OBR.storage");
+          }
+        } catch (obrError) {
+          console.warn("⚠️ OBR.storage não disponível:", obrError.message);
         }
-      } catch (obrError) {
-        console.warn("⚠️ OBR.storage não disponível:", obrError);
       }
     }
     
     const hacks = hacksData ? JSON.parse(hacksData) : [];
-    console.log("✓ Hacks carregados:", hacks.length, "hacks");
+    console.log("✓ Hacks carregados:", hacks.length, "items");
     return Array.isArray(hacks) ? hacks : [];
   } catch (error) {
     console.error("❌ Erro ao carregar hacks:", error);
@@ -396,39 +411,45 @@ async function carregarHacksLocal() {
 
 async function salvarRAMLocal(ramAtual, ramMaximo = MAX_RAM) {
   try {
-    const chave = obterChaveUsuario(RAM_STORAGE_KEY);
-    console.log("💾 Salvando RAM com chave:", chave, "valor:", ramAtual, "/", ramMaximo);
+    // Use chave simples e consistente para localStorage
+    const chaveLoja = "cyberpunk_player_ram_local";
+    console.log("💾 Salvando RAM para localStorage com chave:", chaveLoja);
+    console.log("   Valor: RAM", ramAtual, "/", ramMaximo);
     
-    // SEMPRE tentar salvar em localStorage como método primário
+    // Salvar em localStorage (método primário)
     try {
-      console.log("💾 Salvando RAM em localStorage");
-      localStorage.setItem(chave, JSON.stringify({ ram: ramAtual, max: ramMaximo }));
+      const dataStr = JSON.stringify({ ram: ramAtual, max: ramMaximo });
+      localStorage.setItem(chaveLoja, dataStr);
       
-      const verificacao = localStorage.getItem(chave);
+      // Verificar imediatamente
+      const verificacao = localStorage.getItem(chaveLoja);
       if (verificacao) {
-        console.log("✅ localStorage confirmado - RAM salvo com sucesso");
+        console.log("✅ localStorage verificado - RAM salvo com sucesso");
       } else {
         console.error("❌ localStorage falhou - RAM NÃO foi salvo");
       }
     } catch (storageError) {
       console.error("❌ Erro ao salvar RAM em localStorage:", storageError);
+      return false;
     }
     
-    // TAMBÉM tentar salvar em OBR.storage se disponível
-    if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.setItems) {
-      try {
-        console.log("📡 Também salvando RAM em OBR.storage");
-        await OBR.storage.setItems([{
-          key: chave,
-          value: JSON.stringify({ ram: ramAtual, max: ramMaximo })
-        }]);
-        console.log("📡 OBR.storage RAM sincronizado");
-      } catch (obrError) {
-        console.warn("⚠️ OBR.storage RAM não disponível (isto é normal):", obrError);
+    // Também tentar salvar com chave do usuário em OBR.storage (opcional)
+    if (USER_ID) {
+      const chaveOBR = `${USER_ID}_${RAM_STORAGE_KEY}`;
+      if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.setItems) {
+        try {
+          console.log("📡 Também sincronizando RAM com OBR.storage");
+          await OBR.storage.setItems([{
+            key: chaveOBR,
+            value: JSON.stringify({ ram: ramAtual, max: ramMaximo })
+          }]);
+        } catch (obrError) {
+          console.warn("⚠️ OBR.storage RAM não disponível (pode ignorar):", obrError.message);
+        }
       }
     }
     
-    console.log("✓ RAM salvo:", ramAtual, "/", ramMaximo);
+    console.log("✓ RAM salvo com sucesso");
     return true;
   } catch (error) {
     console.error("❌ Erro ao salvar RAM:", error);
@@ -438,32 +459,39 @@ async function salvarRAMLocal(ramAtual, ramMaximo = MAX_RAM) {
 
 async function carregarRAMLocal() {
   try {
-    const chave = obterChaveUsuario(RAM_STORAGE_KEY);
+    // Use chave simples e consistente para localStorage
+    const chaveLoja = "cyberpunk_player_ram_local";
+    console.log("📂 Carregando RAM de localStorage com chave:", chaveLoja);
+    
     let ramData = null;
     
-    // Tentar carregar de localStorage PRIMEIRO
+    // Tentar carregar de localStorage (método primário)
     try {
-      console.log("💾 Carregando RAM de localStorage");
-      const stored = localStorage.getItem(chave);
+      const stored = localStorage.getItem(chaveLoja);
       if (stored) {
         ramData = JSON.parse(stored);
-        console.log("✓ RAM carregado via localStorage");
+        console.log("✓ RAM encontrado em localStorage:", ramData.ram, "/", ramData.max);
+      } else {
+        console.warn("⚠️ Nenhum RAM encontrado em localStorage, tentando OBR.storage...");
       }
     } catch (storageError) {
-      console.warn("⚠️ localStorage não disponível:", storageError);
+      console.warn("⚠️ Erro ao carregar RAM de localStorage:", storageError);
     }
     
-    // Se localStorage não tinha dados, tentar OBR.storage
-    if (!ramData && typeof OBR !== 'undefined' && OBR.storage && OBR.storage.getItems) {
-      try {
-        console.log("📡 Carregando RAM de OBR.storage");
-        const dados = await OBR.storage.getItems([chave]);
-        if (dados.length > 0) {
-          ramData = JSON.parse(dados[0].value);
-          console.log("✓ RAM carregado via OBR.storage");
+    // Se localStorage não encontrou, tentar OBR.storage
+    if (!ramData && USER_ID) {
+      const chaveOBR = `${USER_ID}_${RAM_STORAGE_KEY}`;
+      if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.getItems) {
+        try {
+          console.log("📡 Tentando carregar RAM de OBR.storage");
+          const dados = await OBR.storage.getItems([chaveOBR]);
+          if (dados.length > 0) {
+            ramData = JSON.parse(dados[0].value);
+            console.log("✓ RAM carregado via OBR.storage");
+          }
+        } catch (obrError) {
+          console.warn("⚠️ OBR.storage RAM não disponível:", obrError.message);
         }
-      } catch (obrError) {
-        console.warn("⚠️ OBR.storage não disponível:", obrError);
       }
     }
     
@@ -1070,32 +1098,39 @@ function sanitizar(texto) {
 
 async function carregarCodigosDesbloqueados() {
   try {
-    const chave = obterChaveUsuario(CODEBREAKER_STORAGE_KEY);
+    // Use chave simples e consistente para localStorage
+    const chaveLoja = "cyberpunk_codebreaker_local";
+    console.log("📂 Carregando códigos de localStorage com chave:", chaveLoja);
+    
     let codigos = null;
     
-    // Tentar carregar de localStorage PRIMEIRO
+    // Tentar carregar de localStorage (método primário)
     try {
-      console.log("💾 Carregando códigos de localStorage");
-      const stored = localStorage.getItem(chave);
+      const stored = localStorage.getItem(chaveLoja);
       if (stored) {
         codigos = JSON.parse(stored);
-        console.log("✓ Códigos carregados via localStorage");
+        console.log("✓ Códigos encontrados em localStorage");
+      } else {
+        console.warn("⚠️ Nenhum código encontrado em localStorage, tentando OBR.storage...");
       }
     } catch (storageError) {
-      console.warn("⚠️ localStorage não disponível:", storageError);
+      console.warn("⚠️ Erro ao carregar códigos de localStorage:", storageError);
     }
     
-    // Se localStorage não tinha dados, tentar OBR.storage
-    if (!codigos && typeof OBR !== 'undefined' && OBR.storage && OBR.storage.getItems) {
-      try {
-        console.log("📡 Carregando códigos de OBR.storage");
-        const dados = await OBR.storage.getItems([chave]);
-        if (dados.length > 0) {
-          codigos = JSON.parse(dados[0].value);
-          console.log("✓ Códigos carregados via OBR.storage");
+    // Se localStorage não encontrou, tentar OBR.storage
+    if (!codigos && USER_ID) {
+      const chaveOBR = `${USER_ID}_${CODEBREAKER_STORAGE_KEY}`;
+      if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.getItems) {
+        try {
+          console.log("📡 Tentando carregar códigos de OBR.storage");
+          const dados = await OBR.storage.getItems([chaveOBR]);
+          if (dados.length > 0) {
+            codigos = JSON.parse(dados[0].value);
+            console.log("✓ Códigos carregados via OBR.storage");
+          }
+        } catch (obrError) {
+          console.warn("⚠️ OBR.storage códigos não disponível:", obrError.message);
         }
-      } catch (obrError) {
-        console.warn("⚠️ OBR.storage não disponível:", obrError);
       }
     }
     
@@ -1109,38 +1144,44 @@ async function carregarCodigosDesbloqueados() {
 
 async function salvarCodigosDesbloqueados(codigos) {
   try {
-    const chave = obterChaveUsuario(CODEBREAKER_STORAGE_KEY);
+    // Use chave simples e consistente para localStorage
+    const chaveLoja = "cyberpunk_codebreaker_local";
+    console.log("💾 Salvando códigos para localStorage com chave:", chaveLoja);
     
-    // SEMPRE tentar salvar em localStorage como método primário
+    // Salvar em localStorage (método primário)
     try {
-      console.log("💾 Salvando códigos em localStorage");
-      localStorage.setItem(chave, JSON.stringify(codigos));
+      const dataStr = JSON.stringify(codigos);
+      localStorage.setItem(chaveLoja, dataStr);
       
-      const verificacao = localStorage.getItem(chave);
+      // Verificar imediatamente
+      const verificacao = localStorage.getItem(chaveLoja);
       if (verificacao) {
-        console.log("✅ localStorage confirmado - códigos salvos");
+        console.log("✅ localStorage verificado - códigos salvos com sucesso");
       } else {
-        console.error("❌ localStorage falhou");
+        console.error("❌ localStorage falhou - códigos NÃO foram salvos");
       }
     } catch (storageError) {
       console.error("❌ Erro ao salvar códigos em localStorage:", storageError);
+      return false;
     }
     
-    // TAMBÉM tentar salvar em OBR.storage se disponível
-    if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.setItems) {
-      try {
-        console.log("📡 Também salvando códigos em OBR.storage");
-        await OBR.storage.setItems([{
-          key: chave,
-          value: JSON.stringify(codigos)
-        }]);
-        console.log("📡 OBR.storage códigos sincronizado");
-      } catch (obrError) {
-        console.warn("⚠️ OBR.storage códigos não disponível (isto é normal):", obrError);
+    // Também tentar salvar com chave do usuário em OBR.storage (opcional)
+    if (USER_ID) {
+      const chaveOBR = `${USER_ID}_${CODEBREAKER_STORAGE_KEY}`;
+      if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.setItems) {
+        try {
+          console.log("📡 Também sincronizando códigos com OBR.storage");
+          await OBR.storage.setItems([{
+            key: chaveOBR,
+            value: JSON.stringify(codigos)
+          }]);
+        } catch (obrError) {
+          console.warn("⚠️ OBR.storage códigos não disponível (pode ignorar):", obrError.message);
+        }
       }
     }
     
-    console.log("✓ Códigos desbloqueados salvos");
+    console.log("✓ Códigos desbloqueados salvos com sucesso");
     return true;
   } catch (error) {
     console.error("❌ Erro ao salvar códigos:", error);
