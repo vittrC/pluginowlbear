@@ -131,6 +131,19 @@
           <small class="form-hint">Máximo 500 caracteres</small>
         </div>
 
+        <div class="form-group">
+          <label for="hackNotes">Notas Personalizadas</label>
+          <textarea
+            id="hackNotes"
+            name="hackNotes"
+            placeholder="Anotações do mestre, customizações, histórico..."
+            maxlength="500"
+            rows="2"
+            autocomplete="off"
+          ></textarea>
+          <small class="form-hint">Máximo 500 caracteres</small>
+        </div>
+
         <button type="submit" class="btn btn-primary btn-add">
           <span class="btn-icon">+</span> Adicionar Hack
         </button>
@@ -211,6 +224,71 @@
           <div id="codebredHacksList" class="hack-list"></div>
         </div>
       </section>
+    </div>
+
+    <!-- Container de Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Modal de Edição de Hack -->
+    <div id="editModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">Editar Hack</h2>
+          <button class="modal-close" onclick="fecharModalEdicao()">✕</button>
+        </div>
+        <div class="modal-body">
+          <form id="editForm" class="form-section">
+            <input type="hidden" id="editHackIndex" />
+            
+            <div class="form-group">
+              <label for="editHackName">Nome do Hack</label>
+              <input type="text" id="editHackName" maxlength="50" required />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="editHackRam">Custo de RAM</label>
+                <input type="number" id="editHackRam" min="1" max="20" required />
+              </div>
+              <div class="form-group">
+                <label for="editHackDv">DV</label>
+                <input type="number" id="editHackDv" min="0" max="20" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="editHackType">Tipo de Hack</label>
+              <select id="editHackType" required>
+                <option value="">Selecione um tipo...</option>
+                <option value="quickhacking">⚡ Quickhacking</option>
+                <option value="intrusion">🔓 Infiltração</option>
+                <option value="stealth">🥷 Furtividade</option>
+                <option value="combat">⚔️ Combate</option>
+                <option value="control">🎮 Controle</option>
+                <option value="utility">🔧 Utilitário</option>
+                <option value="reconnaissance">🔍 Reconhecimento</option>
+                <option value="damage">💥 Dano</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="editHackEffect">Efeito do Hack</label>
+              <textarea id="editHackEffect" maxlength="500" rows="2"></textarea>
+              <small class="form-hint">Máximo 500 caracteres</small>
+            </div>
+
+            <div class="form-group">
+              <label for="editHackNotes">Notas Personalizadas</label>
+              <textarea id="editHackNotes" maxlength="500" rows="2"></textarea>
+              <small class="form-hint">Máximo 500 caracteres</small>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="fecharModalEdicao()">Cancelar</button>
+          <button class="btn btn-primary" onclick="salvarEdicaoHack()">Salvar Alterações</button>
+        </div>
+      </div>
     </div>
   </div>
 

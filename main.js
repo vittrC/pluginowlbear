@@ -713,11 +713,15 @@ function renderizarMercado(filtro = "") {
   hacksExibidos.forEach((hack) => {
     const hackElement = document.createElement("div");
     hackElement.className = "hack-item hack-item-market";
+    const tipoInfo = HACK_TYPES[hack.tipo] || HACK_TYPES.quickhacking;
+    const badgeHTML = hack.tipo ? `<span class="hack-badge hack-badge-${hack.tipo}">${tipoInfo.icon} ${tipoInfo.nome}</span>` : "";
+    
     hackElement.innerHTML = `
       <div class="hack-header">
         <div class="hack-info">
           <h4 class="hack-name">${sanitizar(hack.nome)}</h4>
           <div class="hack-meta">
+            ${badgeHTML}
             <span class="hack-stat">
               <span class="stat-label">RAM:</span>
               <span class="stat-value">${hack.custoRAM}</span>
@@ -729,7 +733,6 @@ function renderizarMercado(filtro = "") {
                 ⚡
               </button>
             </span>
-            <span class="hack-category">${sanitizar(hack.categoria)}</span>
           </div>
         </div>
         <button class="btn btn-install" onclick="importarHack('${hack.id}')" title="Adicionar ao Cyberdeck">
@@ -810,13 +813,23 @@ async function renderizarHacks() {
             </span>
           </div>
         </div>
-        <button class="btn btn-delete" onclick="excluirHack(${index})" title="Excluir hack">
-          <span>✕</span>
-        </button>
+        <div class="hack-actions">
+          <button class="btn btn-edit" onclick="abrirModalEdicao(${index})" title="Editar hack">
+            📝
+          </button>
+          <button class="btn btn-delete" onclick="excluirHack(${index})" title="Excluir hack">
+            <span>✕</span>
+          </button>
+        </div>
       </div>
       ${
         hack.descricao
           ? `<p class="hack-desc">${sanitizar(hack.descricao)}</p>`
+          : ""
+      }
+      ${
+        hack.notas
+          ? `<p class="hack-notes"><strong>Notas:</strong> ${sanitizar(hack.notas)}</p>`
           : ""
       }
     `;
@@ -873,7 +886,7 @@ async function adicionarHack(event) {
 
   if (!PLUGIN_READY) {
     console.warn("⚠️ Plugin ainda não está pronto");
-    alert("⚠️ Plugin ainda está inicializando...");
+    mostrarToast("Plugin ainda está inicializando...", 'warning');
     return;
   }
 
@@ -884,11 +897,12 @@ async function adicionarHack(event) {
   const dvInput = document.getElementById("hackDv");
   const typeInput = document.getElementById("hackType");
   const effectInput = document.getElementById("hackEffect");
+  const notesInput = document.getElementById("hackNotes");
   const form = event ? event.target : document.getElementById("hackForm");
 
   // Validar inputs
   if (!nomeInput || !ramInput || !dvInput || !typeInput) {
-    alert("❌ Erro ao acessar formulário");
+    mostrarToast("Erro ao acessar formulário", 'error');
     return;
   }
 
@@ -897,25 +911,26 @@ async function adicionarHack(event) {
   const dv = parseInt(dvInput.value);
   const tipo = typeInput.value.trim();
   const descricao = effectInput ? effectInput.value.trim() : "";
+  const notas = notesInput ? notesInput.value.trim() : "";
 
   // Validações
   if (!nome) {
-    alert("⚠ Nome do hack é obrigatório");
+    mostrarToast("Nome do hack é obrigatório", 'error');
     return;
   }
 
   if (isNaN(ram) || ram < 1 || ram > 20) {
-    alert("⚠ RAM deve ser entre 1 e 20");
+    mostrarToast("RAM deve ser entre 1 e 20", 'error');
     return;
   }
 
   if (isNaN(dv) || dv < 0 || dv > 20) {
-    alert("⚠ DV deve ser entre 0 e 20");
+    mostrarToast("DV deve ser entre 0 e 20", 'error');
     return;
   }
 
   if (!tipo || !HACK_TYPES[tipo]) {
-    alert("⚠ Tipo de hack é obrigatório");
+    mostrarToast("Tipo de hack é obrigatório", 'error');
     return;
   }
 
@@ -927,6 +942,7 @@ async function adicionarHack(event) {
     dv: dv,
     tipo: tipo,
     descricao: descricao,
+    notas: notas,
     criadoEm: new Date().toISOString()
   };
 
@@ -938,8 +954,9 @@ async function adicionarHack(event) {
     console.log("✓ Novo hack adicionado:", nome);
     form.reset();
     await renderizarHacks();
+    mostrarToast(`✓ "${nome}" adicionado ao cyberdeck!`, 'success');
   } else {
-    alert("❌ Erro ao salvar hack");
+    mostrarToast("Erro ao salvar hack", 'error');
   }
 }
 
@@ -988,7 +1005,7 @@ async function usarHack(hackId) {
   // Procurar o hack no sistema
   const hackOriginal = HACKS_SISTEMA.find(h => h.id === hackId);
   if (!hackOriginal) {
-    alert("❌ Hack não encontrado");
+    mostrarToast("❌ Hack não encontrado", "error");
     return;
   }
 
@@ -997,7 +1014,7 @@ async function usarHack(hackId) {
   
   // Validar se tem RAM suficiente
   if (ramAtual.ram < hackOriginal.custoRAM) {
-    alert(`❌ RAM insuficiente!\nVocê precisa de ${hackOriginal.custoRAM} RAM, mas tem apenas ${ramAtual.ram}.`);
+    mostrarToast(`❌ RAM insuficiente! Precisa de ${hackOriginal.custoRAM}, tem ${ramAtual.ram}`, "error");
     return;
   }
 
@@ -1008,7 +1025,7 @@ async function usarHack(hackId) {
   await salvarRAMLocal(novaRAM, ramAtual.max);
   await renderizarRAM();
   
-  alert(`✓ Hack "${hackOriginal.nome}" usado com sucesso!\n⚡ RAM descontada: ${hackOriginal.custoRAM}\n📊 RAM restante: ${novaRAM}/${ramAtual.max}`);
+  mostrarToast(`✓ "${hackOriginal.nome}" usado! RAM: ${novaRAM}/${ramAtual.max}`, "success");
 }
 
 async function usarHackCyberdeck(custoRAM, nomeHack) {
@@ -1019,7 +1036,7 @@ async function usarHackCyberdeck(custoRAM, nomeHack) {
   
   // Validar se tem RAM suficiente
   if (ramAtual.ram < custoRAM) {
-    alert(`❌ RAM insuficiente!\nVocê precisa de ${custoRAM} RAM, mas tem apenas ${ramAtual.ram}.`);
+    mostrarToast(`❌ RAM insuficiente! Precisa de ${custoRAM}, tem ${ramAtual.ram}`, "error");
     return;
   }
 
@@ -1030,7 +1047,7 @@ async function usarHackCyberdeck(custoRAM, nomeHack) {
   await salvarRAMLocal(novaRAM, ramAtual.max);
   await renderizarRAM();
   
-  alert(`✓ Hack "${nomeHack}" usado com sucesso!\n⚡ RAM descontada: ${custoRAM}\n📊 RAM restante: ${novaRAM}/${ramAtual.max}`);
+  mostrarToast(`✓ "${nomeHack}" usado! RAM: ${novaRAM}/${ramAtual.max}`, "success");
 }
 
 async function reordenarHacks(indexDe, indexPara) {
@@ -1067,7 +1084,7 @@ async function excluirHack(index) {
   const hacks = await carregarHacksLocal();
   
   if (index < 0 || index >= hacks.length) {
-    alert("❌ Hack não encontrado");
+    mostrarToast("❌ Hack não encontrado", "error");
     return;
   }
 
@@ -1076,9 +1093,10 @@ async function excluirHack(index) {
 
   if (await salvarHacksLocal(hacks)) {
     console.log("✓ Hack excluído:", nomeDeletado);
+    mostrarToast(`"${nomeDeletado}" foi excluído`, "success");
     await renderizarHacks();
   } else {
-    alert("❌ Erro ao excluir hack");
+    mostrarToast("❌ Erro ao excluir hack", "error");
   }
 }
 
@@ -1090,6 +1108,129 @@ function sanitizar(texto) {
   const div = document.createElement("div");
   div.textContent = texto;
   return div.innerHTML;
+}
+
+// ============================================
+// TOAST NOTIFICATIONS - Sistema de Confirmações Visuais
+// ============================================
+
+function mostrarToast(mensagem, tipo = 'success', duracao = 3000) {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${tipo}`;
+  
+  const icons = {
+    success: '✓',
+    error: '✕',
+    warning: '⚠'
+  };
+
+  toast.innerHTML = `
+    <span class="toast-icon">${icons[tipo] || '●'}</span>
+    <span class="toast-message">${sanitizar(mensagem)}</span>
+  `;
+
+  container.appendChild(toast);
+
+  // Auto-remover após duracao
+  setTimeout(() => {
+    toast.classList.add('removing');
+    setTimeout(() => toast.remove(), 300);
+  }, duracao);
+}
+
+// ============================================
+// EDITAR HACK - Modal e Funções
+// ============================================
+
+function abrirModalEdicao(index) {
+  carregarHacksLocal().then(hacks => {
+    if (index < 0 || index >= hacks.length) {
+      mostrarToast('Hack não encontrado', 'error');
+      return;
+    }
+
+    const hack = hacks[index];
+    
+    // Preencher formulário de edição
+    document.getElementById('editHackIndex').value = index;
+    document.getElementById('editHackName').value = hack.nome;
+    document.getElementById('editHackRam').value = hack.custoRAM;
+    document.getElementById('editHackDv').value = hack.dv;
+    document.getElementById('editHackType').value = hack.tipo || 'quickhacking';
+    document.getElementById('editHackEffect').value = hack.descricao || '';
+    document.getElementById('editHackNotes').value = hack.notas || '';
+
+    // Mostrar modal
+    const modal = document.getElementById('editModal');
+    if (modal) {
+      modal.classList.add('active');
+    }
+  });
+}
+
+function fecharModalEdicao() {
+  const modal = document.getElementById('editModal');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+}
+
+async function salvarEdicaoHack() {
+  const index = parseInt(document.getElementById('editHackIndex').value);
+  const nome = document.getElementById('editHackName').value.trim();
+  const ram = parseInt(document.getElementById('editHackRam').value);
+  const dv = parseInt(document.getElementById('editHackDv').value);
+  const tipo = document.getElementById('editHackType').value;
+  const descricao = document.getElementById('editHackEffect').value.trim();
+  const notas = document.getElementById('editHackNotes').value.trim();
+
+  // Validações
+  if (!nome) {
+    mostrarToast('Nome do hack é obrigatório', 'error');
+    return;
+  }
+
+  if (isNaN(ram) || ram < 1 || ram > 20) {
+    mostrarToast('RAM deve ser entre 1 e 20', 'error');
+    return;
+  }
+
+  if (isNaN(dv) || dv < 0 || dv > 20) {
+    mostrarToast('DV deve ser entre 0 e 20', 'error');
+    return;
+  }
+
+  if (!tipo || !HACK_TYPES[tipo]) {
+    mostrarToast('Tipo de hack é obrigatório', 'error');
+    return;
+  }
+
+  const hacks = await carregarHacksLocal();
+  
+  if (index < 0 || index >= hacks.length) {
+    mostrarToast('Hack não encontrado', 'error');
+    return;
+  }
+
+  // Atualizar hack
+  hacks[index].nome = nome;
+  hacks[index].custoRAM = ram;
+  hacks[index].dv = dv;
+  hacks[index].tipo = tipo;
+  hacks[index].descricao = descricao;
+  hacks[index].notas = notas;
+
+  if (await salvarHacksLocal(hacks)) {
+    fecharModalEdicao();
+    await renderizarHacks();
+    mostrarToast(`✓ "${nome}" foi atualizado com sucesso!`, 'success');
+    console.log('✓ Hack editado:', nome);
+  } else {
+    mostrarToast('Erro ao salvar alterações', 'error');
+  }
 }
 
 // ============================================
@@ -1290,11 +1431,15 @@ function renderizarHacksDesbloqueados() {
     hacksParaExibir.forEach((hack) => {
       const hackElement = document.createElement("div");
       hackElement.className = "hack-item hack-item-market hack-special";
+      const tipoInfo = HACK_TYPES[hack.tipo] || HACK_TYPES.quickhacking;
+      const badgeHTML = hack.tipo ? `<span class="hack-badge hack-badge-${hack.tipo}">${tipoInfo.icon} ${tipoInfo.nome}</span>` : "";
+      
       hackElement.innerHTML = `
         <div class="hack-header">
           <div class="hack-info">
             <h4 class="hack-name">🔓 ${sanitizar(hack.nome)}</h4>
             <div class="hack-meta">
+              ${badgeHTML}
               <span class="hack-stat">
                 <span class="stat-label">RAM:</span>
                 <span class="stat-value">${hack.custoRAM}</span>
@@ -1303,7 +1448,6 @@ function renderizarHacksDesbloqueados() {
                 <span class="stat-label">DV:</span>
                 <span class="stat-value">${hack.dv}</span>
               </span>
-              <span class="hack-category">${sanitizar(hack.categoria)}</span>
             </div>
           </div>
           <button class="btn btn-install" onclick="importarHack('${hack.id}')" title="Adicionar ao Cyberdeck">

@@ -1,34 +1,54 @@
-# Hacks Rápidos - Cyberpunk RED
+# 🔌 Hacks Rápidos - Cyberpunk RED
 
-Gerenciador de hacks rápidos para o sistema Cyberpunk RED no OWLBear Rodeo 2.3+
+Gerenciador de hacks rápidos para Cyberpunk RED no OWLBear Rodeo.
 
 ## Instalação
 
-1. Copie toda a pasta `pluginowlbear` para dentro da pasta de plugins do OWLBear
-2. Reinicie o OWLBear completamente
-3. No OWLBear, vá em **Configurações > Plugins**
-4. Procure por "Hacks Rápidos" e ative-o
-5. Clique no ícone de raio (⚡) na barra de ferramentas para abrir
+1. Copie o link 'https://vittrc.github.io/pluginowlbear/extension.json' 
+2. Vá em **Configurações > Extensions** e lá cole e ative "Hacks Rápidos"
+3. Adicione a extensão em uma sala criada e pronto!
 
 ## Funcionalidades
 
-- ✓ Adicionar novos hacks com nome, custo de RAM e DV
-- ✓ Descrever efeitos e mecânicas
-- ✓ Salvar automaticamente em localStorage
-- ✓ Excluir hacks com confirmação
-- ✓ Interface Cyberpunk RED com tema neon
-- ✓ Responsivo e compatível com OWLBear 2.3
+- Adicionar hacks com nome, RAM, DV, tipo e descrição
+- Notas personalizadas por hack
+- Editar hacks existentes
+- Reordenar hacks por drag-and-drop
+- Excluir hacks
+- Importar hacks do mercado
+- Gerenciar RAM do jogador
+- Hacks especiais desbloqueáveis com códigos
+- Notificações de ação (sucesso/erro)
+- Responsivo em desktop, tablet e mobile
 
-## Problemas de Instalação
+## Como Usar
 
-Se o plugin não aparecer:
-1. Verifique se o arquivo `extension.json` está na pasta raiz
-2. Reinicie o OWLBear completamente
-3. Verifique o console do navegador (F12) para erros
+**Criar hack:**
+1. Preencha nome, RAM, DV, tipo e descrição
+2. Adicione notas (opcional)
+3. Clique "Adicionar"
 
-## Arquivos
+**Editar hack:**
+1. Clique no botão 📝 no hack
+2. Edite os campos desejados
+3. Clique "Salvar Mudanças"
 
-- `extension.json` - Configuração do plugin
-- `index.html` - Interface do plugin
-- `main.js` - Lógica principal
-- `style.css` - Estilos Cyberpunk RED
+**Usar hack:**
+1. Clique no botão ⚡ no hack
+2. RAM é debitada automaticamente
+
+**Importar do mercado:**
+1. Abra a aba "Mercado"
+2. Use busca para filtrar hacks
+3. Clique "+" para adicionar ao cyberdeck
+
+## Tipos de Hacks
+
+- ⚡ Quickhacking
+- 🔓 Infiltração
+- 🥷 Furtividade
+- ⚔️ Combate
+- 🎮 Controle
+- 🔧 Utilitário
+- 🔍 Reconhecimento
+- 💥 Dano
