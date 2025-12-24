@@ -432,7 +432,8 @@ body {
 }
 
 input,
-textarea {
+textarea,
+select {
   background: var(--bg-secondary);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
@@ -444,7 +445,8 @@ textarea {
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   outline: none;
   border-color: var(--border-focus);
   background: var(--bg-primary);
@@ -466,30 +468,6 @@ textarea {
   font-size: 11px;
   color: var(--text-muted);
   margin-top: -2px;
-}
-
-select {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 13px;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-select:focus {
-  outline: none;
-  border-color: var(--border-focus);
-  background: var(--bg-primary);
-  box-shadow: 0 0 10px rgba(0, 217, 70, 0.2);
-}
-
-select option {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
 }
 
 /* Buttons */
