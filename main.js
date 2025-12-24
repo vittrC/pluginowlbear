@@ -307,30 +307,46 @@ async function salvarHacksLocal(hacks) {
     const chave = obterChaveUsuario(STORAGE_KEY);
     console.log("💾 Salvando hacks com chave:", chave);
     
-    if (typeof OBR !== 'undefined' && OBR.storage) {
-      // Usar OBR.storage em Owlbear
-      console.log("📡 Usando OBR.storage");
-      await OBR.storage.setItems([{
-        key: chave,
-        value: JSON.stringify(hacks)
-      }]);
-    } else {
-      // Fallback para sessionStorage (isola por navegador/conta/janela)
-      console.log("💾 Usando sessionStorage");
-      sessionStorage.setItem(chave, JSON.stringify(hacks));
-      
-      // Verificar se foi realmente salvo
-      const verificacao = sessionStorage.getItem(chave);
-      if (verificacao) {
-        console.log("✅ sessionStorage confirmado - dados salvos com sucesso");
-      } else {
-        console.error("❌ sessionStorage falhou - dados NÃO foram salvos");
+    let salvoComSucesso = false;
+    
+    // Tentar usar OBR.storage primeiro (método preferido)
+    if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.setItems) {
+      try {
+        console.log("📡 Usando OBR.storage");
+        await OBR.storage.setItems([{
+          key: chave,
+          value: JSON.stringify(hacks)
+        }]);
+        console.log("✓ Hacks salvos via OBR.storage");
+        salvoComSucesso = true;
+      } catch (obrError) {
+        console.warn("⚠️ OBR.storage falhou, tentando localStorage:", obrError);
       }
     }
+    
+    // Fallback para localStorage (persiste entre sessões)
+    if (!salvoComSucesso) {
+      try {
+        console.log("💾 Usando localStorage");
+        localStorage.setItem(chave, JSON.stringify(hacks));
+        
+        // Verificar se foi realmente salvo
+        const verificacao = localStorage.getItem(chave);
+        if (verificacao) {
+          console.log("✅ localStorage confirmado - dados salvos com sucesso");
+          salvoComSucesso = true;
+        } else {
+          console.error("❌ localStorage falhou - dados NÃO foram salvos");
+        }
+      } catch (storageError) {
+        console.error("❌ Erro ao usar localStorage:", storageError);
+      }
+    }
+    
     console.log("✓ Hacks salvos com sucesso:", hacks.length, "hacks");
-    return true;
+    return salvoComSucesso;
   } catch (error) {
-    console.error("❌ Erro ao salvar hacks:", error);
+    console.error("❌ Erro crítico ao salvar hacks:", error);
     return false;
   }
 }
@@ -340,13 +356,31 @@ async function carregarHacksLocal() {
     const chave = obterChaveUsuario(STORAGE_KEY);
     let hacksData = null;
     
-    if (typeof OBR !== 'undefined' && OBR.storage) {
-      // Usar OBR.storage em Owlbear
-      const dados = await OBR.storage.getItems([chave]);
-      hacksData = dados.length > 0 ? dados[0].value : null;
-    } else {
-      // Fallback para sessionStorage
-      hacksData = sessionStorage.getItem(chave);
+    // Tentar usar OBR.storage primeiro
+    if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.getItems) {
+      try {
+        console.log("📡 Carregando de OBR.storage");
+        const dados = await OBR.storage.getItems([chave]);
+        hacksData = dados.length > 0 ? dados[0].value : null;
+        if (hacksData) {
+          console.log("✓ Dados carregados via OBR.storage");
+        }
+      } catch (obrError) {
+        console.warn("⚠️ OBR.storage falhou, tentando localStorage:", obrError);
+      }
+    }
+    
+    // Fallback para localStorage
+    if (!hacksData) {
+      try {
+        console.log("💾 Carregando de localStorage");
+        hacksData = localStorage.getItem(chave);
+        if (hacksData) {
+          console.log("✓ Dados carregados via localStorage");
+        }
+      } catch (storageError) {
+        console.warn("⚠️ localStorage falhou:", storageError);
+      }
     }
     
     const hacks = hacksData ? JSON.parse(hacksData) : [];
@@ -367,28 +401,43 @@ async function salvarRAMLocal(ramAtual, ramMaximo = MAX_RAM) {
     const chave = obterChaveUsuario(RAM_STORAGE_KEY);
     console.log("💾 Salvando RAM com chave:", chave, "valor:", ramAtual, "/", ramMaximo);
     
-    if (typeof OBR !== 'undefined' && OBR.storage) {
-      // Usar OBR.storage em Owlbear
-      console.log("📡 Usando OBR.storage");
-      await OBR.storage.setItems([{
-        key: chave,
-        value: JSON.stringify({ ram: ramAtual, max: ramMaximo })
-      }]);
-    } else {
-      // Fallback para sessionStorage
-      console.log("💾 Usando sessionStorage");
-      sessionStorage.setItem(chave, JSON.stringify({ ram: ramAtual, max: ramMaximo }));
-      
-      // Verificar se foi realmente salvo
-      const verificacao = sessionStorage.getItem(chave);
-      if (verificacao) {
-        console.log("✅ sessionStorage confirmado - RAM salvo com sucesso");
-      } else {
-        console.error("❌ sessionStorage falhou - RAM NÃO foi salvo");
+    let salvoComSucesso = false;
+    
+    // Tentar usar OBR.storage primeiro
+    if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.setItems) {
+      try {
+        console.log("📡 Usando OBR.storage");
+        await OBR.storage.setItems([{
+          key: chave,
+          value: JSON.stringify({ ram: ramAtual, max: ramMaximo })
+        }]);
+        console.log("✓ RAM salvo via OBR.storage");
+        salvoComSucesso = true;
+      } catch (obrError) {
+        console.warn("⚠️ OBR.storage falhou, tentando localStorage:", obrError);
       }
     }
+    
+    // Fallback para localStorage
+    if (!salvoComSucesso) {
+      try {
+        console.log("💾 Usando localStorage");
+        localStorage.setItem(chave, JSON.stringify({ ram: ramAtual, max: ramMaximo }));
+        
+        const verificacao = localStorage.getItem(chave);
+        if (verificacao) {
+          console.log("✅ localStorage confirmado - RAM salvo com sucesso");
+          salvoComSucesso = true;
+        } else {
+          console.error("❌ localStorage falhou - RAM NÃO foi salvo");
+        }
+      } catch (storageError) {
+        console.error("❌ Erro ao usar localStorage:", storageError);
+      }
+    }
+    
     console.log("✓ RAM salvo:", ramAtual, "/", ramMaximo);
-    return true;
+    return salvoComSucesso;
   } catch (error) {
     console.error("❌ Erro ao salvar RAM:", error);
     return false;
@@ -398,17 +447,38 @@ async function salvarRAMLocal(ramAtual, ramMaximo = MAX_RAM) {
 async function carregarRAMLocal() {
   try {
     const chave = obterChaveUsuario(RAM_STORAGE_KEY);
-    let ramData;
+    let ramData = null;
     
-    if (typeof OBR !== 'undefined' && OBR.storage) {
-      // Usar OBR.storage em Owlbear
-      const dados = await OBR.storage.getItems([chave]);
-      ramData = dados.length > 0 ? JSON.parse(dados[0].value) : { ram: 0, max: 25 };
-    } else {
-      // Fallback para sessionStorage
-      const stored = sessionStorage.getItem(chave);
-      ramData = stored ? JSON.parse(stored) : { ram: 0, max: 25 };
+    // Tentar usar OBR.storage primeiro
+    if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.getItems) {
+      try {
+        console.log("📡 Carregando RAM de OBR.storage");
+        const dados = await OBR.storage.getItems([chave]);
+        if (dados.length > 0) {
+          ramData = JSON.parse(dados[0].value);
+          console.log("✓ RAM carregado via OBR.storage");
+        }
+      } catch (obrError) {
+        console.warn("⚠️ OBR.storage falhou, tentando localStorage:", obrError);
+      }
     }
+    
+    // Fallback para localStorage
+    if (!ramData) {
+      try {
+        console.log("💾 Carregando RAM de localStorage");
+        const stored = localStorage.getItem(chave);
+        if (stored) {
+          ramData = JSON.parse(stored);
+          console.log("✓ RAM carregado via localStorage");
+        }
+      } catch (storageError) {
+        console.warn("⚠️ localStorage falhou:", storageError);
+      }
+    }
+    
+    // Usar valores padrão se nada foi encontrado
+    ramData = ramData || { ram: 0, max: 25 };
     
     // Atualizar MAX_RAM global
     MAX_RAM = Math.max(1, Math.min(ramData.max, 100));
@@ -1011,18 +1081,37 @@ function sanitizar(texto) {
 async function carregarCodigosDesbloqueados() {
   try {
     const chave = obterChaveUsuario(CODEBREAKER_STORAGE_KEY);
-    let codigos;
+    let codigos = null;
     
-    if (typeof OBR !== 'undefined' && OBR.storage) {
-      // Usar OBR.storage em Owlbear
-      const dados = await OBR.storage.getItems([chave]);
-      codigos = dados.length > 0 ? JSON.parse(dados[0].value) : [];
-    } else {
-      // Fallback para sessionStorage
-      const stored = sessionStorage.getItem(chave);
-      codigos = stored ? JSON.parse(stored) : [];
+    // Tentar usar OBR.storage primeiro
+    if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.getItems) {
+      try {
+        console.log("📡 Carregando códigos de OBR.storage");
+        const dados = await OBR.storage.getItems([chave]);
+        if (dados.length > 0) {
+          codigos = JSON.parse(dados[0].value);
+          console.log("✓ Códigos carregados via OBR.storage");
+        }
+      } catch (obrError) {
+        console.warn("⚠️ OBR.storage falhou, tentando localStorage:", obrError);
+      }
     }
     
+    // Fallback para localStorage
+    if (!codigos) {
+      try {
+        console.log("💾 Carregando códigos de localStorage");
+        const stored = localStorage.getItem(chave);
+        if (stored) {
+          codigos = JSON.parse(stored);
+          console.log("✓ Códigos carregados via localStorage");
+        }
+      } catch (storageError) {
+        console.warn("⚠️ localStorage falhou:", storageError);
+      }
+    }
+    
+    codigos = codigos || [];
     return Array.isArray(codigos) ? codigos : [];
   } catch (error) {
     console.error("❌ Erro ao carregar códigos desbloqueados:", error);
@@ -1033,18 +1122,42 @@ async function carregarCodigosDesbloqueados() {
 async function salvarCodigosDesbloqueados(codigos) {
   try {
     const chave = obterChaveUsuario(CODEBREAKER_STORAGE_KEY);
-    if (typeof OBR !== 'undefined' && OBR.storage) {
-      // Usar OBR.storage em Owlbear
-      await OBR.storage.setItems([{
-        key: chave,
-        value: JSON.stringify(codigos)
-      }]);
-    } else {
-      // Fallback para sessionStorage
-      sessionStorage.setItem(chave, JSON.stringify(codigos));
+    let salvoComSucesso = false;
+    
+    // Tentar usar OBR.storage primeiro
+    if (typeof OBR !== 'undefined' && OBR.storage && OBR.storage.setItems) {
+      try {
+        console.log("📡 Usando OBR.storage");
+        await OBR.storage.setItems([{
+          key: chave,
+          value: JSON.stringify(codigos)
+        }]);
+        console.log("✓ Códigos salvos via OBR.storage");
+        salvoComSucesso = true;
+      } catch (obrError) {
+        console.warn("⚠️ OBR.storage falhou, tentando localStorage:", obrError);
+      }
     }
+    
+    // Fallback para localStorage
+    if (!salvoComSucesso) {
+      try {
+        console.log("💾 Usando localStorage");
+        localStorage.setItem(chave, JSON.stringify(codigos));
+        const verificacao = localStorage.getItem(chave);
+        if (verificacao) {
+          console.log("✅ localStorage confirmado - códigos salvos");
+          salvoComSucesso = true;
+        } else {
+          console.error("❌ localStorage falhou");
+        }
+      } catch (storageError) {
+        console.error("❌ Erro ao usar localStorage:", storageError);
+      }
+    }
+    
     console.log("✓ Códigos desbloqueados salvos");
-    return true;
+    return salvoComSucesso;
   } catch (error) {
     console.error("❌ Erro ao salvar códigos:", error);
     return false;
