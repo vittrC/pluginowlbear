@@ -153,7 +153,10 @@
     <!-- Sistema de Abas -->
     <div class="tabs-wrapper">
       <div class="tabs-header">
-        <button class="tab-btn tab-btn-active" data-tab="cyberdeck">
+        <button class="tab-btn tab-btn-active" data-tab="personagem">
+          <span class="tab-icon">👤</span> Personagem
+        </button>
+        <button class="tab-btn" data-tab="cyberdeck">
           <span class="tab-icon">💾</span> Seu Cyberdeck
         </button>
         <button class="tab-btn" data-tab="market">
@@ -164,8 +167,741 @@
         </button>
       </div>
 
-      <!-- Aba 1: Seu Cyberdeck (Hacks Salvos) -->
-      <section class="tab-panel tab-panel-active" id="tab-cyberdeck">
+      <!-- Aba 1: Personagem -->
+      <section class="tab-panel tab-panel-active" id="tab-personagem">
+        <div class="character-sheet">
+          <div class="character-header">
+            <h3 class="section-title">Ficha de Personagem</h3>
+          </div>
+
+          <!-- Dados Básicos -->
+          <div class="character-basics">
+            <div class="form-group">
+              <label for="charName">Nome do Personagem</label>
+              <input 
+                type="text" 
+                id="charName" 
+                placeholder="Digite o nome do seu personagem"
+                maxlength="100"
+              />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="charLevel">Nível</label>
+                <input 
+                  type="number" 
+                  id="charLevel" 
+                  min="1" 
+                  max="50" 
+                  value="1"
+                />
+              </div>
+              <div class="form-group">
+                <label for="charRole">Papel</label>
+                <select 
+                  id="charRole"
+                  onchange="atualizarHabilidadePapel(this.value)"
+                >
+                  <option value="">Selecione um papel...</option>
+                  <option value="solo">Solo</option>
+                  <option value="trilha-rede">Trilha-Rede</option>
+                  <option value="tecnico">Técnico</option>
+                  <option value="medtech">Medtech</option>
+                  <option value="roqueiro">Roqueiro (Rockerboy)</option>
+                  <option value="midia">Mídia</option>
+                  <option value="executivo">Executivo</option>
+                  <option value="fixer">Fixer</option>
+                  <option value="nomade">Nômade</option>
+                  <option value="policial">Policial</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="charHealthMax">Saúde Máxima</label>
+                <input 
+                  type="number" 
+                  id="charHealthMax" 
+                  min="1" 
+                  max="50"
+                  value="20"
+                  onchange="atualizarVisualizacaoSaude()"
+                />
+              </div>
+              <div class="form-group">
+                <label for="charHealth">Saúde Atual</label>
+                <div class="health-container-inline">
+                  <div class="health-bar-wrapper-compact">
+                    <div class="health-bar-bg">
+                      <div id="healthBarFill" class="health-bar-fill" style="width: 100%"></div>
+                    </div>
+                    <span id="healthValue" class="health-value">10/20</span>
+                  </div>
+                  <input 
+                    type="number" 
+                    id="charHealth" 
+                    min="0" 
+                    max="20"
+                    value="10"
+                    onchange="atualizarVisualizacaoSaude()"
+                    oninput="atualizarVisualizacaoSaude()"
+                    class="health-input-inline"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div id="salvationCircles" class="salvation-circles" style="display: none;">
+              <div class="salvation-circle"></div>
+              <div class="salvation-circle"></div>
+              <div class="salvation-circle"></div>
+              <button class="btn-restore" onclick="restaurarVida()" title="Restaurar +1 ponto de vida">🏥</button>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="charArmor">Armadura</label>
+                <select 
+                  id="charArmor"
+                  onchange="atualizarValorArmadura(this.value)"
+                >
+                  <option value="0">Nenhuma (0)</option>
+                  <option value="5">Leve (5)</option>
+                  <option value="10">Pesada (10)</option>
+                  <option value="custom">Customizada</option>
+                </select>
+                <input 
+                  type="number" 
+                  id="charArmorCustom" 
+                  min="0" 
+                  value="0"
+                  placeholder="Valor customizado"
+                  style="display:none; margin-top: 8px;"
+                />
+              </div>
+              <div class="form-group">
+                <label for="charHumanity">Humanidade</label>
+                <input 
+                  type="number" 
+                  id="charHumanity" 
+                  min="0" 
+                  max="100"
+                  value="100"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="charRoleAbility">Habilidade de Papel</label>
+              <textarea 
+                id="charRoleAbility" 
+                placeholder="Descreva a habilidade especial de seu papel"
+                rows="2"
+                maxlength="300"
+              ></textarea>
+            </div>
+
+            <button class="btn btn-primary" onclick="salvarPersonagem()">💾 Salvar Personagem</button>
+          </div>
+
+          <!-- Atributos -->
+          <div class="character-section">
+            <h4 class="subsection-title">Atributos</h4>
+            <div class="attributes-grid">
+              <div class="attribute-input">
+                <label for="attrIntel">INT<small>(Inteligência)</small></label>
+                <div class="attribute-control">
+                  <button class="attr-btn" onclick="decrementarAtributo('attrIntel')">−</button>
+                  <input type="number" id="attrIntel" min="0" max="20" value="3" class="attr-value" onchange="atualizarPericiasAtributo();atualizarCorAtributo('attrIntel')"/>
+                  <button class="attr-btn" onclick="incrementarAtributo('attrIntel')">+</button>
+                </div>
+              </div>
+              <div class="attribute-input">
+                <label for="attrRefl">REF<small>(Reflexos)</small></label>
+                <div class="attribute-control">
+                  <button class="attr-btn" onclick="decrementarAtributo('attrRefl')">−</button>
+                  <input type="number" id="attrRefl" min="0" max="20" value="3" class="attr-value" onchange="atualizarPericiasAtributo();atualizarCorAtributo('attrRefl')"/>
+                  <button class="attr-btn" onclick="incrementarAtributo('attrRefl')">+</button>
+                </div>
+              </div>
+              <div class="attribute-input">
+                <label for="attrTec">TEC<small>(Técnico)</small></label>
+                <div class="attribute-control">
+                  <button class="attr-btn" onclick="decrementarAtributo('attrTec')">−</button>
+                  <input type="number" id="attrTec" min="0" max="20" value="3" class="attr-value" onchange="atualizarPericiasAtributo();atualizarCorAtributo('attrTec')"/>
+                  <button class="attr-btn" onclick="incrementarAtributo('attrTec')">+</button>
+                </div>
+              </div>
+              <div class="attribute-input">
+                <label for="attrEmp">EMP<small>(Empatia)</small></label>
+                <div class="attribute-control">
+                  <button class="attr-btn" onclick="decrementarAtributo('attrEmp')">−</button>
+                  <input type="number" id="attrEmp" min="0" max="20" value="3" class="attr-value" onchange="atualizarPericiasAtributo();atualizarCorAtributo('attrEmp')"/>
+                  <button class="attr-btn" onclick="incrementarAtributo('attrEmp')">+</button>
+                </div>
+              </div>
+              <div class="attribute-input">
+                <label for="attrSor">SOR<small>(Sorte)</small></label>
+                <div class="attribute-control">
+                  <button class="attr-btn" onclick="decrementarAtributo('attrSor')">−</button>
+                  <input type="number" id="attrSor" min="0" max="20" value="3" class="attr-value" onchange="atualizarPericiasAtributo();atualizarCorAtributo('attrSor')"/>
+                  <button class="attr-btn" onclick="incrementarAtributo('attrSor')">+</button>
+                </div>
+              </div>
+              <div class="attribute-input">
+                <label for="attrFor">FOR<small>(Força)</small></label>
+                <div class="attribute-control">
+                  <button class="attr-btn" onclick="decrementarAtributo('attrFor')">−</button>
+                  <input type="number" id="attrFor" min="0" max="20" value="3" class="attr-value" onchange="atualizarPericiasAtributo();atualizarCorAtributo('attrFor')"/>
+                  <button class="attr-btn" onclick="incrementarAtributo('attrFor')">+</button>
+                </div>
+              </div>
+              <div class="attribute-input">
+                <label for="attrCor">COR<small>(Corpo)</small></label>
+                <div class="attribute-control">
+                  <button class="attr-btn" onclick="decrementarAtributo('attrCor')">−</button>
+                  <input type="number" id="attrCor" min="0" max="20" value="3" class="attr-value" onchange="atualizarPericiasAtributo();atualizarCorAtributo('attrCor')"/>
+                  <button class="attr-btn" onclick="incrementarAtributo('attrCor')">+</button>
+                </div>
+              </div>
+              <div class="attribute-input">
+                <label for="attrMan">MAN<small>(Manuseio)</small></label>
+                <div class="attribute-control">
+                  <button class="attr-btn" onclick="decrementarAtributo('attrMan')">−</button>
+                  <input type="number" id="attrMan" min="0" max="20" value="3" class="attr-value" onchange="atualizarPericiasAtributo();atualizarCorAtributo('attrMan')"/>
+                  <button class="attr-btn" onclick="incrementarAtributo('attrMan')">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Perícias -->
+          <div class="character-section">
+            <h4 class="subsection-title">Perícias</h4>
+            
+            <!-- Busca de Perícias -->
+            <div class="skill-search-container">
+              <input 
+                type="text" 
+                id="skillSearchInput" 
+                class="skill-search-input"
+                placeholder="🔍 Buscar perícia (nome ou atributo)..."
+                oninput="filtrarPericia(this.value)"
+              />
+              <span id="skillSearchResult" class="skill-search-result"></span>
+            </div>
+            
+            <!-- Perícias de Atenção -->
+            <div class="skill-category">
+              <div class="skill-category-header">
+                <h5 class="skill-category-title">Perícias de Atenção</h5>
+                <span class="skill-category-count" data-category="atencao">0/5</span>
+              </div>
+              <div class="skill-inputs-header">
+                <span class="skill-header-label">Perícia</span>
+                <span class="skill-header-label">Nível</span>
+                <span class="skill-header-label">Atrib.</span>
+                <span class="skill-header-label">Base</span>
+              </div>
+              <div class="skills-grid">
+                <div class="skill-item">
+                  <label>Concentração (COR)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrCor" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Ocultar/Revelar Objeto (INT)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrIntel" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Leitura Labial (INT)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrIntel" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Percepção (INT)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrIntel" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Rastrear (INT)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrIntel" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Perícias Corporais -->
+            <div class="skill-category">
+              <div class="skill-category-header">
+                <h5 class="skill-category-title">Perícias Corporais</h5>
+                <span class="skill-category-count" data-category="corporais">0/6</span>
+              </div>
+              <div class="skill-inputs-header">
+                <span class="skill-header-label">Perícia</span>
+                <span class="skill-header-label">Nível</span>
+                <span class="skill-header-label">Atrib.</span>
+                <span class="skill-header-label">Base</span>
+              </div>
+              <div class="skills-grid">
+                <div class="skill-item">
+                  <label>Atletismo (COR)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrCor" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Contorcionismo (COR)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrCor" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Dançar (COR)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrCor" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Resistência (FOR)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrFor" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Resistência à Tortura/Drogas (FOR)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrFor" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Furtividade (COR)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrCor" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Perícias de Condução -->
+            <div class="skill-category">
+              <div class="skill-category-header">
+                <h5 class="skill-category-title">Perícias de Condução</h5>
+                <span class="skill-category-count" data-category="conducao">0/4</span>
+              </div>
+              <div class="skill-inputs-header">
+                <span class="skill-header-label">Perícia</span>
+                <span class="skill-header-label">Nível</span>
+                <span class="skill-header-label">Atrib.</span>
+                <span class="skill-header-label">Base</span>
+              </div>
+              <div class="skills-grid">
+                <div class="skill-item">
+                  <label>Dirigir Veículo Terrestre (REF)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrRefl" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Pilotar Veículo Aéreo x2 (REF)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrRefl" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Pilotar Veículo Marítimo (REF)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrRefl" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Motocicleta (REF)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrRefl" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Perícias de Educação -->
+            <div class="skill-category">
+              <div class="skill-category-header">
+                <h5 class="skill-category-title">Perícias de Educação</h5>
+                <span class="skill-category-count" data-category="educacao">0/10</span>
+              </div>
+              <div class="skill-inputs-header">
+                <span class="skill-header-label">Perícia</span>
+                <span class="skill-header-label">Nível</span>
+                <span class="skill-header-label">Atrib.</span>
+                <span class="skill-header-label">Base</span>
+              </div>
+              <div class="skills-grid">
+                <div class="skill-item">
+                  <label>Contabilidade (INT)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrIntel" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Lidar com Animais (INT)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrIntel" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Burocracia (INT)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrIntel" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Negócios (INT)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrIntel" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Composição (INT)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrIntel" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Criminologia (INT)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrIntel" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Criptografia (INT)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrIntel" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Dedução (INT)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrIntel" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Educação (INT)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrIntel" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Apostar (INT)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrIntel" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Perícias de Luta -->
+            <div class="skill-category">
+              <div class="skill-category-header">
+                <h5 class="skill-category-title">Perícias de Luta</h5>
+                <span class="skill-category-count" data-category="luta">0/4</span>
+              </div>
+              <div class="skill-inputs-header">
+                <span class="skill-header-label">Perícia</span>
+                <span class="skill-header-label">Nível</span>
+                <span class="skill-header-label">Atrib.</span>
+                <span class="skill-header-label">Base</span>
+              </div>
+              <div class="skills-grid">
+                <div class="skill-item">
+                  <label>Briga (COR)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrCor" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Evasão (COR)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrCor" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Artes Marciais x2 (COR)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrCor" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Armas Brancas (COR)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrCor" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Perícias de Armas -->
+            <div class="skill-category">
+              <div class="skill-category-header">
+                <h5 class="skill-category-title">Perícias de Armas</h5>
+                <span class="skill-category-count" data-category="armas">0/5</span>
+              </div>
+              <div class="skill-inputs-header">
+                <span class="skill-header-label">Perícia</span>
+                <span class="skill-header-label">Nível</span>
+                <span class="skill-header-label">Atrib.</span>
+                <span class="skill-header-label">Base</span>
+              </div>
+              <div class="skills-grid">
+                <div class="skill-item">
+                  <label>Arqueirismo (REF)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrRefl" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Automática x2 (REF)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrRefl" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Armas Curtas (REF)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrRefl" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Armas Pesadas x2 (REF)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrRefl" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Fuzil (REF)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrRefl" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Perícias Técnicas -->
+            <div class="skill-category">
+              <div class="skill-category-header">
+                <h5 class="skill-category-title">Perícias Técnicas</h5>
+                <span class="skill-category-count" data-category="tecnicas">0/15</span>
+              </div>
+              <div class="skill-inputs-header">
+                <span class="skill-header-label">Perícia</span>
+                <span class="skill-header-label">Nível</span>
+                <span class="skill-header-label">Atrib.</span>
+                <span class="skill-header-label">Base</span>
+              </div>
+              <div class="skills-grid">
+                <div class="skill-item">
+                  <label>Tecnologia de Veículos Aéreos (TEC)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrTec" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Tecnologia Básica (TEC)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrTec" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Cibertecnologia (TEC)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrTec" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Demolições x2 (TEC)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrTec" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Eletrônica/Tec. de Segurança x2 (TEC)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrTec" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Primeiros Socorros (TEC)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrTec" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Falsificação (TEC)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrTec" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Tecnologia de Veículo Terrestre (TEC)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrTec" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Pintar/Desenhar/Esculpir (TEC)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrTec" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Medicamentos x2 (TEC)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrTec" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Fotografia e Filmagem (TEC)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrTec" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Arrombamento (TEC)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrTec" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Furto (TEC)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrTec" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Tecnologia de Veículo Marítimo (TEC)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrTec" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <label>Tecnologia de Armas/Armeiro (TEC)</label>
+                  <div class="skill-inputs">
+                    <input type="number" min="0" max="20" class="skill-level" data-attr="attrTec" placeholder="0" />
+                    <input type="number" readonly class="skill-attr" placeholder="0" />
+                    <input type="number" readonly class="skill-base" placeholder="Base" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Aba 2: Seu Cyberdeck (Hacks Salvos) -->
+      <section class="tab-panel" id="tab-cyberdeck">
         <div class="list-header">
           <h3 class="section-title">Seu Cyberdeck</h3>
           <span id="hackCount" class="hack-counter">0</span>

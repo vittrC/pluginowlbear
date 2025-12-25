@@ -63,7 +63,7 @@ async function iniciarPluginCompleto() {
     renderizarHacksDesbloqueados();
     
     // Abrir aba padrão
-    abrirAba("cyberdeck");
+    abrirAba("personagem");
     
     // Marcar plugin como pronto
     PLUGIN_READY = true;
@@ -102,6 +102,10 @@ function configurarInterface() {
     });
     console.log("✓ Busca configurada");
   }
+
+  // Inicializar perícias da ficha de personagem
+  inicializarPericiasListeners();
+  console.log("✓ Perícias inicializadas");
 }
 
 // Registrar callback quando OBR estiver pronto - ESPERAR DOM estar pronto
@@ -1495,3 +1499,564 @@ async function importarHackEspecial(hackId) {
   }
 }
 
+// ============================================
+// CHARACTER SHEET FUNCTIONS
+// ============================================
+
+// Mapping de papéis e suas habilidades
+const ROLE_ABILITIES = {
+  solo: {
+    name: "Solo",
+    ability: "Percepção de Combate: Permite que o Solista aloque pontos em diferentes sub-habilidades de combate no início de um turno, como bônus em Iniciativa, Precisão (Ataque), Dano ou Esquiva. É o mestre da sobrevivência e letalidade."
+  },
+  "trilha-rede": {
+    name: "Trilha-Rede",
+    ability: "Interface: É a capacidade de projetar sua consciência em redes de computadores. Permite realizar ações no Cyberespaço, como usar programas para atacar, quebrar senhas e controlar sistemas de segurança (torretas, câmeras)."
+  },
+  tecnico: {
+    name: "Técnico",
+    ability: "Fabricar: Dividida em especialidades, permite que o Técnico conserte itens, modifique equipamentos (tornando armas melhores que as de fábrica) e até invente tecnologias novas que não existem no mercado."
+  },
+  medtech: {
+    name: "Medtech",
+    ability: "Medicina: Permite realizar cirurgias críticas (para curar ferimentos que primeiros socorros não resolvem), fabricar e aplicar drogas farmacêuticas personalizadas e instalar/reparar cibernéticos avançados."
+  },
+  roqueiro: {
+    name: "Roqueiro (Rockerboy)",
+    ability: "Impacto Carismático: Representa sua influência sobre os fãs. Em níveis baixos, pode conseguir pequenos favores (bebidas, informações); em níveis altos, pode incitar uma multidão a iniciar uma rebelião ou proteger o personagem."
+  },
+  midia: {
+    name: "Mídia",
+    ability: "Credibilidade: A capacidade de convencer o público da verdade. Um Mídia pode publicar histórias que destroem a reputação de corporações ou indivíduos poderosos, além de ter fontes que fornecem informações secretas."
+  },
+  executivo: {
+    name: "Executivo",
+    ability: "Trabalho em Equipe: O Executivo tem acesso a recursos corporativos. Ele começa com um terno e um apartamento pagos pela empresa, e pode recrutar uma equipe de subordinados (guarda-costas, motoristas ou técnicos) que o auxiliam diretamente."
+  },
+  fixer: {
+    name: "Fixer",
+    ability: "Operador: É o mestre do mercado negro. Permite localizar itens raros que não estão à venda comum, negociar preços melhores e ter contatos em todas as esferas da sociedade para resolver problemas."
+  },
+  nomade: {
+    name: "Nômade",
+    ability: "Moto: Dá acesso à frota de veículos da sua família nômade. Conforme sobe de nível, o personagem ganha veículos melhores ou pode adicionar modificações pesadas (como blindagem, armas e motores turbinados)."
+  },
+  policial: {
+    name: "Policial",
+    ability: "Reforço: Permite que o personagem use seu rádio para chamar apoio. Dependendo do seu nível, o reforço pode variar de dois policiais locais em uma viatura até uma equipe tática de elite em um veículo aéreo pesado."
+  }
+};
+
+// Mapping de atributos para perícias
+const SKILL_ATTRIBUTE_MAP = {
+  // Perícias de Atenção
+  "Concentração (COR)": "attrCor",
+  "Ocultar/Revelar Objeto (INT)": "attrIntel",
+  "Leitura Labial (INT)": "attrIntel",
+  "Percepção (INT)": "attrIntel",
+  "Rastrear (INT)": "attrIntel",
+  
+  // Perícias Corporais
+  "Atletismo (COR)": "attrCor",
+  "Contorcionismo (COR)": "attrCor",
+  "Dançar (COR)": "attrCor",
+  "Resistência (FOR)": "attrFor",
+  "Resistência à Tortura/Drogas (FOR)": "attrFor",
+  "Furtividade (COR)": "attrCor",
+  
+  // Perícias de Condução
+  "Dirigir Veículo Terrestre (REF)": "attrRefl",
+  "Pilotar Veículo Aéreo x2 (REF)": "attrRefl",
+  "Pilotar Veículo Marítimo (REF)": "attrRefl",
+  "Motocicleta (REF)": "attrRefl",
+  
+  // Perícias de Educação
+  "Contabilidade (INT)": "attrIntel",
+  "Lidar com Animais (INT)": "attrIntel",
+  "Burocracia (INT)": "attrIntel",
+  "Negócios (INT)": "attrIntel",
+  "Composição (INT)": "attrIntel",
+  "Criminologia (INT)": "attrIntel",
+  "Criptografia (INT)": "attrIntel",
+  "Dedução (INT)": "attrIntel",
+  "Educação (INT)": "attrIntel",
+  "Apostar (INT)": "attrIntel",
+  
+  // Perícias de Luta
+  "Briga (COR)": "attrCor",
+  "Evasão (COR)": "attrCor",
+  "Artes Marciais x2 (COR)": "attrCor",
+  "Armas Brancas (COR)": "attrCor",
+  
+  // Perícias de Armas
+  "Arqueirismo (REF)": "attrRefl",
+  "Automática x2 (REF)": "attrRefl",
+  "Armas Curtas (REF)": "attrRefl",
+  "Armas Pesadas x2 (REF)": "attrRefl",
+  "Fuzil (REF)": "attrRefl",
+  
+  // Perícias Técnicas
+  "Tecnologia de Veículos Aéreos (TEC)": "attrTec",
+  "Tecnologia Básica (TEC)": "attrTec",
+  "Cibertecnologia (TEC)": "attrTec",
+  "Demolições x2 (TEC)": "attrTec",
+  "Eletrônica/Tec. de Segurança x2 (TEC)": "attrTec",
+  "Primeiros Socorros (TEC)": "attrTec",
+  "Falsificação (TEC)": "attrTec",
+  "Tecnologia de Veículo Terrestre (TEC)": "attrTec",
+  "Pintar/Desenhar/Esculpir (TEC)": "attrTec",
+  "Medicamentos x2 (TEC)": "attrTec",
+  "Fotografia e Filmagem (TEC)": "attrTec",
+  "Arrombamento (TEC)": "attrTec",
+  "Furto (TEC)": "attrTec",
+  "Tecnologia de Veículo Marítimo (TEC)": "attrTec",
+  "Tecnologia de Armas/Armeiro (TEC)": "attrTec"
+};
+
+// Salvar dados do personagem
+function salvarPersonagem() {
+  const armorSelect = document.getElementById("charArmor").value;
+  let armorValue = parseInt(armorSelect) || 0;
+  
+  // Se for customizada, pega o valor do input customizado
+  if (armorSelect === "custom") {
+    armorValue = parseInt(document.getElementById("charArmorCustom").value) || 0;
+  }
+  
+  const personagem = {
+    nome: document.getElementById("charName").value,
+    nivel: parseInt(document.getElementById("charLevel").value) || 1,
+    saude: parseInt(document.getElementById("charHealth").value) || 10,
+    papel: document.getElementById("charRole").value,
+    habilidadePapel: document.getElementById("charRoleAbility").value,
+    humanidade: parseInt(document.getElementById("charHumanity").value) || 100,
+    armadura: armorValue,
+    atributos: {
+      intel: parseInt(document.getElementById("attrIntel").value) || 3,
+      refl: parseInt(document.getElementById("attrRefl").value) || 3,
+      tec: parseInt(document.getElementById("attrTec").value) || 3,
+      emp: parseInt(document.getElementById("attrEmp").value) || 3,
+      sor: parseInt(document.getElementById("attrSor").value) || 3,
+      for: parseInt(document.getElementById("attrFor").value) || 3,
+      cor: parseInt(document.getElementById("attrCor").value) || 3,
+      man: parseInt(document.getElementById("attrMan").value) || 3
+    },
+    pericias: {}
+  };
+
+  // Coletar dados das perícias
+  document.querySelectorAll(".skill-item").forEach(skillItem => {
+    const label = skillItem.querySelector("label").textContent;
+    const levelInput = skillItem.querySelector(".skill-level");
+    const level = parseInt(levelInput.value) || 0;
+    
+    if (level > 0) {
+      personagem.pericias[label] = level;
+    }
+  });
+
+  // Salvar no localStorage
+  try {
+    const chavePersonagem = obterChaveUsuario("cyberpunk_character");
+    localStorage.setItem(chavePersonagem, JSON.stringify(personagem));
+    console.log("✓ Personagem salvo:", personagem);
+  } catch (error) {
+    console.error("❌ Erro ao salvar personagem:", error);
+    mostrarNotificacao("❌ Erro ao salvar personagem", "error");
+  }
+}
+
+// Carregar dados do personagem
+function carregarPersonagem() {
+  try {
+    const chavePersonagem = obterChaveUsuario("cyberpunk_character");
+    const dados = localStorage.getItem(chavePersonagem);
+    
+    if (dados) {
+      const personagem = JSON.parse(dados);
+      
+      // Preencher dados básicos
+      document.getElementById("charName").value = personagem.nome || "";
+      document.getElementById("charLevel").value = personagem.nivel || 1;
+      document.getElementById("charHealth").value = personagem.saude || 10;
+      document.getElementById("charRole").value = personagem.papel || "";
+      document.getElementById("charRoleAbility").value = personagem.habilidadePapel || "";
+      document.getElementById("charHumanity").value = personagem.humanidade || 100;
+      
+      // Restaurar armadura - verificar se é um preset ou customizada
+      const armorValue = personagem.armadura || 0;
+      const armorSelect = document.getElementById("charArmor");
+      
+      if (armorValue === 0) {
+        armorSelect.value = "0";
+      } else if (armorValue === 5) {
+        armorSelect.value = "5";
+      } else if (armorValue === 10) {
+        armorSelect.value = "10";
+      } else {
+        armorSelect.value = "custom";
+        document.getElementById("charArmorCustom").value = armorValue;
+        document.getElementById("charArmorCustom").style.display = "block";
+      }
+      
+      // Preencher atributos
+      if (personagem.atributos) {
+        document.getElementById("attrIntel").value = personagem.atributos.intel || 3;
+        document.getElementById("attrRefl").value = personagem.atributos.refl || 3;
+        document.getElementById("attrTec").value = personagem.atributos.tec || 3;
+        document.getElementById("attrEmp").value = personagem.atributos.emp || 3;
+        document.getElementById("attrSor").value = personagem.atributos.sor || 3;
+        document.getElementById("attrFor").value = personagem.atributos.for || 3;
+        document.getElementById("attrCor").value = personagem.atributos.cor || 3;
+        document.getElementById("attrMan").value = personagem.atributos.man || 3;
+      }
+      
+      // Preencher perícias
+      if (personagem.pericias) {
+        document.querySelectorAll(".skill-item").forEach(skillItem => {
+          const label = skillItem.querySelector("label").textContent;
+          const levelInput = skillItem.querySelector(".skill-level");
+          
+          if (personagem.pericias[label]) {
+            levelInput.value = personagem.pericias[label];
+          }
+        });
+      }
+      
+      atualizarPericiasAtributo();
+      console.log("✓ Personagem carregado");
+    }
+  } catch (error) {
+    console.error("❌ Erro ao carregar personagem:", error);
+  }
+}
+
+// Atualizar cálculos das perícias
+function atualizarPericiasAtributo() {
+  document.querySelectorAll(".skill-item").forEach(skillItem => {
+    const levelInput = skillItem.querySelector(".skill-level");
+    const attrInput = skillItem.querySelector(".skill-attr");
+    const baseInput = skillItem.querySelector(".skill-base");
+    const attrId = levelInput.getAttribute("data-attr");
+    
+    const attrValue = parseInt(document.getElementById(attrId).value) || 0;
+    const levelValue = parseInt(levelInput.value) || 0;
+    const baseValue = attrValue + levelValue;
+    
+    attrInput.value = attrValue;
+    baseInput.value = baseValue > 0 ? baseValue : "";
+  });
+  
+  // Atualizar contadores de perícias
+  atualizarContadoresPericia();
+}
+
+// Aumentar valor do atributo
+function incrementarAtributo(attrId) {
+  const input = document.getElementById(attrId);
+  if (!input) return;
+  
+  let value = parseInt(input.value) || 0;
+  if (value < 20) {
+    input.value = value + 1;
+    atualizarPericiasAtributo();
+    atualizarCorAtributo(attrId);
+  }
+}
+
+// Diminuir valor do atributo
+function decrementarAtributo(attrId) {
+  const input = document.getElementById(attrId);
+  if (!input) return;
+  
+  let value = parseInt(input.value) || 0;
+  if (value > 0) {
+    input.value = value - 1;
+    atualizarPericiasAtributo();
+    atualizarCorAtributo(attrId);
+  }
+}
+
+// Zerar valor do atributo
+function zerarAtributo(attrId) {
+  const input = document.getElementById(attrId);
+  if (!input) return;
+  
+  input.value = 0;
+  atualizarPericiasAtributo();
+  atualizarCorAtributo(attrId);
+}
+
+// Atualizar cor de feedback do atributo
+function atualizarCorAtributo(attrId) {
+  const input = document.getElementById(attrId);
+  if (!input) return;
+  
+  const value = parseInt(input.value) || 0;
+  
+  // Remover todas as classes de cor
+  input.classList.remove("attr-low", "attr-medium", "attr-high", "attr-max");
+  
+  // Adicionar a cor apropriada
+  if (value <= 2) {
+    input.classList.add("attr-low");
+  } else if (value <= 8) {
+    input.classList.add("attr-medium");
+  } else if (value <= 15) {
+    input.classList.add("attr-high");
+  } else {
+    input.classList.add("attr-max");
+  }
+}
+
+// Atualizar contadores de perícias por categoria
+function atualizarContadoresPericia() {
+  const categorias = {
+    "atencao": 5,
+    "corporais": 6,
+    "conducao": 4,
+    "educacao": 10,
+    "luta": 4,
+    "armas": 5,
+    "tecnicas": 15
+  };
+  
+  for (const [categoria, total] of Object.entries(categorias)) {
+    const counter = document.querySelector(`.skill-category-count[data-category="${categoria}"]`);
+    
+    if (counter) {
+      // Encontrar a categoria pai
+      const categorySection = counter.closest(".skill-category");
+      
+      if (categorySection) {
+        // Contar perícias preenchidas nesta categoria
+        const skills = categorySection.querySelectorAll(".skill-item .skill-level");
+        let preenchidas = 0;
+        
+        skills.forEach(levelInput => {
+          const levelValue = parseInt(levelInput.value) || 0;
+          if (levelValue > 0) {
+            preenchidas++;
+          }
+        });
+        
+        // Atualizar o contador
+        counter.textContent = `${preenchidas}/${total}`;
+        
+        // Adicionar classe 'active' se há perícias preenchidas
+        if (preenchidas > 0) {
+          counter.classList.add("active");
+        } else {
+          counter.classList.remove("active");
+        }
+      }
+    }
+  }
+}
+
+// Atualizar habilidade do papel quando o papel é selecionado
+function atualizarHabilidadePapel(roleValue) {
+  const habilidadeField = document.getElementById("charRoleAbility");
+  
+  if (roleValue && ROLE_ABILITIES[roleValue]) {
+    const roleData = ROLE_ABILITIES[roleValue];
+    habilidadeField.value = roleData.ability;
+  } else {
+    habilidadeField.value = "";
+  }
+}
+
+// Atualizar valor de armadura quando selecionado preset
+function atualizarValorArmadura(value) {
+  const armorCustomInput = document.getElementById("charArmorCustom");
+  
+  if (value === "custom") {
+    armorCustomInput.style.display = "block";
+    // Não altera o valor de charArmor ainda, apenas mostra o input customizado
+  } else {
+    armorCustomInput.style.display = "none";
+    // Select será preenchido com o valor selecionado
+  }
+}
+
+// Filtrar perícias por busca
+function filtrarPericia(termo) {
+  const termoLower = termo.toLowerCase();
+  const skillItems = document.querySelectorAll(".skill-item");
+  const skillCategories = document.querySelectorAll(".skill-category");
+  let totalResults = 0;
+  let totalVisible = 0;
+  
+  // Primeiro, mostrar/esconder items baseado na busca
+  skillItems.forEach(item => {
+    const label = item.querySelector("label").textContent.toLowerCase();
+    const matches = termo === "" || label.includes(termoLower);
+    
+    if (matches) {
+      item.classList.remove("hidden");
+      totalVisible++;
+    } else {
+      item.classList.add("hidden");
+    }
+  });
+  
+  // Depois, mostrar/esconder categorias que não têm items visíveis
+  skillCategories.forEach(category => {
+    const visibleItems = category.querySelectorAll(".skill-item:not(.hidden)");
+    
+    if (visibleItems.length > 0) {
+      category.classList.remove("all-hidden");
+      totalResults += visibleItems.length;
+    } else {
+      category.classList.add("all-hidden");
+    }
+  });
+  
+  // Atualizar contador de resultados
+  const resultSpan = document.getElementById("skillSearchResult");
+  if (termo === "") {
+    resultSpan.textContent = "";
+  } else {
+    resultSpan.textContent = `${totalResults} resultado${totalResults !== 1 ? "s" : ""}`;
+  }
+}
+
+// Limpar busca ao carregar personagem
+function limparBuscaPericia() {
+  const searchInput = document.getElementById("skillSearchInput");
+  if (searchInput) {
+    searchInput.value = "";
+    filtrarPericia("");
+  }
+}
+
+// Inicializar listeners para perícias
+function inicializarPericiasListeners() {
+  // Listeners para mudanças no nível de perícias
+  document.querySelectorAll(".skill-level").forEach(input => {
+    input.addEventListener("change", atualizarPericiasAtributo);
+  });
+  
+  // Listeners para atributos
+  document.querySelectorAll(".attr-value input").forEach(input => {
+    input.addEventListener("change", () => {
+      const attrId = input.id;
+      atualizarPericiasAtributo();
+      atualizarCorAtributo(attrId);
+    });
+  });
+  
+  // Carrega dados salvos
+  carregarPersonagem();
+  
+  // Limpar busca ao carregar
+  limparBuscaPericia();
+  
+  // Atualizar cores iniciais dos atributos
+  document.querySelectorAll("[id^='attr']").forEach(input => {
+    atualizarCorAtributo(input.id);
+  });
+  
+  // Atualizar contadores de perícias
+  atualizarContadoresPericia();
+}
+
+// Mostrar notificação (usa sistema de toast existente)
+function mostrarNotificacao(mensagem, tipo = "success") {
+  mostrarToast(mensagem, tipo);
+}
+
+// Atualizar visualização de saúde com barra e círculos de salvação
+function atualizarVisualizacaoSaude() {
+  const healthInput = document.getElementById("charHealth");
+  const healthMaxInput = document.getElementById("charHealthMax");
+  const healthValue = parseInt(healthInput.value) || 0;
+  const maxHealth = parseInt(healthMaxInput.value) || 20;
+  
+  // Atualizar max do input de saúde atual
+  healthInput.max = maxHealth;
+  
+  const healthPercent = Math.max(0, Math.min(100, (healthValue / maxHealth) * 100));
+  
+  // Atualizar barra de progresso
+  const healthBarFill = document.getElementById("healthBarFill");
+  const healthValueSpan = document.getElementById("healthValue");
+  const salvationCircles = document.getElementById("salvationCircles");
+  const btnRestore = document.querySelector(".btn-restore");
+  
+  healthBarFill.style.width = healthPercent + "%";
+  healthValueSpan.textContent = `${healthValue}/${maxHealth}`;
+  
+  // Atualizar cores baseado no nível de saúde
+  healthBarFill.classList.remove("critical", "warning", "good");
+  healthValueSpan.classList.remove("critical-text");
+  
+  if (healthValue <= 0) {
+    // Mostrar círculos de salvação e botão de restaurar
+    healthBarFill.classList.add("critical");
+    healthValueSpan.classList.add("critical-text");
+    healthValueSpan.textContent = "MORTE ⚰️";
+    salvationCircles.style.display = "flex";
+    if (btnRestore) btnRestore.style.display = "block";
+  } else if (healthValue <= Math.ceil(maxHealth * 0.25)) {
+    healthBarFill.classList.add("critical");
+    healthValueSpan.classList.add("critical-text");
+    salvationCircles.style.display = "none";
+    if (btnRestore) btnRestore.style.display = "none";
+  } else if (healthValue <= Math.ceil(maxHealth * 0.5)) {
+    healthBarFill.classList.add("warning");
+    salvationCircles.style.display = "none";
+    if (btnRestore) btnRestore.style.display = "none";
+  } else {
+    healthBarFill.classList.add("good");
+    salvationCircles.style.display = "none";
+    if (btnRestore) btnRestore.style.display = "none";
+  }
+  
+  // Salvar automaticamente
+  salvarPersonagem();
+}
+
+// Restaurar vida +1 ponto
+function restaurarVida() {
+  const healthInput = document.getElementById("charHealth");
+  const healthValue = parseInt(healthInput.value) || 0;
+  
+  if (healthValue < 20) {
+    healthInput.value = Math.min(20, healthValue + 1);
+    atualizarVisualizacaoSaude();
+  } else if (healthValue === 0) {
+    // Se estiver morto, ressuscita com 1 ponto
+    healthInput.value = 1;
+    atualizarVisualizacaoSaude();
+  }
+}
+
+// Clique nos círculos de salvação para usá-los
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(() => {
+    setupSalvationCircles();
+  }, 100);
+});
+
+function setupSalvationCircles() {
+  const salvationCircles = document.querySelectorAll(".salvation-circle");
+  salvationCircles.forEach((circle, index) => {
+    circle.addEventListener("click", () => {
+      // Apenas apagar o círculo (marcar como usado)
+      if (!circle.classList.contains("used")) {
+        circle.classList.add("used");
+        
+        // Verificar se todos os círculos foram usados
+        const allUsed = document.querySelectorAll(".salvation-circle.used").length === 3;
+        
+        if (allUsed) {
+          // Todos os círculos apagaram - personagem morre
+          const healthInput = document.getElementById("charHealth");
+          healthInput.value = 0;
+          atualizarVisualizacaoSaude();
+        }
+      }
+    });
+  });
+}
