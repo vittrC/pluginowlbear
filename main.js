@@ -3,6 +3,8 @@
  * Sistema completo de gerenciamento de hacks
  */
 
+console.log("🚀 Script main.js carregado!");
+
 // ============================================
 // MAPEAMENTO DE TIPOS DE HACKS
 // ============================================
@@ -17,6 +19,778 @@ const HACK_TYPES = {
   reconnaissance: { icon: "🔍", nome: "Reconhecimento", color: "#c896ff" },
   damage: { icon: "💥", nome: "Dano", color: "#ff6432" }
 };
+
+// ============================================
+// SISTEMA DE TRADUÇÃO MULTILÍNGUE COMPLETO
+// ============================================
+
+const LANGUAGE_STRINGS = {
+  "pt-BR": {
+    // Header
+    hacksRapidos: "Hacks Rápidos",
+    gerenciadorHacks: "Gerenciador de Hacks - Cyberpunk RED",
+    
+    // RAM Section
+    suaRAM: "SUA RAM",
+    maxRAM: "Max RAM",
+    diminuirRAM: "Diminuir 1 RAM",
+    resetarRAM: "Resetar RAM",
+    aumentarRAM: "Aumentar 1 RAM",
+    definirMaxRAM: "Defina seu máximo de RAM (1-100)",
+    
+    // Novo Hack Form
+    novoHack: "Novo Hack",
+    nomeHack: "Nome do Hack",
+    exQuickhacking: "Ex: Quickhacking",
+    custoRAM: "Custo de RAM",
+    costRAMRange: "1-20",
+    dv: "DV",
+    dvRange: "0-20",
+    tipo: "Tipo de Hack",
+    selecioneTipo: "Selecione um tipo...",
+    efeito: "Efeito do Hack",
+    efetoDesc: "Descreva o efeito e as mecânicas do hack...",
+    maxChar500: "Máximo 500 caracteres",
+    notas: "Notas Personalizadas",
+    notasDesc: "Anotações do mestre, customizações, histórico...",
+    adicionarHack: "Adicionar Hack",
+    
+    // Abas
+    tabPersonagem: "Personagem",
+    tabCyberdeck: "Seu Cyberdeck",
+    tabMarket: "Pesquisa de Hacks",
+    tabCodebreaker: "Code Breaker",
+    tabSettings: "Preferências",
+    
+    // Tipos de Hack
+    quickhacking: "Quickhacking",
+    infiltracao: "Infiltração",
+    furtividade: "Furtividade",
+    combate: "Combate",
+    controle: "Controle",
+    utilitario: "Utilitário",
+    reconhecimento: "Reconhecimento",
+    dano: "Dano",
+    
+    // Ficha de Personagem
+    fichaPersonagem: "Ficha de Personagem",
+    nomePersonagem: "Nome do Personagem",
+    digitarNomePersonagem: "Digite o nome do seu personagem",
+    nivel: "Nível",
+    papel: "Papel",
+    selecionePapel: "Selecione um papel...",
+    saudeMaxima: "Saúde Máxima",
+    saudeAtual: "Saúde Atual",
+    armadura: "Armadura",
+    nenhuma: "Nenhuma",
+    leve: "Leve",
+    pesada: "Pesada",
+    customizada: "Customizada",
+    valorCustomizado: "Valor customizado",
+    humanidade: "Humanidade",
+    habilidadePapel: "Habilidade de Papel",
+    descreverHabilidade: "Descreva a habilidade especial de seu papel",
+    salvarPersonagem: "Salvar Personagem",
+    
+    // Papéis
+    solo: "Solo",
+    trilhaRede: "Trilha-Rede",
+    tecnico: "Técnico",
+    medtech: "Medtech",
+    roqueiro: "Roqueiro (Rockerboy)",
+    midia: "Mídia",
+    executivo: "Executivo",
+    fixer: "Fixer",
+    nomade: "Nômade",
+    policial: "Policial",
+    
+    // Atributos
+    atributos: "Atributos",
+    inteligencia: "Inteligência",
+    reflexos: "Reflexos",
+    tecnicoAttr: "Técnico",
+    empatia: "Empatia",
+    sorte: "Sorte",
+    forca: "Força",
+    destreza: "Destreza",
+    corpo: "Corpo",
+    manuseio: "Manuseio",
+    
+    // Perícias
+    pericias: "Perícias",
+    buscarPericia: "Buscar perícia (nome ou atributo)...",
+    resultado: "resultado",
+    resultados: "resultados",
+    pericias_atencao: "Perícias de Atenção",
+    pericias_corporais: "Perícias Corporais",
+    pericias_conducao: "Perícias de Condução",
+    pericias_educacao: "Perícias de Educação",
+    pericias_luta: "Perícias de Luta",
+    pericias_armas: "Perícias de Armas",
+    pericias_tecnicas: "Perícias Técnicas",
+    
+    // Nomes das Perícias de Atenção
+    concentracao: "Concentração",
+    ocultarRevelar: "Ocultar/Revelar Objeto",
+    leituraLabial: "Leitura Labial",
+    percepcao: "Percepção",
+    rastrear: "Rastrear",
+    
+    // Nomes das Perícias Corporais
+    atletismo: "Atletismo",
+    contorcionismo: "Contorcionismo",
+    dancar: "Dançar",
+    resistencia: "Resistência",
+    resistenciaTortura: "Resistência à Tortura/Drogas",
+    furtividade: "Furtividade",
+    
+    // Nomes das Perícias de Condução
+    dirigirTerrestre: "Dirigir Veículo Terrestre",
+    pilotarAereo: "Pilotar Veículo Aéreo x2",
+    pilotarMaritimo: "Pilotar Veículo Marítimo",
+    motocicleta: "Motocicleta",
+    
+    // Nomes das Perícias de Educação
+    contabilidade: "Contabilidade",
+    lidarAnimais: "Lidar com Animais",
+    burocracia: "Burocracia",
+    negocios: "Negócios",
+    composicao: "Composição",
+    criminologia: "Criminologia",
+    criptografia: "Criptografia",
+    deducao: "Dedução",
+    educacao: "Educação",
+    apostar: "Apostar",
+    
+    // Nomes das Perícias de Luta
+    briga: "Briga",
+    evasao: "Evasão",
+    artesMarciais: "Artes Marciais x2",
+    armasBrancas: "Armas Brancas",
+    
+    // Nomes das Perícias de Armas
+    arqueirismo: "Arqueirismo",
+    automatica: "Automática x2",
+    armasCurtas: "Armas Curtas",
+    armasPesadas: "Armas Pesadas x2",
+    fuzil: "Fuzil",
+    
+    // Nomes das Perícias Técnicas
+    vehiculosAereos: "Tecnologia de Veículos Aéreos",
+    tecnologiaBasica: "Tecnologia Básica",
+    cibertecnologia: "Cibertecnologia",
+    demolicoes: "Demolições x2",
+    eletronica: "Eletrônica/Tec. de Segurança x2",
+    primeirosSocorros: "Primeiros Socorros",
+    falsificacao: "Falsificação",
+    vehiculosTerrestre: "Tecnologia de Veículo Terrestre",
+    pintar: "Pintar/Desenhar/Esculpir",
+    medicamentos: "Medicamentos x2",
+    fotografia: "Fotografia e Filmagem",
+    arrombamento: "Arrombamento",
+    furto: "Furto",
+    vehiculosMaritimo: "Tecnologia de Veículo Marítimo",
+    tecnologiaArmas: "Tecnologia de Armas/Armeiro",
+    
+    // Tabela de Skills
+    pericia: "Perícia",
+    nivel: "Nível",
+    atrib: "Atrib.",
+    base: "Base",
+    
+    // Cyberdeck
+    seoCyberdeck: "Seu Cyberdeck",
+    ciberdeckVazio: "Seu cyberdeck está vazio",
+    criarPrimeiroHack: "Crie seu primeiro hack preenchendo o formulário acima",
+    
+    // Market
+    hacksDisponiveis: "Hacks Disponíveis",
+    buscarHacks: "Buscar hacks do sistema...",
+    
+    // Code Breaker
+    codeBreaker: "Code Breaker",
+    codigoDescricao: "Digite um código de 12 caracteres para desbloquear hacks especiais",
+    inserirCodigo: "Insira o código (12 caracteres)...",
+    
+    // Settings
+    preferencias: "Preferências",
+    idioma: "Idioma / Language",
+    escolherIdioma: "Escolha o idioma da interface",
+    portugueseBR: "Português (BR)",
+    englishUS: "English (US)",
+    
+    // Modal de Edição
+    editarHack: "Editar Hack",
+    fechar: "✕",
+    
+    // Botões gerais
+    salvar: "Salvar",
+    cancelar: "Cancelar",
+    editar: "Editar",
+    deletar: "Deletar",
+    buscar: "Buscar",
+    desbloquear: "Desbloquear",
+    restaurarVida: "Restaurar +1 ponto de vida"
+  },
+  "en-US": {
+    // Header
+    hacksRapidos: "Quick Hacks",
+    gerenciadorHacks: "Hack Manager - Cyberpunk RED",
+    
+    // RAM Section
+    suaRAM: "YOUR RAM",
+    maxRAM: "Max RAM",
+    diminuirRAM: "Decrease 1 RAM",
+    resetarRAM: "Reset RAM",
+    aumentarRAM: "Increase 1 RAM",
+    definirMaxRAM: "Set your maximum RAM (1-100)",
+    
+    // Novo Hack Form
+    novoHack: "New Hack",
+    nomeHack: "Hack Name",
+    exQuickhacking: "Ex: Quickhacking",
+    custoRAM: "RAM Cost",
+    costRAMRange: "1-20",
+    dv: "DV",
+    dvRange: "0-20",
+    tipo: "Hack Type",
+    selecioneTipo: "Select a type...",
+    efeito: "Hack Effect",
+    efetoDesc: "Describe the effect and mechanics of the hack...",
+    maxChar500: "Maximum 500 characters",
+    notas: "Custom Notes",
+    notasDesc: "GM notes, customizations, history...",
+    adicionarHack: "Add Hack",
+    
+    // Tabs
+    tabPersonagem: "Character",
+    tabCyberdeck: "Your Cyberdeck",
+    tabMarket: "Hacks Research",
+    tabCodebreaker: "Code Breaker",
+    tabSettings: "Preferences",
+    
+    // Hack Types
+    quickhacking: "Quickhacking",
+    infiltracao: "Infiltration",
+    furtividade: "Stealth",
+    combate: "Combat",
+    controle: "Control",
+    utilitario: "Utility",
+    reconhecimento: "Reconnaissance",
+    dano: "Damage",
+    
+    // Character Sheet
+    fichaPersonagem: "Character Sheet",
+    nomePersonagem: "Character Name",
+    digitarNomePersonagem: "Enter your character name",
+    nivel: "Level",
+    papel: "Role",
+    selecionePapel: "Select a role...",
+    saudeMaxima: "Max Health",
+    saudeAtual: "Current Health",
+    armadura: "Armor",
+    nenhuma: "None",
+    leve: "Light",
+    pesada: "Heavy",
+    customizada: "Custom",
+    valorCustomizado: "Custom value",
+    humanidade: "Humanity",
+    habilidadePapel: "Role Ability",
+    descreverHabilidade: "Describe your role's special ability",
+    salvarPersonagem: "Save Character",
+    
+    // Roles
+    solo: "Solo",
+    trilhaRede: "Netrunner",
+    tecnico: "Technician",
+    medtech: "Medtech",
+    roqueiro: "Rockerboy",
+    midia: "Media",
+    executivo: "Executive",
+    fixer: "Fixer",
+    nomade: "Nomad",
+    policial: "Cop",
+    
+    // Attributes
+    atributos: "Attributes",
+    inteligencia: "Intelligence",
+    reflexos: "Reflexes",
+    tecnicoAttr: "Technical",
+    empatia: "Empathy",
+    sorte: "Luck",
+    forca: "Strength",
+    destreza: "Dexterity",
+    corpo: "Body",
+    manuseio: "Handling",
+    
+    // Skills
+    pericias: "Skills",
+    buscarPericia: "Search skill (name or attribute)...",
+    resultado: "result",
+    resultados: "results",
+    pericias_atencao: "Attention Skills",
+    pericias_corporais: "Body Skills",
+    pericias_conducao: "Driving Skills",
+    pericias_educacao: "Education Skills",
+    pericias_luta: "Combat Skills",
+    pericias_armas: "Weapons Skills",
+    pericias_tecnicas: "Technical Skills",
+    
+    // Attention Skills
+    concentracao: "Concentration",
+    ocultarRevelar: "Hide/Reveal Object",
+    leituraLabial: "Lip Reading",
+    percepcao: "Perception",
+    rastrear: "Track",
+    
+    // Body Skills
+    atletismo: "Athletics",
+    contorcionismo: "Contortionism",
+    dancar: "Dance",
+    resistencia: "Endurance",
+    resistenciaTortura: "Torture/Drug Resistance",
+    furtividade: "Stealth",
+    
+    // Driving Skills
+    dirigirTerrestre: "Drive Land Vehicle",
+    pilotarAereo: "Pilot Aerial Vehicle x2",
+    pilotarMaritimo: "Pilot Marine Vehicle",
+    motocicleta: "Motorcycle",
+    
+    // Education Skills
+    contabilidade: "Accounting",
+    lidarAnimais: "Animal Handling",
+    burocracia: "Bureaucracy",
+    negocios: "Business",
+    composicao: "Composition",
+    criminologia: "Criminology",
+    criptografia: "Cryptography",
+    deducao: "Deduction",
+    educacao: "Education",
+    apostar: "Gambling",
+    
+    // Combat Skills
+    briga: "Brawling",
+    evasao: "Evasion",
+    artesMarciais: "Martial Arts x2",
+    armasBrancas: "Melee Weapons",
+    
+    // Weapons Skills
+    arqueirismo: "Archery",
+    automatica: "Automatic x2",
+    armasCurtas: "Handguns",
+    armasPesadas: "Heavy Weapons x2",
+    fuzil: "Rifle",
+    
+    // Technical Skills
+    vehiculosAereos: "Aerial Vehicle Tech",
+    tecnologiaBasica: "Basic Tech",
+    cibertecnologia: "Cybertech",
+    demolicoes: "Demolitions x2",
+    eletronica: "Electronics/Security Tech x2",
+    primeirosSocorros: "First Aid",
+    falsificacao: "Forgery",
+    vehiculosTerrestre: "Land Vehicle Tech",
+    pintar: "Painting/Drawing/Sculpting",
+    medicamentos: "Pharmaceuticals x2",
+    fotografia: "Photography & Filming",
+    arrombamento: "Lockpicking",
+    furto: "Theft",
+    vehiculosMaritimo: "Marine Vehicle Tech",
+    tecnologiaArmas: "Weapons Tech/Gunsmithing",
+    
+    // Skills Table
+    pericia: "Skill",
+    nivel: "Level",
+    atrib: "Attr.",
+    base: "Base",
+    
+    // Cyberdeck
+    seoCyberdeck: "Your Cyberdeck",
+    ciberdeckVazio: "Your cyberdeck is empty",
+    criarPrimeiroHack: "Create your first hack by filling out the form above",
+    
+    // Market
+    hacksDisponiveis: "Available Hacks",
+    buscarHacks: "Search hacks from system...",
+    
+    // Code Breaker
+    codeBreaker: "Code Breaker",
+    codigoDescricao: "Enter a 12-character code to unlock special hacks",
+    inserirCodigo: "Enter the code (12 characters)...",
+    
+    // Settings
+    preferencias: "Preferences",
+    idioma: "Language",
+    escolherIdioma: "Choose your interface language",
+    portugueseBR: "Portuguese (BR)",
+    englishUS: "English (US)",
+    
+    // Edit Modal
+    editarHack: "Edit Hack",
+    fechar: "✕",
+    
+    // General Buttons
+    salvar: "Save",
+    cancelar: "Cancel",
+    editar: "Edit",
+    deletar: "Delete",
+    buscar: "Search",
+    desbloquear: "Unlock",
+    restaurarVida: "Restore +1 health point"
+  }
+};
+
+// Idioma atual
+let CURRENT_LANGUAGE = "pt-BR";
+
+// Função para obter strings traduzidas
+function t(key) {
+  if (!LANGUAGE_STRINGS[CURRENT_LANGUAGE]) {
+    CURRENT_LANGUAGE = "pt-BR";
+  }
+  return LANGUAGE_STRINGS[CURRENT_LANGUAGE][key] || LANGUAGE_STRINGS["pt-BR"][key] || key;
+}
+
+// Função para alterar idioma
+function alterarIdioma(idioma) {
+  if (idioma !== "pt-BR" && idioma !== "en-US") return;
+  
+  CURRENT_LANGUAGE = idioma;
+  localStorage.setItem("user_language", idioma);
+  
+  // Atualizar botões de idioma
+  document.getElementById("langPT").classList.toggle("btn-language-active", idioma === "pt-BR");
+  document.getElementById("langEN").classList.toggle("btn-language-active", idioma === "en-US");
+  
+  // Recarregar a interface
+  atualizarInterfaceIdioma();
+  
+  // Re-renderizar mercado e hacks desbloqueados com o novo idioma
+  renderizarMercado();
+  renderizarHacksDesbloqueados();
+  
+  console.log("✓ Idioma alterado para:", idioma);
+}
+
+// Função para atualizar a interface com o novo idioma
+function atualizarInterfaceIdioma() {
+  try {
+    // Atualizar header (com verificação de existência)
+    const headerTitle = document.querySelector(".header-title");
+    if (headerTitle) headerTitle.textContent = "⚡ " + t("hacksRapidos");
+    
+    const headerSubtitle = document.querySelector(".header-subtitle");
+    if (headerSubtitle) headerSubtitle.textContent = t("gerenciadorHacks");
+    
+    // Atualizar RAM section
+    const ramText = document.querySelector(".ram-text");
+    if (ramText) ramText.textContent = t("suaRAM");
+    
+    const btnMinus = document.querySelector(".ram-section [title='Diminuir 1 RAM']");
+    if (btnMinus) btnMinus.title = t("diminuirRAM");
+    
+    const btnReset = document.querySelector(".ram-section [title='Resetar RAM']");
+    if (btnReset) btnReset.title = t("resetarRAM");
+    
+    const btnPlus = document.querySelector(".ram-section [title='Aumentar 1 RAM']");
+    if (btnPlus) btnPlus.title = t("aumentarRAM");
+    
+    const inputMax = document.querySelector(".ram-section [title*='máximo']");
+    if (inputMax) inputMax.title = t("definirMaxRAM");
+    
+    // Atualizar formulário de novo hack
+    const formTitle = document.querySelector(".form-wrapper .section-title");
+    if (formTitle) formTitle.textContent = t("novoHack");
+    
+    // Labels do formulário
+    const labels = document.querySelectorAll(".form-wrapper label");
+    labels.forEach(label => {
+      const text = label.textContent.trim();
+      if (text.includes("Nome do Hack") || text.includes("Hack Name")) label.textContent = t("nomeHack");
+      else if (text.includes("Custo de RAM") || text.includes("RAM Cost")) label.textContent = t("custoRAM");
+      else if (text.includes("Tipo de Hack") || text.includes("Hack Type")) label.textContent = t("tipo");
+      else if (text.includes("Efeito do Hack") || text.includes("Hack Effect")) label.textContent = t("efeito");
+    else if (text.includes("Notas Personalizadas") || text.includes("Custom Notes")) label.textContent = t("notas");
+  });
+  
+  // Placeholders
+  const inputs = document.querySelectorAll("input, textarea, select");
+  inputs.forEach(input => {
+    // Verificar se o elemento tem placeholder antes de tentar acessá-lo
+    if (!input.placeholder) return;
+    
+    if (input.placeholder.includes("Ex:") || input.placeholder.includes("Example")) {
+      input.placeholder = t("exQuickhacking");
+    } else if (input.placeholder.includes("Descreva") || input.placeholder.includes("Describe")) {
+      input.placeholder = t("efetoDesc");
+    } else if (input.placeholder.includes("Anotações") || input.placeholder.includes("notes")) {
+      input.placeholder = t("notasDesc");
+    } else if (input.placeholder.includes("Buscar hacks") || input.placeholder.includes("Search hacks")) {
+      input.placeholder = t("buscarHacks");
+    } else if (input.placeholder.includes("Buscar perícia") || input.placeholder.includes("Search skill")) {
+      input.placeholder = "🔍 " + t("buscarPericia");
+    } else if (input.placeholder.includes("Digite") || input.placeholder.includes("Enter") && input.placeholder.includes("nome")) {
+      input.placeholder = t("digitarNomePersonagem");
+    } else if (input.placeholder.includes("Insira o código") || input.placeholder.includes("Enter the code")) {
+      input.placeholder = t("inserirCodigo");
+    }
+  });
+  
+  // Atualizar opções de selects
+  const selectOptions = document.querySelectorAll("select option");
+  selectOptions.forEach(option => {
+    const value = option.value;
+    
+    // Tipos de hack
+    if (value === "quickhacking") option.textContent = "⚡ " + t("quickhacking");
+    else if (value === "intrusion") option.textContent = "🔓 " + t("infiltracao");
+    else if (value === "stealth") option.textContent = "🥷 " + t("furtividade");
+    else if (value === "combat") option.textContent = "⚔️ " + t("combate");
+    else if (value === "control") option.textContent = "🎮 " + t("controle");
+    else if (value === "utility") option.textContent = "🔧 " + t("utilitario");
+    else if (value === "reconnaissance") option.textContent = "🔍 " + t("reconhecimento");
+    else if (value === "damage") option.textContent = "💥 " + t("dano");
+    
+    // Papéis
+    else if (value === "solo") option.textContent = t("solo");
+    else if (value === "trilha-rede") option.textContent = t("trilhaRede");
+    else if (value === "tecnico") option.textContent = t("tecnico");
+    else if (value === "medtech") option.textContent = t("medtech");
+    else if (value === "roqueiro") option.textContent = t("roqueiro");
+    else if (value === "midia") option.textContent = t("midia");
+    else if (value === "executivo") option.textContent = t("executivo");
+    else if (value === "fixer") option.textContent = t("fixer");
+    else if (value === "nomade") option.textContent = t("nomade");
+    else if (value === "policial") option.textContent = t("policial");
+    
+    // Armadura
+    else if (value === "0") option.textContent = t("nenhuma") + " (0)";
+    else if (value === "5") option.textContent = t("leve") + " (5)";
+    else if (value === "10") option.textContent = t("pesada") + " (10)";
+    else if (value === "custom") option.textContent = t("customizada");
+  });
+  
+  // Atualizar abas
+  const tabButtons = document.querySelectorAll(".tab-btn");
+  tabButtons.forEach(btn => {
+    const tabId = btn.getAttribute("data-tab");
+    const textNode = btn.childNodes[btn.childNodes.length - 1];
+    
+    if (tabId === "personagem") btn.innerHTML = `<span class="tab-icon">👤</span> ${t("tabPersonagem")}`;
+    else if (tabId === "cyberdeck") btn.innerHTML = `<span class="tab-icon">💾</span> ${t("tabCyberdeck")}`;
+    else if (tabId === "market") btn.innerHTML = `<span class="tab-icon">🔍</span> ${t("tabMarket")}`;
+    else if (tabId === "codebreaker") btn.innerHTML = `<span class="tab-icon">🔐</span> ${t("tabCodebreaker")}`;
+    else if (tabId === "settings") btn.innerHTML = `<span class="tab-icon">⚙️</span> ${t("tabSettings")}`;
+  });
+  
+  // Atualizar titles das abas de personagem
+  const charLabels = document.querySelectorAll("#tab-personagem label");
+  charLabels.forEach(label => {
+    const text = label.textContent.trim();
+    if (text.includes("Nome do Personagem") || text.includes("Character Name")) label.textContent = t("nomePersonagem");
+    else if (text.includes("Nível")) label.textContent = t("nivel");
+    else if (text.includes("Papel")) label.textContent = t("papel");
+    else if (text.includes("Saúde Máxima") || text.includes("Max Health")) label.textContent = t("saudeMaxima");
+    else if (text.includes("Saúde Atual") || text.includes("Current Health")) label.textContent = t("saudeAtual");
+    else if (text.includes("Armadura")) label.textContent = t("armadura");
+    else if (text.includes("Humanidade")) label.textContent = t("humanidade");
+    else if (text.includes("Habilidade de Papel") || text.includes("Role Ability")) label.textContent = t("habilidadePapel");
+  });
+  
+  // Atualizar títulos de seções
+  const subsections = document.querySelectorAll(".subsection-title");
+  subsections.forEach(el => {
+    if (el.textContent.includes("Atributo")) el.textContent = t("atributos");
+    else if (el.textContent.includes("Perícia") || el.textContent.includes("Skill")) el.textContent = t("pericias");
+  });
+  
+  // Atualizar atributos (INT, REF, TEC, etc)
+  document.querySelectorAll(".attribute-input label").forEach(label => {
+    const small = label.querySelector("small");
+    const shortName = label.textContent.split("(")[0].trim();
+    
+    if (shortName === "INT") small.textContent = "(" + t("inteligencia") + ")";
+    else if (shortName === "REF") small.textContent = "(" + t("reflexos") + ")";
+    else if (shortName === "TEC") small.textContent = "(" + t("tecnicoAttr") + ")";
+    else if (shortName === "EMP") small.textContent = "(" + t("empatia") + ")";
+    else if (shortName === "SOR") small.textContent = "(" + t("sorte") + ")";
+    else if (shortName === "FOR") small.textContent = "(" + t("forca") + ")";
+    else if (shortName === "DES") small.textContent = "(" + t("destreza") + ")";
+    else if (shortName === "COR") small.textContent = "(" + t("corpo") + ")";
+    else if (shortName === "MAN") small.textContent = "(" + t("manuseio") + ")";
+  });
+  
+  // Atualizar categorias de perícias
+  const skillCategories = document.querySelectorAll(".skill-category-title");
+  skillCategories.forEach(el => {
+    const text = el.textContent.trim();
+    if (text.includes("Atenção")) el.textContent = t("pericias_atencao");
+    else if (text.includes("Corporais")) el.textContent = t("pericias_corporais");
+    else if (text.includes("Condução") || text.includes("Driving")) el.textContent = t("pericias_conducao");
+    else if (text.includes("Educação") || text.includes("Education")) el.textContent = t("pericias_educacao");
+    else if (text.includes("Luta") || text.includes("Combat")) el.textContent = t("pericias_luta");
+    else if (text.includes("Armas") || text.includes("Weapons")) el.textContent = t("pericias_armas");
+    else if (text.includes("Técnicas") || text.includes("Technical")) el.textContent = t("pericias_tecnicas");
+  });
+  
+  // Atualizar nomes das perícias
+  const skillLabels = document.querySelectorAll(".skill-item label");
+  skillLabels.forEach(label => {
+    const text = label.textContent.trim();
+    
+    // Período de Atenção
+    if (text.includes("Concentração")) label.textContent = t("concentracao") + " (COR)";
+    else if (text.includes("Ocultar/Revelar")) label.textContent = t("ocultarRevelar") + " (INT)";
+    else if (text.includes("Leitura Labial")) label.textContent = t("leituraLabial") + " (INT)";
+    else if (text.includes("Percepção") || text.includes("Perception")) label.textContent = t("percepcao") + " (INT)";
+    else if (text.includes("Rastrear") || text.includes("Track")) label.textContent = t("rastrear") + " (INT)";
+    
+    // Perícias Corporais
+    else if (text.includes("Atletismo")) label.textContent = t("atletismo") + " (COR)";
+    else if (text.includes("Contorcionismo")) label.textContent = t("contorcionismo") + " (COR)";
+    else if (text.includes("Dançar") || text.includes("Dance")) label.textContent = t("dancar") + " (COR)";
+    else if (text.includes("Resistência") && !text.includes("Tortura")) label.textContent = t("resistencia") + " (FOR)";
+    else if (text.includes("Resistência à Tortura")) label.textContent = t("resistenciaTortura") + " (FOR)";
+    
+    // Perícias de Condução
+    else if (text.includes("Dirigir Veículo Terrestre") || text.includes("Drive Land")) label.textContent = t("dirigirTerrestre") + " (REF)";
+    else if (text.includes("Pilotar Veículo Aéreo")) label.textContent = t("pilotarAereo") + " (REF)";
+    else if (text.includes("Pilotar Veículo Marítimo")) label.textContent = t("pilotarMaritimo") + " (REF)";
+    else if (text.includes("Motocicleta")) label.textContent = t("motocicleta") + " (REF)";
+    
+    // Perícias de Educação
+    else if (text.includes("Contabilidade")) label.textContent = t("contabilidade") + " (INT)";
+    else if (text.includes("Lidar com Animais")) label.textContent = t("lidarAnimais") + " (INT)";
+    else if (text.includes("Burocracia")) label.textContent = t("burocracia") + " (INT)";
+    else if (text.includes("Negócios") || text.includes("Business")) label.textContent = t("negocios") + " (INT)";
+    else if (text.includes("Composição") || text.includes("Composition")) label.textContent = t("composicao") + " (INT)";
+    else if (text.includes("Criminologia")) label.textContent = t("criminologia") + " (INT)";
+    else if (text.includes("Criptografia")) label.textContent = t("criptografia") + " (INT)";
+    else if (text.includes("Dedução") || text.includes("Deduction")) label.textContent = t("deducao") + " (INT)";
+    else if (text.includes("Educação") && !text.includes("Skills")) label.textContent = t("educacao") + " (INT)";
+    else if (text.includes("Apostar") || text.includes("Gambling")) label.textContent = t("apostar") + " (INT)";
+    
+    // Perícias de Luta
+    else if (text.includes("Briga")) label.textContent = t("briga") + " (COR)";
+    else if (text.includes("Evasão")) label.textContent = t("evasao") + " (COR)";
+    else if (text.includes("Artes Marciais")) label.textContent = t("artesMarciais") + " (COR)";
+    else if (text.includes("Armas Brancas") || text.includes("Melee Weapons")) label.textContent = t("armasBrancas") + " (COR)";
+    
+    // Perícias de Armas
+    else if (text.includes("Arqueirismo")) label.textContent = t("arqueirismo") + " (REF)";
+    else if (text.includes("Automática")) label.textContent = t("automatica") + " (REF)";
+    else if (text.includes("Armas Curtas") || text.includes("Handguns")) label.textContent = t("armasCurtas") + " (REF)";
+    else if (text.includes("Armas Pesadas")) label.textContent = t("armasPesadas") + " (REF)";
+    else if (text.includes("Fuzil") || text.includes("Rifle")) label.textContent = t("fuzil") + " (REF)";
+    
+    // Perícias Técnicas
+    else if (text.includes("Tecnologia de Veículos Aéreos") || text.includes("Aerial Vehicle")) label.textContent = t("vehiculosAereos") + " (TEC)";
+    else if (text.includes("Tecnologia Básica") || text.includes("Basic Tech")) label.textContent = t("tecnologiaBasica") + " (TEC)";
+    else if (text.includes("Cibertecnologia") || text.includes("Cybertech")) label.textContent = t("cibertecnologia") + " (TEC)";
+    else if (text.includes("Demolições")) label.textContent = t("demolicoes") + " (TEC)";
+    else if (text.includes("Eletrônica") || text.includes("Electronics")) label.textContent = t("eletronica") + " (TEC)";
+    else if (text.includes("Primeiros Socorros") || text.includes("First Aid")) label.textContent = t("primeirosSocorros") + " (TEC)";
+    else if (text.includes("Falsificação") || text.includes("Forgery")) label.textContent = t("falsificacao") + " (TEC)";
+    else if (text.includes("Tecnologia de Veículo Terrestre") || text.includes("Land Vehicle")) label.textContent = t("vehiculosTerrestre") + " (TEC)";
+    else if (text.includes("Pintar/Desenhar") || text.includes("Painting")) label.textContent = t("pintar") + " (TEC)";
+    else if (text.includes("Medicamentos")) label.textContent = t("medicamentos") + " (TEC)";
+    else if (text.includes("Fotografia") || text.includes("Photography")) label.textContent = t("fotografia") + " (TEC)";
+    else if (text.includes("Arrombamento") || text.includes("Lockpicking")) label.textContent = t("arrombamento") + " (TEC)";
+    else if (text.includes("Furto") || text.includes("Theft")) label.textContent = t("furto") + " (TEC)";
+    else if (text.includes("Tecnologia de Veículo Marítimo") || text.includes("Marine Vehicle")) label.textContent = t("vehiculosMaritimo") + " (TEC)";
+    else if (text.includes("Tecnologia de Armas") || text.includes("Weapons Tech")) label.textContent = t("tecnologiaArmas") + " (TEC)";
+  });
+  
+  // Atualizar headers de tabelas
+  const skillHeaders = document.querySelectorAll(".skill-header-label");
+  skillHeaders.forEach(el => {
+    const text = el.textContent.trim();
+    if (text === "Perícia" || text === "Skill") el.textContent = t("pericia");
+    else if (text === "Nível" || text === "Level") el.textContent = t("nivel");
+    else if (text === "Atrib." || text === "Attr.") el.textContent = t("atrib");
+    else if (text === "Base") el.textContent = t("base");
+  });
+  
+  // Atualizar seção de Cyberdeck
+  const ciberdeckTitle = document.querySelector("#tab-cyberdeck .section-title");
+  if (ciberdeckTitle) ciberdeckTitle.textContent = t("seoCyberdeck");
+  
+  const emptyState = document.querySelector(".empty-state p");
+  if (emptyState) emptyState.textContent = t("ciberdeckVazio");
+  
+  const emptySmall = document.querySelector(".empty-state small");
+  if (emptySmall) emptySmall.textContent = t("criarPrimeiroHack");
+  
+  // Atualizar seção de Market
+  const marketTitle = document.querySelector("#tab-market .section-title");
+  if (marketTitle) marketTitle.textContent = t("hacksDisponiveis");
+  
+  // Atualizar seção de Code Breaker
+  const codeTitle = document.querySelector("#tab-codebreaker .section-title");
+  if (codeTitle) codeTitle.textContent = t("codeBreaker");
+  
+  const codeDesc = document.querySelector(".codebreaker-description");
+  if (codeDesc) codeDesc.textContent = t("codigoDescricao");
+  
+  // Atualizar seção de Settings
+  const settingsTitle = document.querySelector("#tab-settings .section-title");
+  if (settingsTitle) settingsTitle.textContent = t("preferencias");
+  
+  const settingsSubtitle = document.querySelector(".settings-subtitle");
+  if (settingsSubtitle) settingsSubtitle.textContent = t("idioma");
+  
+  const settingsDesc = document.querySelector(".settings-description");
+  if (settingsDesc) settingsDesc.textContent = t("escolherIdioma");
+  
+  // Atualizar modal de edição
+  const modalTitle = document.querySelector(".modal-title");
+  if (modalTitle) modalTitle.textContent = t("editarHack");
+  
+  const editLabels = document.querySelectorAll("#editForm label");
+  editLabels.forEach(label => {
+    const text = label.textContent.trim();
+    if (text.includes("Nome")) label.textContent = t("nomeHack");
+    else if (text.includes("Custo")) label.textContent = t("custoRAM");
+    else if (text.includes("Tipo")) label.textContent = t("tipo");
+    else if (text.includes("Efeito")) label.textContent = t("efeito");
+    else if (text.includes("Notas")) label.textContent = t("notas");
+  });
+  
+  // Atualizar botões de formulário
+  const formButtons = document.querySelectorAll(".btn, .form-hint");
+  formButtons.forEach(btn => {
+    const text = btn.textContent.trim();
+    if (text.includes("Adicionar") || text.includes("Add")) {
+      btn.innerHTML = `<span class="btn-icon">+</span> ${t("adicionarHack")}`;
+    } else if (text.includes("Máximo")) {
+      btn.textContent = t("maxChar500");
+    } else if (text.includes("Salvar Personagem")) {
+      btn.innerHTML = `💾 ${t("salvarPersonagem")}`;
+    }
+  });
+  } catch (error) {
+    console.error("❌ Erro ao atualizar interface de idioma:", error);
+    console.warn("⚠️ Continuando sem atualização de idioma");
+  }
+}
+
+// Carregar idioma salvo na inicialização
+function carregarIdiomaUsuario() {
+  const savedLanguage = localStorage.getItem("user_language");
+  if (savedLanguage && (savedLanguage === "pt-BR" || savedLanguage === "en-US")) {
+    CURRENT_LANGUAGE = savedLanguage;
+  }
+  
+  // Atualizar botões de idioma
+  const langPT = document.getElementById("langPT");
+  const langEN = document.getElementById("langEN");
+  if (langPT && langEN) {
+    langPT.classList.toggle("btn-language-active", CURRENT_LANGUAGE === "pt-BR");
+    langEN.classList.toggle("btn-language-active", CURRENT_LANGUAGE === "en-US");
+  }
+}
+
 
 const STORAGE_KEY = "cyberpunk_hacks_rapidos";
 const RAM_STORAGE_KEY = "cyberpunk_player_ram";
@@ -54,7 +828,7 @@ async function iniciarPluginCompleto() {
     await renderizarHacks();
     await renderizarRAM();
     
-    // Configurar interface
+    // Configurar interface (inclui carregamento de idioma)
     console.log("🎨 Configurando interface...");
     configurarInterface();
     
@@ -75,6 +849,10 @@ async function iniciarPluginCompleto() {
 }
 
 function configurarInterface() {
+  // Carregar e aplicar idioma
+  carregarIdiomaUsuario();
+  atualizarInterfaceIdioma();
+  
   // Configurar formulário
   const form = document.getElementById("hackForm");
   if (form) {
@@ -101,6 +879,33 @@ function configurarInterface() {
       renderizarMercado(e.target.value);
     });
     console.log("✓ Busca configurada");
+  }
+
+  // Configurar controles de RAM
+  const ramMaxInput = document.getElementById("ramMaxInput");
+  if (ramMaxInput) {
+    ramMaxInput.addEventListener("change", (e) => {
+      definirMaxRAM(e.target.value);
+    });
+    console.log("✓ Input de RAM máxima configurado");
+  }
+
+  const ramBtnPlus = document.getElementById("ramBtnPlus");
+  if (ramBtnPlus) {
+    ramBtnPlus.addEventListener("click", aumentarRAM);
+    console.log("✓ Botão + RAM configurado");
+  }
+
+  const ramBtnMinus = document.getElementById("ramBtnMinus");
+  if (ramBtnMinus) {
+    ramBtnMinus.addEventListener("click", diminuirRAM);
+    console.log("✓ Botão - RAM configurado");
+  }
+
+  const ramBtnReset = document.getElementById("ramBtnReset");
+  if (ramBtnReset) {
+    ramBtnReset.addEventListener("click", resetarRAM);
+    console.log("✓ Botão reset RAM configurado");
   }
 
   // Inicializar perícias da ficha de personagem
@@ -181,6 +986,159 @@ if (document.readyState === 'loading') {
 // ============================================
 // SISTEMA DE HACKS (Banco de Dados)
 // ============================================
+
+// Traduções dos hacks do sistema
+const HACKS_TRANSLATIONS = {
+  "pt-BR": {
+    special_moonblessing: {
+      nome: "Hack Rápido - Benção da Lua",
+      descricao: "Uma vez por dia você pode ter visão da lua para te auxiliar a encontrar lugares, objetos.. etc. lhe dando +10 no próximo teste das perícias de Atenção.",
+      categoria: "Visão Especial"
+    },
+    special_phantom: {
+      nome: "Hack Rápido - Corrente Fantasma",
+      descricao: "Você apaga temporariamente sua assinatura digital do campo. Nenhum efeito pode rastrear o netrunner e contra-hacks contra você falham automaticamente. Dura até o fim da cena ou até você executar outro hack. Falha: RAM é gasta normalmente e você é marcado.",
+      categoria: "Ofuscação"
+    },
+    special_redqueen: {
+      nome: "Hack Rápido - Protocolo Redqueen",
+      descricao: "Uma explosão de ruído eletromagnético digital se espalha. Todos em um raio curto sofrem -4 em todos os testes, perdem -6 de RAM atual e aparelhos sofrem interferência. Dura 1d6 turnos.",
+      categoria: "Área de Efeito"
+    },
+    sys_quickhack_1: {
+      nome: "Hack Rápido - Shut Down",
+      descricao: "Força o alvo a desligar todos os sistemas por 1 rodada. O alvo não pode agir durante este tempo.",
+      categoria: "Desativação"
+    },
+    sys_quickhack_2: {
+      nome: "Hack Rápido - Distrair Inimigos",
+      descricao: "Cria ruído nos sensores do alvo, aplicando -2 de REF na próxima ação. Efeito dura 1 rodada.",
+      categoria: "Perturbação"
+    },
+    sys_quickhack_3: {
+      nome: "Hack Rápido - Protocolo de Invasão",
+      descricao: "Abre acesso avançado ao sistema neural do alvo, permitindo um segundo hacking na próxima rodada sem custo de RAM.",
+      categoria: "Infiltração"
+    },
+    sys_zap: {
+      nome: "Hack Rápido - Zap",
+      descricao: "Causa 1d8 de dano cerebral e remove ações no próximo turno.",
+      categoria: "Dano Cerebral"
+    },
+    sys_ping: {
+      nome: "Hack Rápido - Ping",
+      descricao: "Revela todos os dispositivos conectados na rede local.",
+      categoria: "Reconhecimento"
+    },
+    sys_overheat: {
+      nome: "Hack Rápido - Overheat",
+      descricao: "Deixa o alvo queimando por 2d4 rodadas, pode espalhar o efeito para alvos próximos.",
+      categoria: "Dano Contínuo"
+    },
+    sys_crash: {
+      nome: "Hack Rápido - Crash",
+      descricao: "Derruba um drone ou veículo remoto.",
+      categoria: "Desativação"
+    },
+    sys_spike: {
+      nome: "Hack Rápido - Spike",
+      descricao: "Toma controle de um sistema ou câmera por 2 turnos.",
+      categoria: "Controle"
+    },
+    sys_eyeburn: {
+      nome: "Hack Rápido - Eye Burn",
+      descricao: "Causa ofuscamento temporário. Alvo sofre -6 em ataques à distância por 1 turno.",
+      categoria: "Incapacidade"
+    },
+    sys_flicker: {
+      nome: "Hack Rápido - Flicker",
+      descricao: "Alvo perde o próximo movimento.",
+      categoria: "Incapacidade"
+    },
+    sys_davyjones: {
+      nome: "Hack Rápido - W3sKer",
+      descricao: "Quando acertado um crítico, um homem misterioso apenas conhecido como W3sKer aparece atirando no seu ultimo alvo, causando 4d6 de dano",
+      categoria: "Controle"
+    }
+  },
+  "en-US": {
+    special_moonblessing: {
+      nome: "Quick Hack - Moon Blessing",
+      descricao: "Once per day you can have moon vision to help you find places, objects, etc., giving you +10 on your next Awareness skill test.",
+      categoria: "Special Vision"
+    },
+    special_phantom: {
+      nome: "Quick Hack - Phantom Chain",
+      descricao: "You temporarily erase your digital signature from the field. No effect can track the netrunner and counter-hacks against you automatically fail. Lasts until the end of the scene or until you execute another hack. Failure: RAM is spent normally and you are marked.",
+      categoria: "Obfuscation"
+    },
+    special_redqueen: {
+      nome: "Quick Hack - Redqueen Protocol",
+      descricao: "A burst of digital electromagnetic noise spreads out. Everyone within short range suffers -4 on all tests, loses -6 current RAM, and devices experience interference. Lasts 1d6 turns.",
+      categoria: "Area of Effect"
+    },
+    sys_quickhack_1: {
+      nome: "Quick Hack - Shut Down",
+      descricao: "Forces the target to shut down all systems for 1 round. The target cannot act during this time.",
+      categoria: "Disable"
+    },
+    sys_quickhack_2: {
+      nome: "Quick Hack - Distract Enemies",
+      descricao: "Creates noise in the target's sensors, applying -2 REF on the next action. Effect lasts 1 round.",
+      categoria: "Disturbance"
+    },
+    sys_quickhack_3: {
+      nome: "Quick Hack - Invasion Protocol",
+      descricao: "Opens advanced access to the target's neural system, allowing a second hack next round with no RAM cost.",
+      categoria: "Intrusion"
+    },
+    sys_zap: {
+      nome: "Quick Hack - Zap",
+      descricao: "Deals 1d8 brain damage and removes actions next turn.",
+      categoria: "Brain Damage"
+    },
+    sys_ping: {
+      nome: "Quick Hack - Ping",
+      descricao: "Reveals all connected devices on the local network.",
+      categoria: "Reconnaissance"
+    },
+    sys_overheat: {
+      nome: "Quick Hack - Overheat",
+      descricao: "Leaves the target burning for 2d4 rounds, can spread the effect to nearby targets.",
+      categoria: "Continuous Damage"
+    },
+    sys_crash: {
+      nome: "Quick Hack - Crash",
+      descricao: "Crashes a drone or remote vehicle.",
+      categoria: "Disable"
+    },
+    sys_spike: {
+      nome: "Quick Hack - Spike",
+      descricao: "Takes control of a system or camera for 2 turns.",
+      categoria: "Control"
+    },
+    sys_eyeburn: {
+      nome: "Quick Hack - Eye Burn",
+      descricao: "Causes temporary blindness. Target suffers -6 on ranged attacks for 1 turn.",
+      categoria: "Incapacity"
+    },
+    sys_flicker: {
+      nome: "Quick Hack - Flicker",
+      descricao: "Target loses their next movement.",
+      categoria: "Incapacity"
+    }
+  }
+};
+
+// Função helper para obter tradução do hack
+function getHackTranslation(hackId, lang = CURRENT_LANGUAGE) {
+  const translations = HACKS_TRANSLATIONS[lang];
+  if (translations && translations[hackId]) {
+    return translations[hackId];
+  }
+  // Fallback para português
+  return HACKS_TRANSLATIONS["pt-BR"][hackId] || null;
+}
 
 const HACKS_ESPECIAIS = [
   {
@@ -309,6 +1267,15 @@ const HACKS_SISTEMA = [
     tipo: "stealth",
     descricao: "Alvo perde o próximo movimento.",
     categoria: "Incapacidade"
+  },
+  {
+    id: "sys_davyjones",
+    nome: "Hack Rápido - W3sKer",
+    custoRAM: 6,
+    dv: 14,
+    tipo: "combat",
+    descricao: "Quando acertado um crítico, um homem misterioso apenas conhecido como W3sKer aparece atirando no seu ultimo alvo, causando 4d6 de dano",
+    categoria: "controle"
   }
 ];
 
@@ -517,13 +1484,10 @@ async function carregarRAMLocal() {
 function definirMaxRAM(novoMax) {
   console.log("🎯 definirMaxRAM chamado com:", novoMax, "PLUGIN_READY:", PLUGIN_READY);
   
-  if (!PLUGIN_READY) {
-    console.warn("⚠️ Plugin ainda não está pronto");
-    return;
-  }
   if (!USER_ID) {
-    console.warn("⚠️ USER_ID não definido");
-    alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
+    console.warn("⚠️ USER_ID não definido ainda - aguardando inicialização");
+    // Aguardar um pouco e tentar novamente
+    setTimeout(() => definirMaxRAM(novoMax), 100);
     return;
   }
   novoMax = Math.max(1, Math.min(parseInt(novoMax) || 25, 100));
@@ -544,13 +1508,9 @@ function definirMaxRAM(novoMax) {
 function aumentarRAM() {
   console.log("🎯 aumentarRAM chamado, PLUGIN_READY:", PLUGIN_READY);
   
-  if (!PLUGIN_READY) {
-    console.warn("⚠️ Plugin ainda não está pronto");
-    return;
-  }
   if (!USER_ID) {
-    console.warn("⚠️ USER_ID não definido");
-    alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
+    console.warn("⚠️ USER_ID não definido ainda - aguardando inicialização");
+    setTimeout(aumentarRAM, 100);
     return;
   }
   carregarRAMLocal().then(ramData => {
@@ -567,12 +1527,9 @@ function aumentarRAM() {
 function diminuirRAM() {
   console.log("🎯 diminuirRAM chamado, PLUGIN_READY:", PLUGIN_READY);
   
-  if (!PLUGIN_READY) {
-    console.warn("⚠️ Plugin ainda não está pronto");
-    return;
-  }
   if (!USER_ID) {
-    alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
+    console.warn("⚠️ USER_ID não definido ainda - aguardando inicialização");
+    setTimeout(diminuirRAM, 100);
     return;
   }
   carregarRAMLocal().then(ramData => {
@@ -586,12 +1543,9 @@ function diminuirRAM() {
 }
 
 function resetarRAM() {
-  if (!PLUGIN_READY) {
-    console.warn("⚠️ Plugin ainda não está pronto");
-    return;
-  }
   if (!USER_ID) {
-    alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
+    console.warn("⚠️ USER_ID não definido ainda - aguardando inicialização");
+    setTimeout(resetarRAM, 100);
     return;
   }
   salvarRAMLocal(MAX_RAM, MAX_RAM).then(() => {
@@ -652,22 +1606,36 @@ async function renderizarRAM() {
 // ============================================
 
 function abrirAba(abaId) {
-  // Remover aba ativa de todos os painéis e botões
-  document.querySelectorAll(".tab-panel").forEach(panel => {
-    panel.classList.remove("tab-panel-active");
-  });
-  document.querySelectorAll(".tab-btn").forEach(btn => {
-    btn.classList.remove("tab-btn-active");
-  });
+  console.log("🎯 abrirAba chamado com:", abaId);
+  
+  try {
+    // Remover aba ativa de todos os painéis e botões
+    document.querySelectorAll(".tab-panel").forEach(panel => {
+      panel.classList.remove("tab-panel-active");
+    });
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.classList.remove("tab-btn-active");
+    });
 
-  // Ativar aba selecionada
-  const painel = document.getElementById(`tab-${abaId}`);
-  const botao = document.querySelector(`[data-tab="${abaId}"]`);
+    // Ativar aba selecionada
+    const painel = document.getElementById(`tab-${abaId}`);
+    const botao = document.querySelector(`[data-tab="${abaId}"]`);
 
-  if (painel) painel.classList.add("tab-panel-active");
-  if (botao) botao.classList.add("tab-btn-active");
+    console.log("Painel encontrado:", painel ? "✓" : "✗");
+    console.log("Botão encontrado:", botao ? "✓" : "✗");
 
-  console.log(`✓ Aba aberta: ${abaId}`);
+    if (painel) painel.classList.add("tab-panel-active");
+    if (botao) botao.classList.add("tab-btn-active");
+    
+    // Atualizar tradução quando abre a aba
+    if (PLUGIN_READY) {
+      atualizarInterfaceIdioma();
+    }
+
+    console.log(`✓ Aba aberta: ${abaId}`);
+  } catch (error) {
+    console.error("❌ Erro ao abrir aba:", error);
+  }
 }
 
 // ============================================
@@ -691,11 +1659,17 @@ function renderizarMercado(filtro = "") {
   // Aplicar filtro de busca
   if (filtro.trim()) {
     const filtroLower = filtro.toLowerCase();
-    hacksExibidos = HACKS_SISTEMA.filter(hack =>
-      hack.nome.toLowerCase().includes(filtroLower) ||
-      hack.descricao.toLowerCase().includes(filtroLower) ||
-      hack.categoria.toLowerCase().includes(filtroLower)
-    );
+    hacksExibidos = HACKS_SISTEMA.filter(hack => {
+      // Obter tradução
+      const translation = getHackTranslation(hack.id);
+      const nomeExibicao = translation ? translation.nome : hack.nome;
+      const descExibicao = translation ? translation.descricao : hack.descricao;
+      const catExibicao = translation ? translation.categoria : hack.categoria;
+      
+      return nomeExibicao.toLowerCase().includes(filtroLower) ||
+             descExibicao.toLowerCase().includes(filtroLower) ||
+             catExibicao.toLowerCase().includes(filtroLower);
+    });
     console.log("🔍 Hacks encontrados após filtro:", hacksExibidos.length);
   } else {
     console.log("📊 Exibindo todos os hacks:", hacksExibidos.length);
@@ -715,6 +1689,12 @@ function renderizarMercado(filtro = "") {
 
   // Renderizar hacks do sistema
   hacksExibidos.forEach((hack) => {
+    // Obter tradução do hack
+    const translation = getHackTranslation(hack.id);
+    const nomeExibicao = translation ? translation.nome : hack.nome;
+    const descExibicao = translation ? translation.descricao : hack.descricao;
+    const catExibicao = translation ? translation.categoria : hack.categoria;
+    
     const hackElement = document.createElement("div");
     hackElement.className = "hack-item hack-item-market";
     const tipoInfo = HACK_TYPES[hack.tipo] || HACK_TYPES.quickhacking;
@@ -723,7 +1703,7 @@ function renderizarMercado(filtro = "") {
     hackElement.innerHTML = `
       <div class="hack-header">
         <div class="hack-info">
-          <h4 class="hack-name">${sanitizar(hack.nome)}</h4>
+          <h4 class="hack-name">${sanitizar(nomeExibicao)}</h4>
           <div class="hack-meta">
             ${badgeHTML}
             <span class="hack-stat">
@@ -744,8 +1724,8 @@ function renderizarMercado(filtro = "") {
         </button>
       </div>
       ${
-        hack.descricao
-          ? `<p class="hack-desc">${sanitizar(hack.descricao)}</p>`
+        descExibicao
+          ? `<p class="hack-desc">${sanitizar(descExibicao)}</p>`
           : ""
       }
     `;
@@ -888,9 +1868,10 @@ async function adicionarHack(event) {
     event.preventDefault();
   }
 
-  if (!PLUGIN_READY) {
-    console.warn("⚠️ Plugin ainda não está pronto");
+  if (!USER_ID) {
+    console.warn("⚠️ USER_ID não definido ainda - aguardando inicialização");
     mostrarToast("Plugin ainda está inicializando...", 'warning');
+    setTimeout(() => adicionarHack(event), 100);
     return;
   }
 
@@ -1335,12 +2316,10 @@ async function salvarCodigosDesbloqueados(codigos) {
 }
 
 function tentarDesbloqueio() {
-  if (!PLUGIN_READY) {
-    alert("⚠️ Plugin ainda está inicializando...");
-    return;
-  }
   if (!USER_ID) {
-    alert("⚠️ Plugin ainda está conectando ao Owlbear Rodeo...");
+    console.warn("⚠️ USER_ID não definido ainda - aguardando inicialização");
+    alert("⚠️ Plugin ainda está inicializando...");
+    setTimeout(tentarDesbloqueio, 100);
     return;
   }
   const codeInput = document.getElementById("codeInput");
@@ -1433,6 +2412,11 @@ function renderizarHacksDesbloqueados() {
 
     // Renderizar hacks desbloqueados
     hacksParaExibir.forEach((hack) => {
+      // Obter tradução
+      const translation = getHackTranslation(hack.id);
+      const nomeExibicao = translation ? translation.nome : hack.nome;
+      const descExibicao = translation ? translation.descricao : hack.descricao;
+      
       const hackElement = document.createElement("div");
       hackElement.className = "hack-item hack-item-market hack-special";
       const tipoInfo = HACK_TYPES[hack.tipo] || HACK_TYPES.quickhacking;
@@ -1441,7 +2425,7 @@ function renderizarHacksDesbloqueados() {
       hackElement.innerHTML = `
         <div class="hack-header">
           <div class="hack-info">
-            <h4 class="hack-name">🔓 ${sanitizar(hack.nome)}</h4>
+            <h4 class="hack-name">🔓 ${sanitizar(nomeExibicao)}</h4>
             <div class="hack-meta">
               ${badgeHTML}
               <span class="hack-stat">
@@ -1458,7 +2442,7 @@ function renderizarHacksDesbloqueados() {
             <span>+</span>
           </button>
         </div>
-        ${hack.descricao ? `<p class="hack-desc">${sanitizar(hack.descricao)}</p>` : ""}
+        ${descExibicao ? `<p class="hack-desc">${sanitizar(descExibicao)}</p>` : ""}
       `;
       container.appendChild(hackElement);
     });
@@ -2060,3 +3044,28 @@ function setupSalvationCircles() {
     });
   });
 }
+
+// ============================================
+// EXPOSIÇÃO GLOBAL DE FUNÇÕES (para uso inline no HTML)
+// ============================================
+window.abrirAba = abrirAba;
+window.definirMaxRAM = definirMaxRAM;
+window.aumentarRAM = aumentarRAM;
+window.diminuirRAM = diminuirRAM;
+window.resetarRAM = resetarRAM;
+window.adicionarHack = adicionarHack;
+window.tentarDesbloqueio = tentarDesbloqueio;
+window.alterarIdioma = alterarIdioma;
+window.salvarPersonagem = salvarPersonagem;
+window.atualizarVisualizacaoSaude = atualizarVisualizacaoSaude;
+window.atualizarHabilidadePapel = atualizarHabilidadePapel;
+window.atualizarValorArmadura = atualizarValorArmadura;
+window.restaurarVida = restaurarVida;
+window.incrementarAtributo = incrementarAtributo;
+window.decrementarAtributo = decrementarAtributo;
+window.atualizarPericiasAtributo = atualizarPericiasAtributo;
+window.atualizarCorAtributo = atualizarCorAtributo;
+window.fecharModalEdicao = fecharModalEdicao;
+window.salvarEdicaoHack = salvarEdicaoHack;
+
+console.log("✓ Funções globais expostas no objeto window");

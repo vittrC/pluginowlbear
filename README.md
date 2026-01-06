@@ -19,7 +19,7 @@ Gerenciador de hacks rápidos para Cyberpunk RED no OWLBear Rodeo.
 - Gerenciar RAM do jogador
 - Hacks especiais desbloqueáveis com códigos
 - Notificações de ação (sucesso/erro)
-- Responsivo em desktop, tablet e mobile
+- Responsivo em desktop e mobile
 
 ## Como Usar
 
@@ -52,3 +52,7 @@ Gerenciador de hacks rápidos para Cyberpunk RED no OWLBear Rodeo.
 - 🔧 Utilitário
 - 🔍 Reconhecimento
 - 💥 Dano
+
+## Encontrou Problemas?
+
+- Em caso de erros, bugs ou má funcionalidades, por favor, entre em contato: vitorrr.correia77@gmail.com

@@ -45,9 +45,9 @@
       </div>
 
       <div class="ram-controls">
-        <button class="ram-btn ram-btn-minus" onclick="diminuirRAM()" title="Diminuir 1 RAM">−</button>
-        <button class="ram-btn ram-btn-reset" onclick="resetarRAM()" title="Resetar RAM">⟲</button>
-        <button class="ram-btn ram-btn-plus" onclick="aumentarRAM()" title="Aumentar 1 RAM">+</button>
+        <button class="ram-btn ram-btn-minus" id="ramBtnMinus" onclick="diminuirRAM()" title="Diminuir 1 RAM">−</button>
+        <button class="ram-btn ram-btn-reset" id="ramBtnReset" onclick="resetarRAM()" title="Resetar RAM">⟲</button>
+        <button class="ram-btn ram-btn-plus" id="ramBtnPlus" onclick="aumentarRAM()" title="Aumentar 1 RAM">+</button>
       </div>
     </section>
 
@@ -164,6 +164,9 @@
         </button>
         <button class="tab-btn" data-tab="codebreaker">
           <span class="tab-icon">🔐</span> Code Breaker
+        </button>
+        <button class="tab-btn" data-tab="settings">
+          <span class="tab-icon">⚙️</span> Preferências
         </button>
       </div>
 
@@ -356,6 +359,14 @@
                   <button class="attr-btn" onclick="decrementarAtributo('attrFor')">−</button>
                   <input type="number" id="attrFor" min="0" max="20" value="3" class="attr-value" onchange="atualizarPericiasAtributo();atualizarCorAtributo('attrFor')"/>
                   <button class="attr-btn" onclick="incrementarAtributo('attrFor')">+</button>
+                </div>
+              </div>
+              <div class="attribute-input">
+                <label for="attrDes">DES<small>(Destreza)</small></label>
+                <div class="attribute-control">
+                  <button class="attr-btn" onclick="decrementarAtributo('attrDes')">−</button>
+                  <input type="number" id="attrDes" min="0" max="20" value="3" class="attr-value" onchange="atualizarPericiasAtributo();atualizarCorAtributo('attrDes')"/>
+                  <button class="attr-btn" onclick="incrementarAtributo('attrDes')">+</button>
                 </div>
               </div>
               <div class="attribute-input">
@@ -935,7 +946,7 @@
         <div id="marketList" class="hack-list"></div>
       </section>
 
-      <!-- Aba 3: Code Breaker -->
+      <!-- Aba 4: Code Breaker -->
       <section class="tab-panel" id="tab-codebreaker">
         <div class="list-header">
           <h3 class="section-title">Code Breaker</h3>
@@ -958,6 +969,28 @@
           </div>
           <div id="codeMessage" class="codebreaker-message"></div>
           <div id="codebredHacksList" class="hack-list"></div>
+        </div>
+      </section>
+
+      <!-- Aba 5: Preferências -->
+      <section class="tab-panel" id="tab-settings">
+        <div class="list-header">
+          <h3 class="section-title">Preferências</h3>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-group">
+            <h4 class="settings-subtitle">Idioma / Language</h4>
+            <p class="settings-description">Escolha o idioma da interface</p>
+            <div class="language-buttons">
+              <button class="btn btn-language btn-language-active" id="langPT" onclick="alterarIdioma('pt-BR')">
+                🇧🇷 Português (BR)
+              </button>
+              <button class="btn btn-language" id="langEN" onclick="alterarIdioma('en-US')">
+                🇺🇸 English (US)
+              </button>
+            </div>
+          </div>
         </div>
       </section>
     </div>
