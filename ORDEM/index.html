@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ordem Paranormal - Artes Paranormais</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://unpkg.com/@owlbear-rodeo/sdk"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-label">HOMEBREW</div>
+      <h1 class="header-title">ORDEM<br>PARANORMAL</h1>
+      <div class="header-subtitle">ARTES PARANORMAIS</div>
+    </header>
+
+    <!-- Controles Superiores -->
+    <div class="top-controls">
+      <button class="btn-control" onclick="abrirMenuSimbolos()">
+        ALTERAR SÍMBOLO <span class="icon">✎</span>
+      </button>
+      <button class="btn-control" onclick="abrirDescricaoSimbolo()">
+        DESCRIÇÃO DO SÍMBOLO <span class="icon">✎</span>
+      </button>
+    </div>
+
+    <!-- Símbolo Central com Espaços -->
+    <section class="symbol-section" id="symbolSection">
+      <!-- Layout será gerado dinamicamente pelo JavaScript -->
+    </section>
+
+    <!-- Artes Equipadas -->
+    <section class="artes-equipadas">
+      <h2 class="artes-title">ARTES EQUIPADAS:</h2>
+      <div class="artes-grid" id="artesGrid">
+        <!-- Grid será gerado dinamicamente pelo JavaScript -->
+      </div>
+    </section>
+  </div>
+
+  <!-- Modal de Seleção de Arte -->
+  <div id="arteModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button class="btn-modal-tab active">ALTERAR SÍMBOLO</button>
+        <button class="btn-modal-tab" onclick="abrirDescricaoSimbolo()">DESCRIÇÃO DO SÍMBOLO</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="modal-symbol">
+          <img src="membro-sombrio.webp" alt="Símbolo" class="modal-symbol-img" />
+        </div>
+        
+        <h3 class="modal-subtitle" id="modalSubtitle">INSURGÊNCIA</h3>
+        
+        <div class="modal-description" id="modalDescription">
+          <p>A FACULDADE PARA MANIPULAÇÃO DE SI COMO DEVE SER A REFLEXÃO DO SÍMBOLO.</p>
+        </div>
+        
+        <div class="modal-specs">
+          <div class="spec-item">ESPAÇO 1: INT</div>
+          <div class="spec-item">VALOR/CUSTO DE SANIDADE: DEVE SER A DISTRIBUIÇÃO DOS ESPAÇOS.</div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn-modal-close" onclick="fecharModal()">FECHAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Lista de Símbolos -->
+  <div id="symbolListModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button class="btn-modal-tab active">ALTERAR SÍMBOLO</button>
+        <button class="btn-modal-tab" onclick="voltarDescricao()">DESCRIÇÃO DO SÍMBOLO</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="symbol-list" id="symbolList">
+          <!-- Lista será preenchida pelo JavaScript -->
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn-modal-close" onclick="fecharModal()">FECHAR</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./main.js"></script>
+</body>
+</html>

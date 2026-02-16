@@ -1,0 +1,15 @@
+{
+  "name": "Ordem Paranormal - Sistema Homebrew",
+  "version": "1.0.0",
+  "manifest_version": 1,
+  "description": "Sistema de runas e símbolos para Ordem Paranormal",
+  "author": "Vittrc",
+  "icon": "https://vittrC.github.io/pluginowlbear/ORDEM/icon.png",
+  "action": {
+    "title": "Ordem Paranormal - Runas",
+    "icon": "https://vittrC.github.io/pluginowlbear/ORDEM/icon.png",
+    "popover": "https://vittrC.github.io/pluginowlbear/ORDEM/index.html",
+    "width": 500,
+    "height": 700
+  }
+}
