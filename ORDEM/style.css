@@ -120,6 +120,166 @@ body {
 }
 
 /* ============================================
+   MODAL CRIAR ARTE
+   ============================================ */
+
+.modal-criar-arte {
+  max-width: 500px;
+  max-height: 95vh;
+  background: #000000;
+  border: 2px solid rgba(255, 215, 0, 0.6);
+}
+
+.modal-header-criar {
+  padding: 20px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.modal-title-criar {
+  font-size: 1.2rem;
+  letter-spacing: 4px;
+  color: #ffffff;
+  font-family: 'Hebrew', serif;
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+  margin: 0;
+}
+
+.modal-criar-body {
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.circulo-simbolos {
+  position: relative;
+  width: 400px;
+  height: 400px;
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  border-radius: 50%;
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.4), inset 0 0 30px rgba(255, 215, 0, 0.15);
+  animation: rotateGlowGold 6s linear infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes rotateGlowGold {
+  0% { 
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.4), inset 0 0 30px rgba(255, 215, 0, 0.15);
+  }
+  50% { 
+    box-shadow: 0 0 60px rgba(255, 215, 0, 0.6), inset 0 0 40px rgba(255, 215, 0, 0.25);
+  }
+  100% { 
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.4), inset 0 0 30px rgba(255, 215, 0, 0.15);
+  }
+}
+
+.simbolo-letra {
+  position: absolute;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Sigilos', 'Sinais', serif;
+  font-size: 2rem;
+  color: #ffd700;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  transition: all 0.2s ease;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.4);
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { 
+    text-shadow: 0 0 12px rgba(255, 215, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.4);
+  }
+  50% { 
+    text-shadow: 0 0 18px rgba(255, 215, 0, 1), 0 0 30px rgba(255, 215, 0, 0.7);
+  }
+}
+
+.simbolo-letra:hover {
+  color: #ffffff;
+  font-size: 2.4rem;
+  text-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 45px rgba(255, 215, 0, 0.9);
+  transform: translate(-50%, -50%) scale(1.3);
+  animation: none;
+  z-index: 10;
+}
+
+.texto-senha {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 320px;
+  min-height: 40px;
+  padding: 10px;
+}
+
+.simbolo-digitado {
+  font-family: 'Sigilos', 'Sinais', serif;
+  font-size: 2rem;
+  color: #ffd700;
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.9), 0 0 25px rgba(255, 215, 0, 0.6);
+  animation: aparecer 0.3s ease;
+}
+
+@keyframes aparecer {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-footer-criar {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px 40px;
+  border-top: 1px solid rgba(255, 215, 0, 0.3);
+  gap: 20px;
+}
+
+.btn-criar-limpar,
+.btn-criar-aceitar {
+  flex: 1;
+  padding: 12px 24px;
+  font-family: 'Hebrew', serif;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+  border: 2px solid rgba(255, 215, 0, 0.6);
+  background: transparent;
+  color: #ffffff;
+  transition: all 0.3s ease;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+}
+
+.btn-criar-limpar:hover,
+.btn-criar-aceitar:hover {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: #ffd700;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+  text-shadow: 0 0 15px rgba(255, 215, 0, 1);
+  transform: translateY(-2px);
+}
+
+/* ============================================
    SÍMBOLO PRINCIPAL E ESPAÇOS
    ============================================ */
 
@@ -464,9 +624,9 @@ body {
 }
 
 .modal-description {
-  font-size: 0.65rem;
+  font-size: 1rem;
   color: #ffffff;
-  line-height: 1.6;
+  line-height: 1.8;
   margin-bottom: 20px;
   padding: 0 10px;
   font-family: 'Hebrew', serif;

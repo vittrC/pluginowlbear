@@ -13,14 +13,12 @@ let audioMascaras = null;
 let audioTranscender = null;
 
 function inicializarAudio() {
-  if (!audioMascaras) {
-    audioMascaras = new Audio('./assets/audio/mascara.mp3');
-    audioMascaras.volume = 0.6;
-  }
-  if (!audioTranscender) {
-    audioTranscender = new Audio('./assets/audio/transcender.mp3');
-    audioTranscender.volume = 0.6;
-  }
+  // Sempre criar novas instâncias para evitar cache
+  audioMascaras = new Audio('./assets/audio/mascara.mp3?v=' + Date.now());
+  audioMascaras.volume = 0.6;
+  
+  audioTranscender = new Audio('./assets/audio/transcender.mp3?v=' + Date.now());
+  audioTranscender.volume = 0.6;
 }
 
 // Som para adicionar/remover arte
@@ -63,7 +61,7 @@ const SIMBOLOS = [
     id: 'insurgencia',
     nome: 'INSURGÊNCIA',
     imagem: 'assets/images/membro-sombrio.webp',
-    descricao: 'A faculdade para manipulação de si como deve ser a reflexão do símbolo.',
+    descricao: 'A rebeldia contra a própria realidade, sem mais correntes.',
     titulo: 'INSURGÊNCIA',
     espacos: [
       { id: 1, label: 'ESPAÇO 1', posicao: 'esquerda' },
@@ -111,7 +109,172 @@ const ARTES = [
   }
 ];
 
+const ARTES_BLOQUEADAS = [
+  {
+    id: 'arte-eclipse',
+    nome: 'Eclipse',
+    descricao: 'Uma arte sombria que eclipsa a luz da realidade, permitindo manipular as trevas paranormais do terror booo booo fantasmass.',
+    imagem: 'assets/images/placeholder.png',
+    senha: 'ECLIPSE',
+    desbloqueada: false
+  }
+];
+
 let simboloAtual = SIMBOLOS[0];
+let senhaAtual = [];
+
+// ============================================
+// SISTEMA DE CRIAÇÃO DE ARTE
+// ============================================
+
+const ALFABETO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+function abrirCriarArte() {
+  const modal = document.getElementById('criarArteModal');
+  if (!modal) return;
+  
+  renderizarCirculoSimbolos();
+  limparSenha();
+  
+  modal.classList.add('active');
+  modal.addEventListener('click', fecharModalExterno);
+}
+
+function renderizarCirculoSimbolos() {
+  const circulo = document.getElementById('circuloSimbolos');
+  if (!circulo) return;
+  
+  // Limpar apenas os símbolos, preservando as linhas
+  const simbolosExistentes = circulo.querySelectorAll('.simbolo-letra');
+  simbolosExistentes.forEach(s => s.remove());
+  
+  const totalSimbolos = ALFABETO.length;
+  const raio = 180;
+  
+  ALFABETO.forEach((letra, index) => {
+    const angulo = (index / totalSimbolos) * 2 * Math.PI - Math.PI / 2;
+    const x = raio * Math.cos(angulo);
+    const y = raio * Math.sin(angulo);
+    
+    const simbolo = document.createElement('div');
+    simbolo.className = 'simbolo-letra';
+    simbolo.textContent = letra;
+    simbolo.style.left = `calc(50% + ${x}px)`;
+    simbolo.style.top = `calc(50% + ${y}px)`;
+    simbolo.onclick = () => adicionarLetra(letra);
+    
+    circulo.appendChild(simbolo);
+  });
+}
+
+function adicionarLetra(letra) {
+  if (senhaAtual.length >= 20) return;
+  
+  tocarSomAdicionar();
+  senhaAtual.push(letra);
+  atualizarTextoSenha();
+}
+
+function atualizarTextoSenha() {
+  const textoSenha = document.getElementById('textoSenha');
+  if (!textoSenha) return;
+  
+  textoSenha.innerHTML = '';
+  
+  senhaAtual.forEach(letra => {
+    const span = document.createElement('span');
+    span.className = 'simbolo-digitado';
+    span.textContent = letra;
+    textoSenha.appendChild(span);
+  });
+}
+
+function limparSenha() {
+  senhaAtual = [];
+  atualizarTextoSenha();
+}
+
+function verificarSenha() {
+  const senhaDigitada = senhaAtual.join('');
+  
+  for (let arte of ARTES_BLOQUEADAS) {
+    if (senhaDigitada === arte.senha && !arte.desbloqueada) {
+      arte.desbloqueada = true;
+      ARTES.push(arte);
+      
+      tocarSomSimbolo();
+      fecharModal();
+      
+      // Mostrar notificação de sucesso
+      mostrarNotificacaoArte(`✨ Arte "${arte.nome}" desbloqueada!`);
+      
+      salvarEstado();
+      return;
+    } else if (senhaDigitada === arte.senha && arte.desbloqueada) {
+      mostrarNotificacaoArte(`⚠️ Arte "${arte.nome}" já foi desbloqueada!`);
+      return;
+    }
+  }
+  
+  tocarSomRemover();
+  mostrarNotificacaoArte('❌ Símbolos incorretos. Tente novamente.');
+  limparSenha();
+}
+
+function mostrarNotificacaoArte(mensagem) {
+  const notif = document.createElement('div');
+  notif.textContent = mensagem;
+  notif.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #8b0000 0%, #1a0000 100%);
+    color: white;
+    padding: 30px 50px;
+    border: 2px solid #ff0000;
+    font-size: 1.2rem;
+    font-weight: 600;
+    box-shadow: 0 0 40px rgba(255, 0, 0, 0.8);
+    z-index: 10001;
+    animation: fadeInScale 0.3s ease;
+    font-family: 'Hebrew', serif;
+    text-align: center;
+  `;
+  
+  document.body.appendChild(notif);
+  
+  setTimeout(() => {
+    notif.style.animation = 'fadeOutScale 0.3s ease';
+    setTimeout(() => notif.remove(), 300);
+  }, 3000);
+}
+
+const styleAnimations = document.createElement('style');
+styleAnimations.textContent = `
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.8);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+  
+  @keyframes fadeOutScale {
+    from {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.8);
+    }
+  }
+`;
+document.head.appendChild(styleAnimations);
 
 // ============================================
 // INICIALIZAÇÃO
@@ -172,11 +335,23 @@ function carregarEstadoLocal() {
   try {
     const savedArtes = localStorage.getItem('ordem.artes');
     const savedSimbolo = localStorage.getItem('ordem.simbolo');
+    const savedDesbloqueadas = localStorage.getItem('ordem.desbloqueadas');
     
     if (savedArtes) Object.assign(estadoArtes, JSON.parse(savedArtes));
     if (savedSimbolo) {
       const simboloSalvo = SIMBOLOS.find(s => s.id === savedSimbolo);
       if (simboloSalvo) simboloAtual = simboloSalvo;
+    }
+    if (savedDesbloqueadas) {
+      const desbloqueadas = JSON.parse(savedDesbloqueadas);
+      ARTES_BLOQUEADAS.forEach(arte => {
+        if (desbloqueadas.includes(arte.id)) {
+          arte.desbloqueada = true;
+          if (!ARTES.find(a => a.id === arte.id)) {
+            ARTES.push(arte);
+          }
+        }
+      });
     }
   } catch (erro) {
     console.warn("⚠️ Erro ao carregar estado local:", erro);
@@ -185,15 +360,21 @@ function carregarEstadoLocal() {
 
 async function salvarEstado() {
   try {
+    const artesDesbloqueadas = ARTES_BLOQUEADAS
+      .filter(a => a.desbloqueada)
+      .map(a => a.id);
+    
     if (typeof OBR !== 'undefined' && OBR.player) {
       await OBR.player.setMetadata({
         'ordem.artes': estadoArtes,
-        'ordem.simbolo': simboloAtual.id
+        'ordem.simbolo': simboloAtual.id,
+        'ordem.desbloqueadas': artesDesbloqueadas
       });
       console.log("💾 Estado salvo no Owlbear!");
     } else {
       localStorage.setItem('ordem.artes', JSON.stringify(estadoArtes));
       localStorage.setItem('ordem.simbolo', simboloAtual.id);
+      localStorage.setItem('ordem.desbloqueadas', JSON.stringify(artesDesbloqueadas));
       console.log("💾 Estado salvo localmente!");
     }
   } catch (erro) {
