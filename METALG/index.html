@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#000000" />
+  <title>VYPER // AGENT SYSTEM</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ROTATE PROMPT -->
+<div id="rotate-prompt">
+  <div class="rotate-inner">
+    <div class="rotate-icon">&#8635;</div>
+    <div class="rotate-text">GIRE O DISPOSITIVO</div>
+    <div class="rotate-sub">Para acessar o sistema</div>
+  </div>
+</div>
+
+<!-- BOOT -->
+<div id="screen-boot" class="screen active">
+  <div class="scanlines"></div>
+  <div class="boot-wrap">
+    <img src="icones/logo.png" class="boot-logo" onerror="this.style.display='none'" />
+    <div class="boot-title">VYPER PESSOAL AGENT SYSTEM</div>
+    <div class="boot-lines" id="boot-lines"></div>
+    <div class="boot-bar-wrap"><div class="boot-bar" id="boot-bar"></div></div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="screen-login" class="screen hidden">
+  <div class="scanlines"></div>
+  <div class="login-wrap">
+    <div class="login-head">
+      <img src="icones/logo.png" class="login-logo" onerror="this.style.display='none'" />
+      <div>
+        <div class="login-title">VYPER PESSOAL</div>
+        <div class="login-sub">AGENT SYSTEM // v2.4</div>
+      </div>
+    </div>
+    <div class="login-div"></div>
+    <div class="role-grid">
+      <button class="role-btn" id="btn-player" onclick="App.selectRole('player')">
+        <span class="role-ico">&#9672;</span>
+        <span class="role-lbl">OPERADOR</span>
+        <span class="role-desc">Acesso a ficha pessoal</span>
+      </button>
+      <button class="role-btn" id="btn-gm" onclick="App.selectRole('gm')">
+        <span class="role-ico">&#9670;</span>
+        <span class="role-lbl">MESTRE</span>
+        <span class="role-desc">Controle central</span>
+      </button>
+    </div>
+    <div id="login-player" class="lform hidden">
+      <label class="lform-label">&#9658; CODINOME DO OPERADOR</label>
+      <input class="lform-input" id="input-codename" type="text" maxlength="20" placeholder="INSIRA SEU CODINOME" autocomplete="off" spellcheck="false" />
+      <button class="lform-btn" onclick="App.loginPlayer()">[ ACESSAR FICHA ]</button>
+      <div class="lform-err hidden" id="login-error-player"></div>
+    </div>
+    <div id="login-gm" class="lform hidden">
+      <label class="lform-label">&#9658; CODIGO DE ACESSO</label>
+      <input class="lform-input" id="input-gm-pass" type="password" maxlength="30" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="off" />
+      <button class="lform-btn" onclick="App.loginGM()">[ ACESSO CENTRAL ]</button>
+      <div class="lform-err hidden" id="login-error-gm"></div>
+    </div>
+    <div class="login-footer">ACESSO NAO AUTORIZADO SERA REGISTRADO E PUNIDO</div>
+  </div>
+</div>
+
+<!-- SHEET -->
+<div id="screen-sheet" class="screen hidden">
+  <div class="scanlines"></div>
+
+  <!-- HEADER -->
+  <div class="s-header">
+    <img src="icones/logo.png" class="s-header-logo" onerror="this.style.display='none'" />
+    <span class="s-header-title">Vyper Pessoal Agent System</span>
+    <button class="s-header-back" onclick="App.logout()">&#9167;</button>
+  </div>
+
+  <!-- BODY: 3 columns -->
+  <div class="s-body">
+
+    <!-- LEFT -->
+    <div class="s-left">
+      <div class="photo-frame" id="photo-frame" onclick="App.editPhoto()">
+        <div class="photo-inner">
+          <img id="agent-photo" src="" alt="" />
+          <div class="photo-ph">
+            <span>SEM FOTO</span>
+            <span class="photo-hint">toque para alterar</span>
+          </div>
+        </div>
+        <div class="photo-notch"></div>
+      </div>
+      <input type="file" id="photo-input" accept="image/*" class="hidden" onchange="App.handlePhotoUpload(event)" />
+
+      <div class="reg-wrap">
+        <div class="reg-title">&#9658; REGISTRO</div>
+
+        <div class="reg-field">
+          <div class="reg-key-row" onclick="App.toggleEdit('nome')">
+            <span class="reg-tri">&#9660;</span><span class="reg-key">NOME</span>
+          </div>
+          <div class="reg-val-row">
+            <span class="reg-tree">&#x2514;&#x2500;&#x2500;</span>
+            <span class="reg-val" id="display-nome" onclick="App.toggleEdit('nome')">&#8212;</span>
+            <input class="reg-input hidden" id="edit-nome" type="text" maxlength="20" placeholder="NOME"
+              onblur="App.saveField('nome')" onkeydown="if(event.key==='Enter')App.saveField('nome')" />
+          </div>
+        </div>
+
+        <div class="reg-field">
+          <div class="reg-key-row" onclick="App.toggleEdit('origem')">
+            <span class="reg-tri">&#9660;</span><span class="reg-key">ORIGEM</span>
+          </div>
+          <div class="reg-val-row">
+            <span class="reg-tree">&#x2514;&#x2500;&#x2500;</span>
+            <span class="reg-val" id="display-origem" onclick="App.toggleEdit('origem')">[CONFIDENCIAL]</span>
+            <input class="reg-input hidden" id="edit-origem" type="text" maxlength="30" placeholder="[CONFIDENCIAL]"
+              onblur="App.saveField('origem')" onkeydown="if(event.key==='Enter')App.saveField('origem')" />
+          </div>
+        </div>
+
+        <div class="reg-field reg-indent">
+          <div class="reg-key-row">
+            <span class="reg-tri">&#9660;</span><span class="reg-key">STATUS</span>
+          </div>
+          <div class="reg-val-row">
+            <span class="reg-tree">&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;</span>
+            <span class="reg-val" id="display-status-ativo">ATIVO</span>
+          </div>
+        </div>
+      </div>
+    </div><!-- /s-left -->
+
+    <!-- CENTER -->
+    <div class="s-center">
+
+      <!-- atributos box -->
+      <div class="attr-box">
+        <div class="attr-box-header">&#9658; ATRIBUTOS</div>
+        <div class="attr-grid">
+
+          <div class="attr-card" onclick="App.cycleAttr('fisico')">
+            <div class="attr-icon-area"><img src="icones/1.png" class="attr-img" /></div>
+            <div class="attr-foot">
+              <span class="attr-grade" id="grade-fisico">&#8212;</span>
+            </div>
+            <div class="attr-cut"></div>
+          </div>
+
+          <div class="attr-card" onclick="App.cycleAttr('intelecto')">
+            <div class="attr-icon-area"><img src="icones/2.png" class="attr-img" /></div>
+            <div class="attr-foot">
+              <span class="attr-grade" id="grade-intelecto">&#8212;</span>
+            </div>
+            <div class="attr-cut"></div>
+          </div>
+
+          <div class="attr-card" onclick="App.cycleAttr('reflexos')">
+            <div class="attr-icon-area"><img src="icones/3.png" class="attr-img" /></div>
+            <div class="attr-foot">
+              <span class="attr-grade" id="grade-reflexos">&#8212;</span>
+            </div>
+            <div class="attr-cut"></div>
+          </div>
+
+          <div class="attr-card attr-wide" onclick="App.cycleAttr('resiliencia')">
+            <div class="attr-icon-area"><img src="icones/4.png" class="attr-img" /></div>
+            <div class="attr-foot">
+              <span class="attr-grade" id="grade-resiliencia">&#8212;</span>
+              <img src="icones/4.png" class="attr-foot-ico" />
+            </div>
+            <div class="attr-cut"></div>
+          </div>
+
+          <div class="attr-card attr-wide" onclick="App.cycleAttr('presenca')">
+            <div class="attr-icon-area"><img src="icones/5.png" class="attr-img" /></div>
+            <div class="attr-foot">
+              <span class="attr-grade" id="grade-presenca">&#8212;</span>
+              <img src="icones/5.png" class="attr-foot-ico" />
+            </div>
+            <div class="attr-cut"></div>
+          </div>
+
+        </div>
+      </div><!-- /attr-box -->
+
+      <!-- integrity -->
+      <div class="integ-wrap">
+        <div class="integrity-bars" id="integrity-bars">
+          <div class="integrity-bar active" data-index="0" onclick="App.toggleIntegrity(0)"></div>
+          <div class="integrity-bar active" data-index="1" onclick="App.toggleIntegrity(1)"></div>
+          <div class="integrity-bar active" data-index="2" onclick="App.toggleIntegrity(2)"></div>
+          <div class="integrity-bar active" data-index="3" onclick="App.toggleIntegrity(3)"></div>
+          <div class="integrity-bar active" data-index="4" onclick="App.toggleIntegrity(4)"></div>
+        </div>
+        <span class="integ-count hidden" id="integrity-count">5/5</span>
+      </div>
+
+      <!-- security -->
+      <div class="sec-wrap">
+        <div id="security-display" class="sec-badge seguro">
+          <span id="security-text">SEGURO</span>
+        </div>
+      </div>
+
+    </div><!-- /s-center -->
+
+    <!-- RIGHT: NAV -->
+    <div class="s-nav">
+      <div class="nav-tab" id="nav-mald" onclick="App.switchTab('mald')">
+        <div class="nav-ico-box"><img src="icones/6.png" class="nav-ico" /></div>
+        <span class="nav-lbl">/MALD</span>
+      </div>
+      <div class="nav-tab" id="nav-radio" onclick="App.switchTab('radio')">
+        <div class="nav-ico-box"><img src="icones/7.png" class="nav-ico" /></div>
+        <span class="nav-lbl">/RADIO</span>
+      </div>
+      <div class="nav-tab" id="nav-docs" onclick="App.switchTab('docs')">
+        <div class="nav-ico-box"><img src="icones/8.png" class="nav-ico" /></div>
+        <span class="nav-lbl">/DOCS</span>
+      </div>
+      <div class="nav-tab" id="nav-fitas" onclick="App.switchTab('fitas')">
+        <div class="nav-ico-box"><img src="icones/9.png" class="nav-ico" /></div>
+        <span class="nav-lbl">/FITAS</span>
+      </div>
+      <div class="nav-tab" id="nav-equip" onclick="App.switchTab('equip')">
+        <div class="nav-ico-box nav-red"><img src="icones/10.png" class="nav-ico" /></div>
+        <span class="nav-lbl">/EQUIP</span>
+      </div>
+    </div><!-- /s-nav -->
+
+  </div><!-- /s-body -->
+
+  <!-- TAB OVERLAY -->
+  <div id="tab-content" class="tab-overlay hidden">
+    <button class="tab-back" onclick="App.switchTab('main')">&#9668; VOLTAR</button>
+    <div id="tab-panel-mald"  class="tab-panel hidden"><div class="cs"><span class="cs-ico">&#9672;</span><span class="cs-title">MALDICOES</span><span class="cs-sub">[ EM DESENVOLVIMENTO ]</span></div></div>
+    <div id="tab-panel-radio" class="tab-panel hidden"><div class="cs"><span class="cs-ico">&#9672;</span><span class="cs-title">FREQUENCIAS DE RADIO</span><span class="cs-sub">[ EM DESENVOLVIMENTO ]</span></div></div>
+    <div id="tab-panel-docs"  class="tab-panel hidden"><div class="cs"><span class="cs-ico">&#9672;</span><span class="cs-title">DOCUMENTOS</span><span class="cs-sub">[ EM DESENVOLVIMENTO ]</span></div></div>
+    <div id="tab-panel-fitas" class="tab-panel hidden">
+      <div class="fitas-wrap">
+
+        <!-- LEFT: tape list tree -->
+        <div class="fitas-list-col">
+          <div class="fitas-heading">&#9658; FITAS</div>
+          <div id="fitas-tree" class="fitas-tree">
+            <div class="fitas-empty">Nenhuma fita alocada.</div>
+          </div>
+        </div>
+
+        <!-- RIGHT: cassette player -->
+        <div class="fitas-player-col">
+          <div class="cassette-wrap">
+            <img src="icones/iconefita.png" class="cassette-img" />
+          </div>
+
+          <div class="fitas-progress-wrap">
+            <div class="fitas-prog-bar" id="fitas-prog-bar" onclick="App.fitaSeek(event)">
+              <div class="fitas-prog-fill" id="fitas-prog-fill"></div>
+              <div class="fitas-prog-knob" id="fitas-prog-knob"></div>
+            </div>
+            <div class="fitas-time-row">
+              <span id="fitas-time-cur">0:00</span>
+              <span id="fitas-time-dur">0:00</span>
+            </div>
+          </div>
+
+          <div class="fitas-controls">
+            <button class="fita-btn" id="fitas-btn-loop" onclick="App.fitaToggleLoop()" title="Loop">&#10227;</button>
+            <button class="fita-btn fita-btn-main" id="fitas-btn-play" onclick="App.fitaTogglePlay()">&#9654;</button>
+            <button class="fita-btn" onclick="App.fitaSkip(15)" title="+15s">&#9654;&#9654; +15s</button>
+          </div>
+
+          <div class="fitas-now-playing" id="fitas-now-playing">&#9658; NENHUMA FITA SELECIONADA</div>
+        </div>
+
+      </div>
+    </div>
+    <div id="tab-panel-equip" class="tab-panel hidden"><div class="cs"><span class="cs-ico">&#9672;</span><span class="cs-title">EQUIPAMENTOS</span><span class="cs-sub">[ EM DESENVOLVIMENTO ]</span></div></div>
+  </div>
+
+</div><!-- /screen-sheet -->
+
+<!-- GM -->
+<div id="screen-gm" class="screen hidden">
+  <div class="scanlines"></div>
+  <div class="s-header">
+    <img src="icones/logo.png" class="s-header-logo" onerror="this.style.display='none'" />
+    <span class="s-header-title gm-title-color">CONTROLE CENTRAL // MESTRE</span>
+    <button class="s-header-back" onclick="App.logout()">&#9167;</button>
+  </div>
+  <div class="gm-body">
+    <div class="gm-sec-title">&#9658; OPERADORES REGISTRADOS</div>
+    <div id="gm-agent-list" class="gm-list">
+      <div class="gm-empty">Nenhum operador registrado.</div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast hidden"></div>
+
+<!-- GRADE MODAL -->
+<div id="grade-modal" class="modal-bg hidden" onclick="App.closeGradeModal(event)">
+  <div class="modal-panel">
+    <div class="modal-title" id="grade-modal-title">SELECIONAR GRAU</div>
+    <div class="modal-opts" id="grade-modal-options"></div>
+  </div>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>

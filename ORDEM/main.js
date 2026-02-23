@@ -222,31 +222,111 @@ function verificarSenha() {
 }
 
 function mostrarNotificacaoArte(mensagem) {
-  const notif = document.createElement('div');
-  notif.textContent = mensagem;
-  notif.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: linear-gradient(135deg, #8b0000 0%, #1a0000 100%);
-    color: white;
-    padding: 30px 50px;
-    border: 2px solid #ff0000;
-    font-size: 1.2rem;
-    font-weight: 600;
-    box-shadow: 0 0 40px rgba(255, 0, 0, 0.8);
-    z-index: 10001;
-    animation: fadeInScale 0.3s ease;
-    font-family: 'Hebrew', serif;
-    text-align: center;
+  const isDesbloqueio = mensagem.includes('desbloqueada');
+  
+  if (isDesbloqueio) {
+    mostrarTelaDesbloqueio(mensagem);
+  } else {
+    mostrarNotificacaoSimples(mensagem);
+  }
+}
+
+function mostrarTelaDesbloqueio(mensagem) {
+  // Criar overlay de tela cheia
+  const overlay = document.createElement('div');
+  overlay.className = 'desbloqueio-overlay';
+  
+  // Extrair nome da arte
+  const nomeArte = mensagem.match(/"(.+?)"/)?.[1] || 'Arte';
+  
+  overlay.innerHTML = `
+    <div class="desbloqueio-container">
+      <div class="desbloqueio-raios"></div>
+      <div class="desbloqueio-circulo-externo"></div>
+      <div class="desbloqueio-circulo-medio"></div>
+      <div class="desbloqueio-circulo-interno"></div>
+      <div class="desbloqueio-simbolo">🔓</div>
+      <div class="desbloqueio-titulo">ARTE DESBLOQUEADA</div>
+      <div class="desbloqueio-nome">${nomeArte}</div>
+      <div class="desbloqueio-linha"></div>
+    </div>
   `;
   
-  document.body.appendChild(notif);
+  document.body.appendChild(overlay);
   
+  // Tocar som adicional
+  setTimeout(() => tocarSomSimbolo(), 500);
+  
+  // Remover após animação
   setTimeout(() => {
-    notif.style.animation = 'fadeOutScale 0.3s ease';
-    setTimeout(() => notif.remove(), 300);
+    overlay.classList.add('desbloqueio-saindo');
+    setTimeout(() => overlay.remove(), 1000);
+  }, 4000);
+}
+
+function mostrarNotificacaoSimples(mensagem) {
+  const isErro = mensagem.includes('incorretos') || mensagem.includes('❌');
+  
+  if (isErro) {
+    mostrarTelaErro(mensagem);
+  } else {
+    // Notificação simples para outros casos
+    const notif = document.createElement('div');
+    notif.textContent = mensagem;
+    notif.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #8b0000 0%, #1a0000 100%);
+      color: white;
+      padding: 30px 50px;
+      border: 2px solid #ff0000;
+      font-size: 1.2rem;
+      font-weight: 600;
+      box-shadow: 0 0 40px rgba(255, 0, 0, 0.8);
+      z-index: 10001;
+      animation: fadeInScale 0.3s ease;
+      font-family: 'Hebrew', serif;
+      text-align: center;
+    `;
+    
+    document.body.appendChild(notif);
+    
+    setTimeout(() => {
+      notif.style.animation = 'fadeOutScale 0.3s ease';
+      setTimeout(() => notif.remove(), 300);
+    }, 3000);
+  }
+}
+
+function mostrarTelaErro(mensagem) {
+  // Criar overlay de tela cheia
+  const overlay = document.createElement('div');
+  overlay.className = 'erro-overlay';
+  
+  overlay.innerHTML = `
+    <div class="erro-container">
+      <div class="erro-chamas"></div>
+      <div class="erro-circulo-rachado"></div>
+      <div class="erro-x-externo"></div>
+      <div class="erro-x-interno"></div>
+      <div class="erro-simbolo">❌</div>
+      <div class="erro-titulo">RITUAL FALHOU</div>
+      <div class="erro-mensagem">SÍMBOLOS INCORRETOS</div>
+      <div class="erro-linha-quebrada"></div>
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+  
+  // Tocar som de erro
+  setTimeout(() => tocarSomRemover(), 200);
+  
+  // Remover após animação
+  setTimeout(() => {
+    overlay.classList.add('erro-saindo');
+    setTimeout(() => overlay.remove(), 800);
   }, 3000);
 }
 
@@ -654,7 +734,45 @@ function selecionarArte(arteId) {
   atualizarInterface();
   fecharModal();
   
+  // Verificar se todos os espaços foram preenchidos
+  verificarEspacosCompletos();
+  
   console.log(`✅ Arte ${arte.nome} adicionada ao Espaço ${espacoAtual}`);
+}
+
+function verificarEspacosCompletos() {
+  const todosPreenchidos = simboloAtual.espacos.every(espaco => estadoArtes[espaco.id] !== null);
+  
+  if (todosPreenchidos) {
+    ativarEfeitoCompleto();
+  }
+}
+
+function ativarEfeitoCompleto() {
+  // Tocar som transcender
+  tocarSomSimbolo();
+  
+  // Adicionar efeito visual vibrante ao símbolo
+  const simboloImg = document.querySelector('.symbol-main');
+  if (simboloImg) {
+    simboloImg.classList.add('efeito-completo');
+    
+    // Remover efeito após animação
+    setTimeout(() => {
+      simboloImg.classList.remove('efeito-completo');
+    }, 4000);
+  }
+  
+  // Adicionar aura de energia ao redor do símbolo
+  const symbolSection = document.getElementById('symbolSection');
+  if (symbolSection) {
+    symbolSection.classList.add('ritual-ativo');
+    setTimeout(() => {
+      symbolSection.classList.remove('ritual-ativo');
+    }, 4000);
+  }
+  
+  console.log("🔥 TODOS OS ESPAÇOS PREENCHIDOS! RITUAL COMPLETO!");
 }
 
 function removerArte() {
