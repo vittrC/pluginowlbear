@@ -355,7 +355,14 @@
         </div>
       </div>
     </div>
-    <div id="tab-panel-docs"  class="tab-panel hidden"><div class="cs"><span class="cs-ico">&#9672;</span><span class="cs-title">DOCUMENTOS</span><span class="cs-sub">[ EM DESENVOLVIMENTO ]</span></div></div>
+    <div id="tab-panel-docs" class="tab-panel docs-tab-panel hidden">
+      <div class="docs-wrap">
+        <div class="docs-heading">&#9658; DOCUMENTOS</div>
+        <div id="docs-list" class="docs-list">
+          <div class="docs-empty">Nenhum documento disponível.</div>
+        </div>
+      </div>
+    </div>
     <div id="tab-panel-fitas" class="tab-panel hidden">
       <div class="fitas-wrap">
 
@@ -396,6 +403,26 @@
       </div>
     </div>
     <div id="tab-panel-equip" class="tab-panel hidden"><div class="cs"><span class="cs-ico">&#9672;</span><span class="cs-title">EQUIPAMENTOS</span><span class="cs-sub">[ EM DESENVOLVIMENTO ]</span></div></div>
+  </div>
+
+  <!-- DOC VIEWER -->
+  <div id="doc-viewer" class="doc-viewer-overlay hidden">
+    <div class="doc-viewer-header">
+      <button class="doc-viewer-close" onclick="App.closeDocViewer()">&#9668; FECHAR</button>
+      <span class="doc-viewer-title" id="doc-viewer-title">DOCUMENTO</span>
+      <button class="doc-viewer-uv-btn" id="doc-uv-btn" onclick="App.toggleDocUV()">&#9675; UV</button>
+    </div>
+    <div class="doc-viewer-body" id="doc-viewer-body">
+      <div class="doc-uv-light hidden" id="doc-uv-light"></div>
+      <div class="doc-zoom-container" id="doc-zoom-container">
+        <img class="doc-image" id="doc-image" src="" alt="" draggable="false" />
+      </div>
+    </div>
+    <div class="doc-annotation-bar">
+      <div class="doc-ann-label">&#9658; ANOTAÇÕES</div>
+      <textarea class="doc-ann-input" id="doc-ann-input" placeholder="Suas anotações sobre este documento..." rows="3"></textarea>
+      <button class="doc-ann-save" onclick="App.saveDocAnnotation()">SALVAR</button>
+    </div>
   </div>
 
 </div><!-- /screen-sheet -->
@@ -449,6 +476,8 @@
         <button class="gm-fita-upload-btn" onclick="App.gmAddMaldicao()" style="margin-left:auto">ADICIONAR</button>
       </div>
     </div>
+    <div class="gm-sec-title">&#9658; DOCUMENTOS</div>
+    <div id="gm-docs-list" class="gm-docs-list"><div class="gm-fitas-empty">Carregando documentos...</div></div>
     <div class="gm-sec-title">&#9658; OPERADORES REGISTRADOS</div>
     <div id="gm-agent-list" class="gm-list">
       <div class="gm-empty">Nenhum operador registrado.</div>

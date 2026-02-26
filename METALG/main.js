@@ -63,6 +63,18 @@ const ATTR_LABELS = {
   reflexos: "REFLEXOS", resiliencia: "RESILIÊNCIA", presenca: "PRESENÇA"
 };
 
+// ──────────────────────────────────────────────────────────
+//  DOCUMENTS CONFIG — adicione novos documentos aqui
+// ──────────────────────────────────────────────────────────
+const DOCUMENTS = [
+  {
+    id:      'doc_placeholder',
+    title:   'DOCUMENTO #01',
+    image:   'documentos/placeholder.jpg',
+    uvImage: null   // null = usa filtro CSS. coloque 'documentos/placeholder_uv.jpg' para versão real
+  }
+];
+
 const DEFAULT_CHAR = () => ({
   codename:   "",
   nome:       "",
@@ -86,6 +98,8 @@ const DEFAULT_CHAR = () => ({
 // ──────────────────────────────────────────────────────────
 let db = null;
 let firebaseOk = false;
+let docsReleasedState = [];   // IDs de documentos liberados pelo GM
+let docsUnsub = null;         // listener firestore de docs
 
 try {
   const app = initializeApp(firebaseConfig);
@@ -279,7 +293,10 @@ async function loginPlayer() {
   renderSheet(charData);
   showScreen('screen-sheet');
 
-  // Realtime listener
+  // Load docs released state then render
+  await loadDocsState();
+
+  // Realtime listener — character
   if (firebaseOk) {
     if (state.unsubscribe) state.unsubscribe();
     state.unsubscribe = onSnapshot(doc(db, 'characters', codename), (snap) => {
@@ -302,6 +319,13 @@ async function loginPlayer() {
       if (state.currentTab === 'fitas') renderFitasTab();
       // Refresh radio tab if open
       if (state.currentTab === 'radio') renderRadioTab();
+    });
+
+    // Realtime listener — docs released state
+    if (docsUnsub) docsUnsub();
+    docsUnsub = onSnapshot(doc(db, 'gameState', 'docs'), (snap) => {
+      docsReleasedState = snap.exists() ? (snap.data().released || []) : [];
+      if (state.currentTab === 'docs') renderDocsTab();
     });
   }
 }
@@ -329,6 +353,8 @@ async function loginGM() {
 function logout() {
   if (state.unsubscribe)    state.unsubscribe();
   if (state.gmCharsUnsub)   state.gmCharsUnsub();
+  if (docsUnsub)            { docsUnsub(); docsUnsub = null; }
+  docsReleasedState = [];
   state = {
     role: null, codename: null, character: null,
     unsubscribe: null, currentTab: 'main',
@@ -609,6 +635,7 @@ function switchTab(tab) {
     if (tab === 'fitas') renderFitasTab();
     if (tab === 'radio') renderRadioTab();
     if (tab === 'mald')  { loadMaldicoes().then(renderMaldicoesTab); }
+    if (tab === 'docs')  renderDocsTab();
   }
 }
 
@@ -1117,6 +1144,7 @@ function loadGMDashboard() {
   listEl.innerHTML = '<div class="gm-empty">Carregando operadores...</div>';
   loadNpcPresets();
   renderGMMaldicoes();
+  loadDocsState().then(() => renderGMDocs());
 
   if (firebaseOk) {
     if (state.gmCharsUnsub) state.gmCharsUnsub();
@@ -1522,6 +1550,281 @@ async function gmRemoveMaldicao(id) {
   renderGMMaldicoes();
 }
 
+// ══════════════════════════════════════════════════════════
+//  DOCUMENTS SYSTEM
+// ══════════════════════════════════════════════════════════
+
+// ── Docs state (released list) ───────────────────────────
+async function loadDocsState() {
+  if (firebaseOk) {
+    try {
+      const ref  = doc(db, 'gameState', 'docs');
+      const snap = await getDoc(ref);
+      docsReleasedState = snap.exists() ? (snap.data().released || []) : [];
+    } catch (e) {
+      console.error('loadDocsState:', e);
+      docsReleasedState = [];
+    }
+  } else {
+    const raw = localStorage.getItem('vyper_docs_released');
+    docsReleasedState = raw ? JSON.parse(raw) : [];
+  }
+}
+
+async function saveDocsState() {
+  if (firebaseOk) {
+    try {
+      await setDoc(doc(db, 'gameState', 'docs'), { released: docsReleasedState });
+    } catch (e) {
+      console.error('saveDocsState:', e);
+      showToast('Erro ao salvar estado dos documentos.', 'error');
+    }
+  } else {
+    localStorage.setItem('vyper_docs_released', JSON.stringify(docsReleasedState));
+  }
+}
+
+// ── Player Docs Tab ───────────────────────────────────────
+function renderDocsTab() {
+  const listEl = $('docs-list');
+  if (!listEl) return;
+
+  if (DOCUMENTS.length === 0) {
+    listEl.innerHTML = '<div class="docs-empty">Nenhum documento cadastrado.</div>';
+    return;
+  }
+
+  listEl.innerHTML = DOCUMENTS.map(d => {
+    const released = docsReleasedState.includes(d.id);
+    const ann      = ((state.character?.docAnnotations || {})[d.id] || '');
+    const annPrev  = ann.length > 55 ? ann.substring(0, 55) + '…' : ann;
+
+    return `<div class="doc-card ${released ? 'doc-released' : 'doc-locked'}" ${released ? `onclick="App.openDocViewer('${d.id}')"` : ''}>
+      <div class="doc-card-thumb">
+        ${released
+          ? `<img class="doc-thumb-img" src="${d.image}" alt="" />`
+          : `<div class="doc-thumb-locked">&#128274;</div>`}
+      </div>
+      <div class="doc-card-info">
+        <div class="doc-card-title">${escHtml(d.title)}</div>
+        <div class="doc-card-status ${released ? 'doc-status-ok' : 'doc-status-lock'}">
+          ${released ? '&#9670; LIBERADO' : '&#8212; ACESSO RESTRITO'}
+        </div>
+        ${annPrev ? `<div class="doc-card-ann-preview">${escHtml(annPrev)}</div>` : ''}
+      </div>
+      ${released ? `<div class="doc-card-arrow">&#9658;</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── Doc Viewer ────────────────────────────────────────────
+const docViewerState = {
+  docId: null, uvMode: false,
+  scale: 1, minScale: 1, maxScale: 5,
+  panX: 0, panY: 0,
+  isDragging: false, lastX: 0, lastY: 0,
+  lastDist: 0
+};
+
+function openDocViewer(docId) {
+  const docDef = DOCUMENTS.find(d => d.id === docId);
+  if (!docDef) return;
+
+  docViewerState.docId  = docId;
+  docViewerState.uvMode = false;
+  docViewerState.scale  = 1;
+  docViewerState.panX   = 0;
+  docViewerState.panY   = 0;
+
+  const img = $('doc-image');
+  if (img) { img.src = docDef.image; img.style.filter = ''; }
+
+  const titleEl = $('doc-viewer-title');
+  if (titleEl) titleEl.textContent = docDef.title;
+
+  const uvBtn  = $('doc-uv-btn');
+  const uvLight = $('doc-uv-light');
+  if (uvBtn)   uvBtn.classList.remove('active');
+  if (uvLight) uvLight.classList.add('hidden');
+
+  const annInput = $('doc-ann-input');
+  if (annInput) annInput.value = (state.character?.docAnnotations || {})[docId] || '';
+
+  applyDocTransform();
+  $('doc-viewer').classList.remove('hidden');
+}
+
+function closeDocViewer() {
+  $('doc-viewer').classList.add('hidden');
+  docViewerState.docId = null;
+  docViewerState.scale = 1;
+  docViewerState.panX  = 0;
+  docViewerState.panY  = 0;
+}
+
+function toggleDocUV() {
+  docViewerState.uvMode = !docViewerState.uvMode;
+  const uvBtn   = $('doc-uv-btn');
+  const uvLight = $('doc-uv-light');
+  const img     = $('doc-image');
+  const docDef  = DOCUMENTS.find(d => d.id === docViewerState.docId);
+
+  if (docViewerState.uvMode) {
+    if (docDef?.uvImage) {
+      img.src          = docDef.uvImage;
+      img.style.filter = '';
+    } else {
+      // Simulate UV with CSS: white→UV-fluorescent colours
+      img.style.filter = 'invert(1) hue-rotate(200deg) saturate(5) brightness(1.4) contrast(1.5)';
+    }
+    if (uvBtn)   uvBtn.classList.add('active');
+    if (uvLight) uvLight.classList.remove('hidden');
+  } else {
+    if (docDef) img.src = docDef.image;
+    img.style.filter = '';
+    if (uvBtn)   uvBtn.classList.remove('active');
+    if (uvLight) uvLight.classList.add('hidden');
+  }
+}
+
+async function saveDocAnnotation() {
+  const ann    = ($('doc-ann-input')?.value || '').trim();
+  const docId  = docViewerState.docId;
+  if (!docId || !state.character) return;
+
+  if (!state.character.docAnnotations) state.character.docAnnotations = {};
+  state.character.docAnnotations[docId] = ann;
+
+  await persistChar({ [`docAnnotations.${docId}`]: ann });
+  showToast('Anotação salva.', 'success', 1800);
+  renderDocsTab();
+}
+
+// ── Zoom & Pan ────────────────────────────────────────────
+function applyDocTransform() {
+  const container = $('doc-zoom-container');
+  if (!container) return;
+  const { scale, panX, panY } = docViewerState;
+  container.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+}
+
+function initDocViewerEvents() {
+  const body = $('doc-viewer-body');
+  if (!body) return;
+
+  // Mouse wheel zoom
+  body.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.18 : 0.18;
+    const { minScale, maxScale } = docViewerState;
+    docViewerState.scale = Math.max(minScale, Math.min(maxScale, docViewerState.scale + delta));
+    if (docViewerState.scale <= minScale) { docViewerState.panX = 0; docViewerState.panY = 0; }
+    applyDocTransform();
+  }, { passive: false });
+
+  // Mouse drag pan
+  body.addEventListener('mousedown', (e) => {
+    if (docViewerState.scale <= 1) return;
+    docViewerState.isDragging = true;
+    docViewerState.lastX = e.clientX;
+    docViewerState.lastY = e.clientY;
+    body.style.cursor = 'grabbing';
+  });
+  body.addEventListener('mousemove', (e) => {
+    if (!docViewerState.isDragging) return;
+    docViewerState.panX += e.clientX - docViewerState.lastX;
+    docViewerState.panY += e.clientY - docViewerState.lastY;
+    docViewerState.lastX = e.clientX;
+    docViewerState.lastY = e.clientY;
+    applyDocTransform();
+  });
+  const stopDrag = () => { docViewerState.isDragging = false; body.style.cursor = ''; };
+  body.addEventListener('mouseup', stopDrag);
+  body.addEventListener('mouseleave', stopDrag);
+
+  // Touch pinch zoom + single-finger pan
+  body.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      docViewerState.lastDist = Math.hypot(dx, dy);
+    } else if (e.touches.length === 1 && docViewerState.scale > 1) {
+      docViewerState.isDragging = true;
+      docViewerState.lastX = e.touches[0].clientX;
+      docViewerState.lastY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+
+  body.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dx   = e.touches[0].clientX - e.touches[1].clientX;
+      const dy   = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      docViewerState.scale = Math.max(
+        docViewerState.minScale,
+        Math.min(docViewerState.maxScale, docViewerState.scale * (dist / docViewerState.lastDist))
+      );
+      docViewerState.lastDist = dist;
+      if (docViewerState.scale <= docViewerState.minScale) { docViewerState.panX = 0; docViewerState.panY = 0; }
+      applyDocTransform();
+    } else if (e.touches.length === 1 && docViewerState.isDragging) {
+      docViewerState.panX += e.touches[0].clientX - docViewerState.lastX;
+      docViewerState.panY += e.touches[0].clientY - docViewerState.lastY;
+      docViewerState.lastX = e.touches[0].clientX;
+      docViewerState.lastY = e.touches[0].clientY;
+      applyDocTransform();
+    }
+  }, { passive: false });
+
+  body.addEventListener('touchend', () => {
+    docViewerState.isDragging = false;
+    docViewerState.lastDist   = 0;
+  });
+}
+
+// ── GM Docs Panel ─────────────────────────────────────────
+function renderGMDocs() {
+  const listEl = $('gm-docs-list');
+  if (!listEl) return;
+
+  if (DOCUMENTS.length === 0) {
+    listEl.innerHTML = '<div class="gm-fitas-empty">Nenhum documento cadastrado.</div>';
+    return;
+  }
+
+  listEl.innerHTML = DOCUMENTS.map(d => {
+    const released = docsReleasedState.includes(d.id);
+    return `<div class="gm-doc-item">
+      <div class="gm-doc-thumb">
+        <img src="${d.image}" alt="" class="gm-doc-thumb-img" onerror="this.style.display='none'" />
+      </div>
+      <div class="gm-doc-info">
+        <div class="gm-doc-title">${escHtml(d.title)}</div>
+        <div class="gm-doc-status ${released ? 'gm-doc-released' : 'gm-doc-locked'}">
+          ${released ? '&#9670; LIBERADO' : '&#128274; BLOQUEADO'}
+        </div>
+      </div>
+      <button class="gm-doc-toggle-btn ${released ? 'gm-doc-btn-lock' : 'gm-doc-btn-release'}"
+              onclick="App.gmToggleDocRelease('${d.id}')">
+        ${released ? 'BLOQUEAR' : 'LIBERAR'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function gmToggleDocRelease(docId) {
+  const idx = docsReleasedState.indexOf(docId);
+  if (idx === -1) {
+    docsReleasedState.push(docId);
+  } else {
+    docsReleasedState.splice(idx, 1);
+  }
+  await saveDocsState();
+  renderGMDocs();
+  showToast(idx === -1 ? 'Documento liberado para os jogadores.' : 'Documento bloqueado.', 'success', 2000);
+}
+
 // ──────────────────────────────────────────────────────────
 //  PUBLIC API (called from HTML onclick)
 // ──────────────────────────────────────────────────────────
@@ -1566,7 +1869,12 @@ window.App = {
   gmAddMaldicao,
   gmRemoveMaldicao,
   gmAddMaldTag,
-  gmRemoveMaldTag
+  gmRemoveMaldTag,
+  openDocViewer,
+  closeDocViewer,
+  toggleDocUV,
+  saveDocAnnotation,
+  gmToggleDocRelease
 };
 
 // ──────────────────────────────────────────────────────────
@@ -1574,6 +1882,12 @@ window.App = {
 // ──────────────────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    // Close doc viewer first
+    const viewer = $('doc-viewer');
+    if (viewer && !viewer.classList.contains('hidden')) {
+      closeDocViewer();
+      return;
+    }
     // Close any open modal or editing
     if (!$('grade-modal').classList.contains('hidden')) {
       $('grade-modal').classList.add('hidden');
@@ -1589,4 +1903,5 @@ document.addEventListener('keydown', (e) => {
 // ──────────────────────────────────────────────────────────
 //  START
 // ──────────────────────────────────────────────────────────
+initDocViewerEvents();
 runBoot();
