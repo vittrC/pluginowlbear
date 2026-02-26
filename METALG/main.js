@@ -300,6 +300,8 @@ async function loginPlayer() {
 
       // Refresh fitas tab if open
       if (state.currentTab === 'fitas') renderFitasTab();
+      // Refresh radio tab if open
+      if (state.currentTab === 'radio') renderRadioTab();
     });
   }
 }
@@ -605,7 +607,191 @@ function switchTab(tab) {
       p.classList.toggle('hidden', p.id !== 'tab-panel-' + tab);
     });
     if (tab === 'fitas') renderFitasTab();
+    if (tab === 'radio') renderRadioTab();
+    if (tab === 'mald')  { loadMaldicoes().then(renderMaldicoesTab); }
   }
+}
+
+// ──────────────────────────────────────────────────────────
+//  RÁDIO — PLAYER
+// ──────────────────────────────────────────────────────────
+const RADIO_FREQS = ['00.221', '00.425', '00.614', '00.733', '00.881', '00.963'];
+
+function renderRadioTab() {
+  const char = state.character;
+  if (!char) return;
+  const radio  = char.radio || {};
+  const status = radio.status || 'idle';
+  const freq   = radio.frequencia || RADIO_FREQS[0];
+
+  // Player photo
+  const pPhoto = $('radio-player-photo');
+  const pPh    = $('radio-player-ph');
+  if (char.photo) { pPhoto.src = char.photo; pPhoto.classList.remove('hidden'); pPh.style.display = 'none'; }
+  else            { pPhoto.src = ''; pPhoto.classList.add('hidden'); pPh.style.display = ''; pPh.textContent = '?'; }
+  $('radio-player-name').textContent = '\u25b6 ' + (char.codename || '—');
+
+  // Frequency display
+  $('radio-freq-val').textContent = freq;
+
+  // NPC photo
+  const nPhoto = $('radio-npc-photo');
+  const nPh    = $('radio-npc-ph');
+  if (status === 'conectado' && radio.npcFoto) {
+    nPhoto.src = radio.npcFoto; nPhoto.classList.remove('hidden'); nPh.style.display = 'none';
+  } else {
+    nPhoto.src = ''; nPhoto.classList.add('hidden'); nPh.style.display = '';
+    nPh.textContent = status === 'aguardando' ? '...' : '?';
+  }
+  $('radio-npc-name').textContent = status === 'conectado' ? '\u25b6 ' + (radio.npcNome || '—') : '—';
+
+  // Waveform
+  const waveSvg = $('radio-wave-svg');
+  if (waveSvg) waveSvg.classList.toggle('radio-wave-active', status === 'conectado');
+
+  // Status badge
+  const badge = $('radio-status-badge');
+  const labels = { idle: 'OCIOSO', aguardando: 'AGUARDANDO', conectado: 'CONECTADO', recusado: 'RECUSADO' };
+  badge.textContent = labels[status] || 'OCIOSO';
+  badge.className   = 'radio-status-badge radio-status-' + status;
+
+  // Action buttons
+  const acts = $('radio-actions');
+  if (status === 'idle' || status === 'recusado') {
+    acts.innerHTML = '<button class="radio-btn" onclick="App.radioSolicitar()">SOLICITAR CONEXÃO</button>';
+  } else if (status === 'aguardando') {
+    acts.innerHTML = '<button class="radio-btn radio-btn-cancel" onclick="App.radioCancelar()">CANCELAR</button>';
+  } else if (status === 'conectado') {
+    acts.innerHTML = '<button class="radio-btn radio-btn-cancel" onclick="App.radioCancelar()">ENCERRAR</button>';
+  }
+}
+
+function radioChangeFreq(dir) {
+  const char = state.character;
+  if (!char) return;
+  const radio  = char.radio || {};
+  if ((radio.status || 'idle') === 'conectado') return;
+  let idx = RADIO_FREQS.indexOf(radio.frequencia || RADIO_FREQS[0]);
+  if (idx === -1) idx = 0;
+  idx = (idx + dir + RADIO_FREQS.length) % RADIO_FREQS.length;
+  const freq = RADIO_FREQS[idx];
+  if (!char.radio) char.radio = {};
+  char.radio.frequencia = freq;
+  if ($('radio-freq-val')) $('radio-freq-val').textContent = freq;
+  persistChar({ 'radio.frequencia': freq });
+}
+
+const radioCodecAudio = new Audio('codec.mp3');
+
+async function radioSolicitar() {
+  const char = state.character;
+  if (!char) return;
+  radioCodecAudio.currentTime = 0;
+  radioCodecAudio.play().catch(() => {});
+  if (!char.radio) char.radio = {};
+  char.radio.status = 'aguardando';
+  await persistChar({ 'radio.status': 'aguardando' });
+  renderRadioTab();
+}
+
+async function radioCancelar() {
+  const char = state.character;
+  if (!char) return;
+  if (!char.radio) char.radio = {};
+  Object.assign(char.radio, { status: 'idle', npcNome: '', npcFoto: '' });
+  await persistChar({ 'radio.status': 'idle', 'radio.npcNome': '', 'radio.npcFoto': '' });
+  renderRadioTab();
+}
+
+// ──────────────────────────────────────────────────────────
+//  RÁDIO — GM CONTROLS
+// ──────────────────────────────────────────────────────────
+let npcPresets = [];
+
+async function loadNpcPresets() {
+  if (firebaseOk) {
+    try {
+      const snap = await getDoc(doc(db, 'meta', 'npcs'));
+      npcPresets = snap.exists() ? (snap.data().presets || []) : [];
+    } catch (e) { npcPresets = []; }
+  } else {
+    const raw = localStorage.getItem('vyper_npc_presets');
+    npcPresets = raw ? JSON.parse(raw) : [];
+  }
+  renderGMNpcPresets();
+}
+
+async function saveNpcPresets() {
+  if (firebaseOk) {
+    await setDoc(doc(db, 'meta', 'npcs'), { presets: npcPresets });
+  } else {
+    localStorage.setItem('vyper_npc_presets', JSON.stringify(npcPresets));
+  }
+}
+
+function renderGMNpcPresets() {
+  const el = $('gm-npc-list');
+  if (!el) return;
+  if (!npcPresets.length) { el.innerHTML = '<div class="gm-fitas-empty">Nenhum preset.</div>'; return; }
+  el.innerHTML = npcPresets.map((p, i) =>
+    `<div class="gm-npc-item">
+      ${p.foto ? `<img class="gm-npc-thumb" src="${p.foto}" />` : '<div class="gm-npc-thumb-ph">?</div>'}
+      <span class="gm-npc-nome">${escHtml(p.nome)}</span>
+      <button class="gm-fita-del" onclick="App.gmRemoveNpcPreset(${i})">&#10005;</button>
+    </div>`
+  ).join('');
+}
+
+async function gmAddNpcPreset(fileInput) {
+  const file      = fileInput.files?.[0];
+  const nomeInput = $('gm-npc-nome-input');
+  const nome      = nomeInput?.value?.trim();
+  if (!nome) { showToast('Digite o nome do NPC.', 'error'); fileInput.value = ''; return; }
+  if (!file) { showToast('Selecione uma foto.', 'error'); return; }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = async () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 200; let w = img.width, h = img.height;
+      if (w > h) { if (w > MAX) { h = Math.round(h*MAX/w); w = MAX; } }
+      else       { if (h > MAX) { w = Math.round(w*MAX/h); h = MAX; } }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const foto = canvas.toDataURL('image/jpeg', 0.7);
+      npcPresets.push({ nome, foto });
+      await saveNpcPresets();
+      nomeInput.value = ''; fileInput.value = '';
+      renderGMNpcPresets();
+      showToast(`NPC "${nome}" adicionado.`, 'success');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function gmRemoveNpcPreset(index) {
+  npcPresets.splice(index, 1);
+  await saveNpcPresets();
+  renderGMNpcPresets();
+}
+
+async function gmRadioAceitar(codename) {
+  const sel = document.getElementById('gm-radio-npc-sel-' + codename);
+  const idx = sel ? parseInt(sel.value) : -1;
+  if (isNaN(idx) || idx < 0 || !npcPresets[idx]) { showToast('Selecione um NPC.', 'error'); return; }
+  const npc = npcPresets[idx];
+  await gmUpdateChar(codename, { 'radio.status': 'conectado', 'radio.npcNome': npc.nome, 'radio.npcFoto': npc.foto });
+}
+
+async function gmRadioRecusar(codename) {
+  await gmUpdateChar(codename, { 'radio.status': 'recusado' });
+  setTimeout(() => gmUpdateChar(codename, { 'radio.status': 'idle' }), 3000);
+}
+
+async function gmRadioDesconectar(codename) {
+  await gmUpdateChar(codename, { 'radio.status': 'idle', 'radio.npcNome': '', 'radio.npcFoto': '' });
 }
 
 // ──────────────────────────────────────────────────────────
@@ -756,6 +942,32 @@ function fitaSeek(event) {
 // ──────────────────────────────────────────────────────────
 //  FITAS — GM CONTROLS
 // ──────────────────────────────────────────────────────────
+function buildGMRadioHtml(char) {
+  const radio     = char.radio || {};
+  const status    = radio.status || 'idle';
+  const freq      = radio.frequencia || '—';
+  const labels    = { idle: 'OCIOSO', aguardando: 'AGUARDANDO', conectado: 'CONECTADO', recusado: 'RECUSADO' };
+  let html = `<div class="gm-radio-status gm-radio-${status}">${labels[status] || 'OCIOSO'}</div>`;
+
+  if (status === 'aguardando') {
+    const opts = npcPresets.length
+      ? npcPresets.map((p, i) => `<option value="${i}">${escHtml(p.nome)}</option>`).join('')
+      : '<option value="">Nenhum preset</option>';
+    html += `
+      <div class="gm-radio-freq">FREQ: ${freq}</div>
+      <select id="gm-radio-npc-sel-${char.codename}" class="gm-select">${opts}</select>
+      <div class="gm-radio-btns">
+        <button class="gm-toggle-btn active-ativo" onclick="App.gmRadioAceitar('${char.codename}')">ACEITAR</button>
+        <button class="gm-toggle-btn active-morto" onclick="App.gmRadioRecusar('${char.codename}')">RECUSAR</button>
+      </div>`;
+  } else if (status === 'conectado') {
+    html += `
+      <div class="gm-radio-freq">FREQ: ${freq} — ${escHtml(radio.npcNome || '?')}</div>
+      <button class="gm-toggle-btn active-morto" onclick="App.gmRadioDesconectar('${char.codename}')">DESCONECTAR</button>`;
+  }
+  return html;
+}
+
 function buildGMFitasListHtml(codename, tapes) {
   if (!tapes || !tapes.length) return '<div class="gm-fitas-empty">Nenhuma fita.</div>';
   const ico = { musica: '&#9835;', historia: '&#9658;', outro: '&#9672;' };
@@ -903,6 +1115,8 @@ function flatToNested(obj) {
 function loadGMDashboard() {
   const listEl = $('gm-agent-list');
   listEl.innerHTML = '<div class="gm-empty">Carregando operadores...</div>';
+  loadNpcPresets();
+  renderGMMaldicoes();
 
   if (firebaseOk) {
     if (state.gmCharsUnsub) state.gmCharsUnsub();
@@ -1007,6 +1221,10 @@ function buildGMCard(char) {
         <div class="gm-active-toggle">${statusBtns}</div>
       </div>
       <div class="gm-ctrl-group">
+        <div class="gm-ctrl-label">⬡ RÁDIO</div>
+        <div id="gm-radio-panel-${char.codename}">${buildGMRadioHtml(char)}</div>
+      </div>
+      <div class="gm-ctrl-group">
         <div class="gm-ctrl-label">⬡ FITAS ALOCADAS</div>
         <div class="gm-fitas-list" id="gm-fitas-list-${char.codename}">${buildGMFitasListHtml(char.codename, char.tapes || [])}</div>
         <div class="gm-fitas-add">
@@ -1068,6 +1286,243 @@ async function gmUpdateChar(codename, updates) {
 }
 
 // ──────────────────────────────────────────────────────────
+//  MALDIÇÕES
+// ──────────────────────────────────────────────────────────
+let maldicoesData = [];
+let malState = { view: 'elem', elemento: null, maldicaoId: null };
+let _malIconBase64 = null;
+let _malTags = [];
+
+function gmAddMaldTag() {
+  const input = $('gm-mald-tag-input');
+  if (!input) return;
+  const tag = input.value.trim().toUpperCase();
+  if (!tag || _malTags.includes(tag)) { input.value = ''; return; }
+  _malTags.push(tag);
+  input.value = '';
+  _renderGMTagPills();
+}
+
+function gmRemoveMaldTag(i) {
+  _malTags.splice(i, 1);
+  _renderGMTagPills();
+}
+
+function _renderGMTagPills() {
+  const el = $('gm-mald-tags-list');
+  if (!el) return;
+  el.innerHTML = _malTags.map((t, i) =>
+    `<span class="mald-tag-pill gm-tag-pill">${escHtml(t)}<button onclick="App.gmRemoveMaldTag(${i})">&#10005;</button></span>`
+  ).join('');
+}
+
+const ELEM_LABELS = {
+  sangue: 'SANGUE', morte: 'MORTE',
+  energia: 'ENERGIA', conhecimento: 'CONHECIMENTO'
+};
+
+async function loadMaldicoes() {
+  if (!firebaseOk) return;
+  try {
+    const snap = await getDoc(doc(db, 'meta', 'maldicoes'));
+    maldicoesData = snap.exists() ? (snap.data().maldicoes || []) : [];
+  } catch (e) {
+    console.error('loadMaldicoes:', e);
+    maldicoesData = [];
+  }
+}
+
+async function saveMaldicoes() {
+  if (!firebaseOk) return;
+  try {
+    await setDoc(doc(db, 'meta', 'maldicoes'), { maldicoes: maldicoesData });
+  } catch (e) {
+    console.error('saveMaldicoes:', e);
+    showToast('Erro ao salvar: documento muito grande. Reduza o tamanho dos ícones.', 'error', 5000);
+    throw e;
+  }
+}
+
+function _maldShowView(view) {
+  malState.view = view;
+  ['elem', 'grid', 'detail'].forEach(v => {
+    const el = $('mald-view-' + v);
+    if (el) el.classList.toggle('hidden', v !== view);
+  });
+}
+
+function renderMaldicoesTab() {
+  _maldShowView('elem');
+}
+
+function maldSelectElement(elem) {
+  malState.elemento = elem;
+  _maldShowView('grid');
+  const titleEl   = $('mald-grid-title');
+  const lblEl     = $('mald-grid-elem-lbl');
+  const accentEl  = $('mald-grid-accent');
+  const viewEl    = $('mald-view-grid');
+  const gridEl    = $('mald-slots-grid');
+  if (titleEl)  titleEl.textContent = 'MALDI\u00C7\u00D5ES';
+  if (lblEl)    lblEl.textContent   = '\u25BA ' + (ELEM_LABELS[elem] || elem).toUpperCase();
+  if (accentEl) { accentEl.className = 'mald-grid-accent accent-' + elem; }
+  if (viewEl)   { viewEl.className = viewEl.className.replace(/elem-bg-\w+/g,'').trim() + ' elem-bg-' + elem; }
+  if (gridEl)   { gridEl.className = 'mald-slots-grid mald-slots-elem-' + elem; }
+  _renderMaldSlots(elem);
+}
+
+function _renderMaldSlots(elem) {
+  const grid = $('mald-slots-grid');
+  if (!grid) return;
+  const filtered = maldicoesData.filter(m => m.elemento === elem);
+  const TOTAL_SLOTS = 16;
+  let html = '';
+  for (let i = 0; i < TOTAL_SLOTS; i++) {
+    const m = filtered[i];
+    const num = String(i + 1).padStart(2, '0');
+    if (m) {
+      const iconHtml = m.icone
+        ? `<img class="mald-slot-img" src="${m.icone}" alt="" />`
+        : `<span style="font-size:26px;color:var(--dim)">&#9672;</span>`;
+      html += `<div class="mald-slot" onclick="App.maldShowDetail('${escHtml(m.id)}')">
+        <div class="mald-slot-idx">${num}</div>
+        <div class="mald-slot-icon-wrap">${iconHtml}</div>
+        <div class="mald-slot-name">${escHtml(m.nome)}</div>
+        <div class="mald-slot-cut"></div>
+      </div>`;
+    } else {
+      html += `<div class="mald-slot mald-slot-empty">
+        <div class="mald-slot-empty-num">${num}</div>
+      </div>`;
+    }
+  }
+  grid.innerHTML = html;
+}
+
+function maldShowDetail(id) {
+  const m = maldicoesData.find(x => x.id === id);
+  if (!m) return;
+  malState.maldicaoId = id;
+  _maldShowView('detail');
+  const container = $('mald-detail-inner');
+  if (!container) return;
+  const iconHtml = m.icone
+    ? `<img class="mald-detail-icon" src="${m.icone}" alt="" />`
+    : `<div class="mald-detail-icon-ph">&#9672;</div>`;
+  const detectClass = m.detectavel ? 'mald-detect-yes' : 'mald-detect-no';
+  const detectText  = m.detectavel ? 'DETECT\u00C1VEL' : 'N\u00C3O DETECT\u00C1VEL';
+  const elemLabel   = ELEM_LABELS[m.elemento] || m.elemento;
+  const tagsHtml    = (m.tags && m.tags.length)
+    ? `<div class="mald-detail-tags">${m.tags.map(t => `<span class="mald-tag-pill elem-tag-${m.elemento}">${escHtml(t)}</span>`).join('')}</div>`
+    : '';
+  container.innerHTML = `
+    <div class="mald-detail-top">
+      ${iconHtml}
+      <div class="mald-detail-info">
+        <div class="mald-detail-name">${escHtml(m.nome)}</div>
+        <div class="mald-detail-elem-row">
+          <span class="mald-detail-elem-badge elem-${m.elemento}">${elemLabel}</span>
+        </div>
+        <div class="mald-detail-custo">${elemLabel} &#9675; ${m.custo || 0} COMPONENTES</div>
+        <div class="mald-detect-badge ${detectClass}">${detectText}</div>
+        ${tagsHtml}
+      </div>
+    </div>
+    <div class="mald-detail-desc">${escHtml(m.descricao || '\u2014')}</div>
+  `;
+}
+
+function maldBack(to) {
+  if (to === 'elem') {
+    _maldShowView('elem');
+  } else if (to === 'grid' && malState.elemento) {
+    maldSelectElement(malState.elemento);
+  }
+}
+
+// GM ─────────────────────────────────────────────────────
+async function renderGMMaldicoes() {
+  await loadMaldicoes();
+  const listEl = $('gm-mald-list');
+  if (!listEl) return;
+  if (!maldicoesData.length) {
+    listEl.innerHTML = '<div class="gm-fitas-empty">Nenhuma maldi\u00e7\u00e3o cadastrada.</div>';
+    return;
+  }
+  listEl.innerHTML = maldicoesData.map(m => {
+    const thumbHtml = m.icone
+      ? `<img class="gm-mald-thumb" src="${m.icone}" alt="" />`
+      : `<div class="gm-mald-thumb-ph">&#9672;</div>`;
+    return `<div class="gm-mald-item">
+      ${thumbHtml}
+      <div class="gm-mald-info">
+        <div class="gm-mald-nome">${escHtml(m.nome)}</div>
+        <div class="gm-mald-meta">${ELEM_LABELS[m.elemento] || m.elemento} &middot; CUSTO ${m.custo} &middot; ${m.detectavel ? 'DETECT.' : 'N.DETECT.'}</div>
+      </div>
+      <button class="gm-fita-del" onclick="App.gmRemoveMaldicao('${escHtml(m.id)}')">&#10005;</button>
+    </div>`;
+  }).join('');
+}
+
+function gmPreviewMaldIcon(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 256;
+      const ar = img.width / img.height;
+      canvas.width  = ar >= 1 ? MAX : Math.round(MAX * ar);
+      canvas.height = ar >= 1 ? Math.round(MAX / ar) : MAX;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      _malIconBase64 = canvas.toDataURL('image/jpeg', 0.92);
+      const prev = $('gm-mald-icone-preview');
+      if (prev) { prev.src = _malIconBase64; prev.classList.remove('hidden'); }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function gmAddMaldicao() {
+  const nome = ($('gm-mald-nome').value || '').trim();
+  if (!nome) { showToast('Insira o nome da maldi\u00e7\u00e3o.', 'error'); return; }
+  const elem       = $('gm-mald-elem').value;
+  const custo      = parseInt($('gm-mald-custo').value) || 0;
+  const detectavel = $('gm-mald-detect').checked;
+  const descricao  = ($('gm-mald-desc').value || '').trim();
+  const id = 'mald_' + Date.now();
+  maldicoesData.push({ id, nome, elemento: elem, custo, detectavel, descricao, tags: [..._malTags], icone: _malIconBase64 || '' });
+  try {
+    await saveMaldicoes();
+  } catch {
+    maldicoesData.pop();
+    return;
+  }
+  $('gm-mald-nome').value = '';
+  $('gm-mald-custo').value = '';
+  $('gm-mald-detect').checked = false;
+  $('gm-mald-desc').value = '';
+  $('gm-mald-tag-input').value = '';
+  _malTags = [];
+  _renderGMTagPills();
+  _malIconBase64 = null;
+  const prev = $('gm-mald-icone-preview');
+  if (prev) { prev.src = ''; prev.classList.add('hidden'); }
+  showToast('Maldiçao adicionada.', 'success');
+  renderGMMaldicoes();
+}
+
+async function gmRemoveMaldicao(id) {
+  maldicoesData = maldicoesData.filter(m => m.id !== id);
+  await saveMaldicoes();
+  showToast('Maldi\u00e7\u00e3o removida.', 'success', 1500);
+  renderGMMaldicoes();
+}
+
+// ──────────────────────────────────────────────────────────
 //  PUBLIC API (called from HTML onclick)
 // ──────────────────────────────────────────────────────────
 window.App = {
@@ -1095,7 +1550,23 @@ window.App = {
   fitaSkip,
   fitaSeek,
   gmUploadFita,
-  gmRemoveFita
+  gmRemoveFita,
+  radioChangeFreq,
+  radioSolicitar,
+  radioCancelar,
+  gmAddNpcPreset,
+  gmRemoveNpcPreset,
+  gmRadioAceitar,
+  gmRadioRecusar,
+  gmRadioDesconectar,
+  maldSelectElement,
+  maldShowDetail,
+  maldBack,
+  gmPreviewMaldIcon,
+  gmAddMaldicao,
+  gmRemoveMaldicao,
+  gmAddMaldTag,
+  gmRemoveMaldTag
 };
 
 // ──────────────────────────────────────────────────────────

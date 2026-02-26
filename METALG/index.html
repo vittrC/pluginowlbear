@@ -242,8 +242,119 @@
   <!-- TAB OVERLAY -->
   <div id="tab-content" class="tab-overlay hidden">
     <button class="tab-back" onclick="App.switchTab('main')">&#9668; VOLTAR</button>
-    <div id="tab-panel-mald"  class="tab-panel hidden"><div class="cs"><span class="cs-ico">&#9672;</span><span class="cs-title">MALDICOES</span><span class="cs-sub">[ EM DESENVOLVIMENTO ]</span></div></div>
-    <div id="tab-panel-radio" class="tab-panel hidden"><div class="cs"><span class="cs-ico">&#9672;</span><span class="cs-title">FREQUENCIAS DE RADIO</span><span class="cs-sub">[ EM DESENVOLVIMENTO ]</span></div></div>
+    <div id="tab-panel-mald"  class="tab-panel hidden">
+      <div class="mald-wrap">
+        <!-- View 1: Element Picker -->
+        <div id="mald-view-elem" class="mald-view mald-view-elem-screen">
+          <div class="mald-elem-grid">
+            <div class="mald-elem-card elem-card-sangue" onclick="App.maldSelectElement('sangue')" style="background-image:url('elementos/sangue.jpg')">
+              <div class="mald-elem-overlay"></div>
+              <div class="mald-elem-num">01</div>
+              <div class="mald-elem-corner"></div>
+              <div class="mald-elem-footer">
+                <div class="mald-elem-name elem-sangue">SANGUE</div>
+                <div class="mald-elem-select-hint">&#9660; ACESSAR</div>
+              </div>
+            </div>
+            <div class="mald-elem-card elem-card-morte" onclick="App.maldSelectElement('morte')" style="background-image:url('elementos/morte.jpg')">
+              <div class="mald-elem-overlay"></div>
+              <div class="mald-elem-num">02</div>
+              <div class="mald-elem-corner"></div>
+              <div class="mald-elem-footer">
+                <div class="mald-elem-name elem-morte">MORTE</div>
+                <div class="mald-elem-select-hint">&#9660; ACESSAR</div>
+              </div>
+            </div>
+            <div class="mald-elem-card elem-card-energia" onclick="App.maldSelectElement('energia')" style="background-image:url('elementos/energia.jpg')">
+              <div class="mald-elem-overlay"></div>
+              <div class="mald-elem-num">03</div>
+              <div class="mald-elem-corner"></div>
+              <div class="mald-elem-footer">
+                <div class="mald-elem-name elem-energia">ENERGIA</div>
+                <div class="mald-elem-select-hint">&#9660; ACESSAR</div>
+              </div>
+            </div>
+            <div class="mald-elem-card elem-card-conhecimento" onclick="App.maldSelectElement('conhecimento')" style="background-image:url('elementos/conhecimento.jpg')">
+              <div class="mald-elem-overlay"></div>
+              <div class="mald-elem-num">04</div>
+              <div class="mald-elem-corner"></div>
+              <div class="mald-elem-footer">
+                <div class="mald-elem-name elem-conhecimento">CONHECIMENTO</div>
+                <div class="mald-elem-select-hint">&#9660; ACESSAR</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- View 2: Maldições Grid -->
+        <div id="mald-view-grid" class="mald-view hidden">
+          <div class="mald-grid-header" id="mald-grid-header">
+            <div class="mald-grid-accent" id="mald-grid-accent"></div>
+            <div class="mald-grid-header-inner">
+              <span class="mald-grid-title" id="mald-grid-title">MALDICOES</span>
+              <span class="mald-grid-elem-lbl" id="mald-grid-elem-lbl"></span>
+            </div>
+            <button class="mald-back-btn" onclick="App.maldBack('elem')">&#9668; VOLTAR</button>
+          </div>
+          <div class="mald-slots-grid" id="mald-slots-grid"></div>
+        </div>
+        <!-- View 3: Curse Detail -->
+        <div id="mald-view-detail" class="mald-view hidden">
+          <button class="mald-back-btn" onclick="App.maldBack('grid')">&#9668; VOLTAR</button>
+          <div id="mald-detail-inner" class="mald-detail-inner"></div>
+        </div>
+      </div>
+    </div>
+    <div id="tab-panel-radio" class="tab-panel hidden">
+      <div class="radio-wrap">
+        <div class="radio-heading">&#9658; R&#x41;&#x44;&#x49;&#x4F;</div>
+        <div class="radio-stage">
+
+          <!-- left: player -->
+          <div class="radio-photo-col">
+            <div class="radio-photo-frame">
+              <div class="radio-photo-inner">
+                <img id="radio-player-photo" src="" alt="" />
+                <div class="radio-photo-ph" id="radio-player-ph">?</div>
+              </div>
+              <div class="radio-photo-notch"></div>
+            </div>
+            <div class="radio-name" id="radio-player-name">&#8212;</div>
+          </div>
+
+          <!-- center: waveform + freq + status -->
+          <div class="radio-center-col">
+            <div class="radio-waveform-wrap">
+              <svg class="radio-wave-svg" id="radio-wave-svg" viewBox="0 0 220 50" preserveAspectRatio="none">
+                <polyline class="radio-wave-line" points="0,25 10,25 18,8 26,42 34,8 42,42 50,8 58,42 66,8 74,42 82,8 90,42 98,25 106,25 114,8 122,42 130,8 138,42 146,8 154,42 162,25 170,25 178,8 186,42 194,8 202,42 210,25 220,25" />
+              </svg>
+            </div>
+            <div class="radio-freq-row">
+              <button class="radio-arr" onclick="App.radioChangeFreq(-1)">&#9664;</button>
+              <span class="radio-freq-val" id="radio-freq-val">00.221</span>
+              <button class="radio-arr" onclick="App.radioChangeFreq(1)">&#9654;</button>
+            </div>
+            <div class="radio-divider"></div>
+            <div class="radio-status-badge radio-status-idle" id="radio-status-badge">OCIOSO</div>
+            <div class="radio-actions" id="radio-actions">
+              <button class="radio-btn" onclick="App.radioSolicitar()">SOLICITAR CONEX&#xC3;O</button>
+            </div>
+          </div>
+
+          <!-- right: NPC -->
+          <div class="radio-photo-col">
+            <div class="radio-photo-frame">
+              <div class="radio-photo-inner">
+                <img id="radio-npc-photo" src="" alt="" class="hidden" />
+                <div class="radio-photo-ph" id="radio-npc-ph">?</div>
+              </div>
+              <div class="radio-photo-notch"></div>
+            </div>
+            <div class="radio-name" id="radio-npc-name">&#8212;</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
     <div id="tab-panel-docs"  class="tab-panel hidden"><div class="cs"><span class="cs-ico">&#9672;</span><span class="cs-title">DOCUMENTOS</span><span class="cs-sub">[ EM DESENVOLVIMENTO ]</span></div></div>
     <div id="tab-panel-fitas" class="tab-panel hidden">
       <div class="fitas-wrap">
@@ -298,6 +409,46 @@
     <button class="s-header-back" onclick="App.logout()">&#9167;</button>
   </div>
   <div class="gm-body">
+    <div class="gm-sec-title">&#9658; PRESETS DE NPC (R&#xC1;DIO)</div>
+    <div id="gm-npc-list" class="gm-npc-list"><div class="gm-fitas-empty">Nenhum preset.</div></div>
+    <div class="gm-fitas-add" style="margin-bottom:10px">
+      <input type="text" id="gm-npc-nome-input" placeholder="nome do npc..." class="gm-text-input" />
+      <label class="gm-fita-upload-btn">+ FOTO
+        <input type="file" accept="image/*" class="hidden" onchange="App.gmAddNpcPreset(this)" />
+      </label>
+    </div>
+    <div class="gm-sec-title">&#9658; MALDICOES</div>
+    <div id="gm-mald-list" class="gm-mald-list"><div class="gm-fitas-empty">Nenhuma maldi&ccedil;&atilde;o cadastrada.</div></div>
+    <div class="gm-fitas-add" style="flex-direction:column;align-items:stretch;gap:5px;margin-bottom:10px">
+      <input type="text" id="gm-mald-nome" placeholder="nome da maldição..." class="gm-text-input" style="width:100%" />
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <select id="gm-mald-elem" class="gm-select">
+          <option value="sangue">SANGUE</option>
+          <option value="morte">MORTE</option>
+          <option value="energia">ENERGIA</option>
+          <option value="conhecimento">CONHECIMENTO</option>
+        </select>
+        <input type="number" id="gm-mald-custo" placeholder="custo" class="gm-text-input" min="0" max="99" style="width:60px;flex:none" />
+        <label style="display:flex;align-items:center;gap:4px;color:var(--green);font-family:var(--font);font-size:11px;white-space:nowrap;cursor:pointer">
+          <input type="checkbox" id="gm-mald-detect" /> DETECT&Aacute;VEL
+        </label>
+      </div>
+      <textarea id="gm-mald-desc" placeholder="descrição..." class="gm-text-input" rows="2" style="width:100%;resize:vertical"></textarea>
+      <div class="gm-mald-tags-row">
+        <div id="gm-mald-tags-list" class="gm-mald-tags-list"></div>
+        <div style="display:flex;gap:4px;margin-top:4px">
+          <input type="text" id="gm-mald-tag-input" placeholder="adicionar tag..." class="gm-text-input" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();App.gmAddMaldTag()}" />
+          <button class="gm-fita-upload-btn" onclick="App.gmAddMaldTag()">+ TAG</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <label class="gm-fita-upload-btn">&#43; &Iacute;CONE
+          <input type="file" accept="image/*" class="hidden" onchange="App.gmPreviewMaldIcon(this)" />
+        </label>
+        <img id="gm-mald-icone-preview" src="" alt="" class="hidden" style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border2)" />
+        <button class="gm-fita-upload-btn" onclick="App.gmAddMaldicao()" style="margin-left:auto">ADICIONAR</button>
+      </div>
+    </div>
     <div class="gm-sec-title">&#9658; OPERADORES REGISTRADOS</div>
     <div id="gm-agent-list" class="gm-list">
       <div class="gm-empty">Nenhum operador registrado.</div>
