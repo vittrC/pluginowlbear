@@ -1,0 +1,10 @@
+{
+  "hosting": {
+    "public": "METALG",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}

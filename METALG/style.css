@@ -3,7 +3,7 @@
    Landscape-first, pixel-terminal aesthetic
 ══════════════════════════════════════════════════════ */
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
 
 :root {
   --bg:        #070707;
@@ -1225,3 +1225,284 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
 .gm-doc-btn-release:hover { background: var(--green); color: var(--bg); }
 .gm-doc-btn-lock { border: 1px solid var(--dim); color: var(--dim); }
 .gm-doc-btn-lock:hover { background: var(--dim); color: var(--bg); }
+
+/* ══════════════════════════════════════════════════════
+   UV TORCH LAYER
+══════════════════════════════════════════════════════ */
+.doc-image-uv {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .35s ease;
+  -webkit-mask-image: radial-gradient(
+    circle var(--tr, 90px) at var(--tx, -999px) var(--ty, -999px),
+    black 0%, black 55%, transparent 100%
+  );
+  mask-image: radial-gradient(
+    circle var(--tr, 90px) at var(--tx, -999px) var(--ty, -999px),
+    black 0%, black 55%, transparent 100%
+  );
+}
+.doc-image-uv.uv-active { opacity: 1; }
+
+/* UV cursor crosshair */
+.doc-viewer-body.uv-cursor { cursor: none; }
+.doc-viewer-body.uv-cursor::before {
+  content: '';
+  position: fixed;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(180, 60, 255, 0.85);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 50;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px rgba(160, 50, 255, 0.7), inset 0 0 4px rgba(160, 50, 255, 0.3);
+  /* positioned via JS — not practical to move with CSS alone, done via wrapper div */
+}
+
+/* ══════════════════════════════════════════════════════
+   SCANNER LINE
+══════════════════════════════════════════════════════ */
+.doc-scan-line {
+  position: absolute;
+  left: 0; right: 0;
+  top: -4px;
+  height: 4px;
+  background: linear-gradient(90deg,
+    transparent, rgba(0,220,80,.12) 20%,
+    rgba(0,255,100,.7) 50%,
+    rgba(0,220,80,.12) 80%,
+    transparent);
+  box-shadow: 0 0 14px 4px rgba(0, 255, 100, 0.35);
+  z-index: 30;
+  pointer-events: none;
+  opacity: 0;
+}
+.doc-scan-line.scanning {
+  animation: doc-scan 0.9s cubic-bezier(.4,0,.6,1) forwards;
+}
+@keyframes doc-scan {
+  0%   { top: -4px;   opacity: 0; }
+  5%   { opacity: 1; }
+  95%  { opacity: .7; }
+  100% { top: calc(100% + 4px); opacity: 0; }
+}
+
+/* ══════════════════════════════════════════════════════
+   CLASSIFIED STAMP
+══════════════════════════════════════════════════════ */
+.doc-classified-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+  pointer-events: none;
+  background: rgba(0,0,0,.25);
+}
+.doc-classified-stamp {
+  font-family: var(--vt);
+  font-size: clamp(28px, 6vw, 52px);
+  letter-spacing: 8px;
+  color: var(--red);
+  border: 4px solid var(--red);
+  padding: 8px 20px;
+  transform: rotate(-18deg);
+  opacity: 0;
+  text-shadow: 0 0 18px rgba(204,0,0,.6);
+  box-shadow: 0 0 18px rgba(204,0,0,.3), inset 0 0 10px rgba(204,0,0,.1);
+}
+.doc-classified-wrap.stamp-show .doc-classified-stamp {
+  animation: stamp-appear .25s cubic-bezier(.2,1.4,.4,1) forwards;
+}
+.doc-classified-wrap.stamp-fade .doc-classified-stamp {
+  animation: stamp-vanish .7s ease forwards;
+}
+@keyframes stamp-appear {
+  0%   { opacity: 0; transform: rotate(-18deg) scale(1.6); }
+  60%  { opacity: 1; transform: rotate(-18deg) scale(0.93); }
+  100% { opacity: 1; transform: rotate(-18deg) scale(1); }
+}
+@keyframes stamp-vanish {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ══════════════════════════════════════════════════════
+   "NOVO" BADGE ON DOC CARDS
+══════════════════════════════════════════════════════ */
+.doc-card-thumb { position: relative; }
+.doc-new-badge {
+  position: absolute;
+  top: 3px; left: 3px;
+  background: var(--red);
+  color: var(--white);
+  font-family: var(--font);
+  font-size: 8px;
+  letter-spacing: 2px;
+  padding: 2px 5px;
+  animation: badgepulse 1.5s ease-in-out infinite;
+  z-index: 5;
+}
+@keyframes badgepulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .5; }
+}
+
+/* ══════════════════════════════════════════════════════
+   ARQUIVO RECEBIDO — ALERT OVERLAY
+══════════════════════════════════════════════════════ */
+.doc-new-alert {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0,0,0,.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s ease;
+}
+.doc-new-alert.doc-new-visible {
+  opacity: 1;
+  pointer-events: all;
+}
+.doc-new-alert.doc-new-dismiss-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Noise texture overlay */
+.doc-new-noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(0deg,
+      transparent, transparent 2px,
+      rgba(204,0,0,.025) 2px, rgba(204,0,0,.025) 4px);
+  z-index: 0;
+  animation: noiseshift 4s steps(1) infinite;
+}
+@keyframes noiseshift {
+  0%, 100% { transform: translateY(0); }
+  25%       { transform: translateY(-2px); }
+  50%       { transform: translateY(1px); }
+  75%       { transform: translateY(-1px); }
+}
+
+.doc-new-inner {
+  position: relative; z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 28px;
+  border: 1px solid var(--red);
+  background: var(--bg2);
+  max-width: 320px;
+  width: 90%;
+  box-shadow: 0 0 40px rgba(204,0,0,.35), 0 0 80px rgba(204,0,0,.1);
+  animation: alertslide .35s cubic-bezier(.2,1,.4,1) both;
+}
+.doc-new-alert.doc-new-dismiss-out .doc-new-inner {
+  animation: alertslideout .3s ease forwards;
+}
+@keyframes alertslide {
+  from { transform: translateY(-24px) scale(.96); opacity: 0; }
+  to   { transform: translateY(0)     scale(1);   opacity: 1; }
+}
+@keyframes alertslideout {
+  from { transform: translateY(0)  scale(1);   opacity: 1; }
+  to   { transform: translateY(16px) scale(.97); opacity: 0; }
+}
+
+.doc-new-header {
+  font-family: var(--font);
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--red);
+  animation: glitch-flicker 3s ease-in-out infinite;
+}
+@keyframes glitch-flicker {
+  0%, 92%, 96%, 100% { opacity: 1;  clip-path: none; }
+  93%  { opacity: .4; clip-path: inset(30% 0 50% 0); transform: translateX(3px); }
+  94%  { opacity: 1;  clip-path: none; transform: none; }
+  95%  { opacity: .6; clip-path: inset(60% 0 10% 0); transform: translateX(-2px); }
+}
+
+.doc-new-title {
+  font-family: var(--vt);
+  font-size: 30px;
+  letter-spacing: 4px;
+  color: var(--white);
+  text-shadow: 0 0 12px rgba(255,255,255,.4);
+}
+
+.doc-new-thumb-wrap {
+  width: 120px;
+  height: 160px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border2);
+  box-shadow: 0 0 16px rgba(204,0,0,.3);
+}
+.doc-new-thumb {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  filter: grayscale(.4) contrast(1.15);
+}
+.doc-new-thumb-scan {
+  position: absolute;
+  left: 0; right: 0; top: -3px;
+  height: 3px;
+  background: rgba(0,255,100,.8);
+  box-shadow: 0 0 8px rgba(0,255,100,.6);
+  animation: doc-scan 1.8s linear infinite;
+}
+
+.doc-new-docname {
+  font-family: var(--vt);
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: var(--red);
+}
+
+.doc-new-access {
+  font-family: var(--font);
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--green);
+  animation: accessblink 1.2s steps(1) infinite;
+}
+@keyframes accessblink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.doc-new-actions {
+  display: flex; flex-direction: column; gap: 6px; width: 100%; margin-top: 4px;
+}
+.doc-new-btn-view {
+  width: 100%; background: var(--red);
+  border: none; color: var(--white);
+  font-family: var(--font); font-size: 12px;
+  letter-spacing: 2px; padding: 10px;
+  cursor: pointer; transition: background .15s;
+}
+.doc-new-btn-view:hover { background: var(--red2); }
+.doc-new-btn-dismiss {
+  width: 100%; background: transparent;
+  border: 1px solid var(--border2); color: var(--dim);
+  font-family: var(--font); font-size: 10px;
+  letter-spacing: 2px; padding: 7px;
+  cursor: pointer; transition: all .15s;
+}
+.doc-new-btn-dismiss:hover { border-color: var(--dim); color: var(--off); }

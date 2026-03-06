@@ -69,9 +69,15 @@ const ATTR_LABELS = {
 const DOCUMENTS = [
   {
     id:      'doc_placeholder',
-    title:   'DOCUMENTO #01',
-    image:   'documentos/placeholder.jpg',
-    uvImage: null   // null = usa filtro CSS. coloque 'documentos/placeholder_uv.jpg' para versão real
+    title:   'Papel Estranho',
+    image:   'documentos/documento01.jpg',
+    uvImage: 'documentos/documento01_uv.jpg'   // versão UV real — null = usa filtro CSS apenas
+  },
+  {
+    id:      'doc_02',             
+    title:   'PROJETO [CENSURADO] — RELATÓRIO DE TESTES',
+    image:   'documentos/documento02.jpg',
+    uvImage: 'documentos/documento02_uv.jpg'  // ou null se não tiver versão UV
   }
 ];
 
@@ -100,6 +106,8 @@ let db = null;
 let firebaseOk = false;
 let docsReleasedState = [];   // IDs de documentos liberados pelo GM
 let docsUnsub = null;         // listener firestore de docs
+let docsReadSet   = new Set(); // IDs de docs já abertos pelo jogador
+let _newDocAlertId = null;     // docId pendente no alerta de novo arquivo
 
 try {
   const app = initializeApp(firebaseConfig);
@@ -323,8 +331,13 @@ async function loginPlayer() {
 
     // Realtime listener — docs released state
     if (docsUnsub) docsUnsub();
+    const _prevReleased = [...docsReleasedState];
     docsUnsub = onSnapshot(doc(db, 'gameState', 'docs'), (snap) => {
-      docsReleasedState = snap.exists() ? (snap.data().released || []) : [];
+      const newReleased = snap.exists() ? (snap.data().released || []) : [];
+      // Detect newly released docs (not in previous state)
+      const justReleased = newReleased.filter(id => !docsReleasedState.includes(id));
+      docsReleasedState = newReleased;
+      if (justReleased.length > 0) showNewDocAlert(justReleased[0]);
       if (state.currentTab === 'docs') renderDocsTab();
     });
   }
@@ -355,6 +368,8 @@ function logout() {
   if (state.gmCharsUnsub)   state.gmCharsUnsub();
   if (docsUnsub)            { docsUnsub(); docsUnsub = null; }
   docsReleasedState = [];
+  docsReadSet = new Set();
+  _newDocAlertId = null;
   state = {
     role: null, codename: null, character: null,
     unsubscribe: null, currentTab: 'main',
@@ -1569,6 +1584,19 @@ async function loadDocsState() {
     const raw = localStorage.getItem('vyper_docs_released');
     docsReleasedState = raw ? JSON.parse(raw) : [];
   }
+  // Load which docs this player has already opened
+  if (state.codename) {
+    const readRaw = localStorage.getItem('vyper_docs_read_' + state.codename);
+    docsReadSet = new Set(readRaw ? JSON.parse(readRaw) : []);
+  }
+}
+
+function markDocRead(docId) {
+  if (!docId || docsReadSet.has(docId)) return;
+  docsReadSet.add(docId);
+  if (state.codename) {
+    localStorage.setItem('vyper_docs_read_' + state.codename, JSON.stringify([...docsReadSet]));
+  }
 }
 
 async function saveDocsState() {
@@ -1596,6 +1624,7 @@ function renderDocsTab() {
 
   listEl.innerHTML = DOCUMENTS.map(d => {
     const released = docsReleasedState.includes(d.id);
+    const isNew    = released && !docsReadSet.has(d.id);
     const ann      = ((state.character?.docAnnotations || {})[d.id] || '');
     const annPrev  = ann.length > 55 ? ann.substring(0, 55) + '…' : ann;
 
@@ -1604,9 +1633,10 @@ function renderDocsTab() {
         ${released
           ? `<img class="doc-thumb-img" src="${d.image}" alt="" />`
           : `<div class="doc-thumb-locked">&#128274;</div>`}
+        ${isNew ? '<div class="doc-new-badge">NOVO</div>' : ''}
       </div>
       <div class="doc-card-info">
-        <div class="doc-card-title">${escHtml(d.title)}</div>
+        <div class="doc-card-title">${released ? escHtml(d.title) : '[???]'}</div>
         <div class="doc-card-status ${released ? 'doc-status-ok' : 'doc-status-lock'}">
           ${released ? '&#9670; LIBERADO' : '&#8212; ACESSO RESTRITO'}
         </div>
@@ -1630,19 +1660,30 @@ function openDocViewer(docId) {
   const docDef = DOCUMENTS.find(d => d.id === docId);
   if (!docDef) return;
 
+  const isFirstOpen = !docsReadSet.has(docId);
+
   docViewerState.docId  = docId;
   docViewerState.uvMode = false;
   docViewerState.scale  = 1;
   docViewerState.panX   = 0;
   docViewerState.panY   = 0;
 
+  // Normal image
   const img = $('doc-image');
   if (img) { img.src = docDef.image; img.style.filter = ''; }
+
+  // UV image layer — pre-load source
+  const uvImg = $('doc-image-uv');
+  if (uvImg) {
+    uvImg.src = docDef.uvImage || docDef.image;
+    uvImg.classList.remove('uv-active');
+    uvImg.style.cssText = '';
+  }
 
   const titleEl = $('doc-viewer-title');
   if (titleEl) titleEl.textContent = docDef.title;
 
-  const uvBtn  = $('doc-uv-btn');
+  const uvBtn   = $('doc-uv-btn');
   const uvLight = $('doc-uv-light');
   if (uvBtn)   uvBtn.classList.remove('active');
   if (uvLight) uvLight.classList.add('hidden');
@@ -1652,38 +1693,84 @@ function openDocViewer(docId) {
 
   applyDocTransform();
   $('doc-viewer').classList.remove('hidden');
+
+  // Scanner animation
+  const scanLine = $('doc-scan-line');
+  if (scanLine) {
+    scanLine.classList.remove('scanning');
+    void scanLine.offsetWidth; // reflow
+    scanLine.classList.add('scanning');
+    setTimeout(() => scanLine.classList.remove('scanning'), 1000);
+  }
+
+  // CLASSIFICADO stamp on first open
+  if (isFirstOpen) {
+    const stampWrap = $('doc-classified-wrap');
+    if (stampWrap) {
+      stampWrap.classList.remove('hidden', 'stamp-fade');
+      void stampWrap.offsetWidth;
+      stampWrap.classList.add('stamp-show');
+      setTimeout(() => {
+        stampWrap.classList.add('stamp-fade');
+        setTimeout(() => {
+          stampWrap.classList.add('hidden');
+          stampWrap.classList.remove('stamp-show', 'stamp-fade');
+        }, 700);
+      }, 1400);
+    }
+  }
+
+  markDocRead(docId);
+  renderDocsTab();
 }
 
 function closeDocViewer() {
   $('doc-viewer').classList.add('hidden');
-  docViewerState.docId = null;
-  docViewerState.scale = 1;
-  docViewerState.panX  = 0;
-  docViewerState.panY  = 0;
+  docViewerState.docId  = null;
+  docViewerState.uvMode = false;
+  docViewerState.scale  = 1;
+  docViewerState.panX   = 0;
+  docViewerState.panY   = 0;
+  const uvImg = $('doc-image-uv');
+  if (uvImg) { uvImg.classList.remove('uv-active'); uvImg.style.cssText = ''; }
+  const uvLight = $('doc-uv-light');
+  if (uvLight) uvLight.classList.add('hidden');
+  const uvBtn = $('doc-uv-btn');
+  if (uvBtn) uvBtn.classList.remove('active');
+  const body = $('doc-viewer-body');
+  if (body) body.classList.remove('uv-cursor');
 }
 
 function toggleDocUV() {
   docViewerState.uvMode = !docViewerState.uvMode;
   const uvBtn   = $('doc-uv-btn');
   const uvLight = $('doc-uv-light');
-  const img     = $('doc-image');
+  const uvImg   = $('doc-image-uv');
+  const body    = $('doc-viewer-body');
   const docDef  = DOCUMENTS.find(d => d.id === docViewerState.docId);
 
   if (docViewerState.uvMode) {
-    if (docDef?.uvImage) {
-      img.src          = docDef.uvImage;
-      img.style.filter = '';
-    } else {
-      // Simulate UV with CSS: white→UV-fluorescent colours
-      img.style.filter = 'invert(1) hue-rotate(200deg) saturate(5) brightness(1.4) contrast(1.5)';
+    // Apply filter if no dedicated UV image
+    if (uvImg) {
+      if (!docDef?.uvImage) {
+        uvImg.style.filter = 'invert(1) hue-rotate(200deg) saturate(6) brightness(1.6) contrast(1.6)';
+      } else {
+        uvImg.style.filter = '';
+      }
+      // Start torch off-screen until cursor moves
+      uvImg.style.setProperty('--tx', '-999px');
+      uvImg.style.setProperty('--ty', '-999px');
+      uvImg.style.setProperty('--tr', '100px');
+      uvImg.classList.add('uv-active');
     }
     if (uvBtn)   uvBtn.classList.add('active');
     if (uvLight) uvLight.classList.remove('hidden');
+    if (body)    body.classList.add('uv-cursor');
   } else {
-    if (docDef) img.src = docDef.image;
-    img.style.filter = '';
+    if (uvImg) { uvImg.classList.remove('uv-active'); uvImg.style.filter = ''; }
     if (uvBtn)   uvBtn.classList.remove('active');
     if (uvLight) uvLight.classList.add('hidden');
+    if (body)    body.classList.remove('uv-cursor');
   }
 }
 
@@ -1708,6 +1795,23 @@ function applyDocTransform() {
   container.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
 }
 
+function _uvTorchTrack(cx, cy) {
+  if (!docViewerState.uvMode) return;
+  const uvImg = $('doc-image-uv');
+  if (!uvImg) return;
+  const rect = uvImg.getBoundingClientRect();
+  if (rect.width === 0) return;
+  // Convert viewport coords to element local coords (pre-transform)
+  const scaleX = uvImg.offsetWidth  ? rect.width  / uvImg.offsetWidth  : 1;
+  const scaleY = uvImg.offsetHeight ? rect.height / uvImg.offsetHeight : 1;
+  const lx = (cx - rect.left) / scaleX;
+  const ly = (cy - rect.top)  / scaleY;
+  const tr = Math.round(100 / Math.max(scaleX, 0.1)); // torch r in local px ~100px viewport
+  uvImg.style.setProperty('--tx', lx + 'px');
+  uvImg.style.setProperty('--ty', ly + 'px');
+  uvImg.style.setProperty('--tr', tr + 'px');
+}
+
 function initDocViewerEvents() {
   const body = $('doc-viewer-body');
   if (!body) return;
@@ -1722,6 +1826,23 @@ function initDocViewerEvents() {
     applyDocTransform();
   }, { passive: false });
 
+  // Mouse move — drag pan + UV torch
+  body.addEventListener('mousemove', (e) => {
+    _uvTorchTrack(e.clientX, e.clientY);
+    if (!docViewerState.isDragging) return;
+    docViewerState.panX += e.clientX - docViewerState.lastX;
+    docViewerState.panY += e.clientY - docViewerState.lastY;
+    docViewerState.lastX = e.clientX;
+    docViewerState.lastY = e.clientY;
+    applyDocTransform();
+  });
+
+  body.addEventListener('mouseleave', () => {
+    // Park torch off-screen
+    const uvImg = $('doc-image-uv');
+    if (uvImg) { uvImg.style.setProperty('--tx', '-999px'); uvImg.style.setProperty('--ty', '-999px'); }
+  });
+
   // Mouse drag pan
   body.addEventListener('mousedown', (e) => {
     if (docViewerState.scale <= 1) return;
@@ -1730,28 +1851,22 @@ function initDocViewerEvents() {
     docViewerState.lastY = e.clientY;
     body.style.cursor = 'grabbing';
   });
-  body.addEventListener('mousemove', (e) => {
-    if (!docViewerState.isDragging) return;
-    docViewerState.panX += e.clientX - docViewerState.lastX;
-    docViewerState.panY += e.clientY - docViewerState.lastY;
-    docViewerState.lastX = e.clientX;
-    docViewerState.lastY = e.clientY;
-    applyDocTransform();
-  });
-  const stopDrag = () => { docViewerState.isDragging = false; body.style.cursor = ''; };
+  const stopDrag = () => { docViewerState.isDragging = false; if (!docViewerState.uvMode) body.style.cursor = ''; };
   body.addEventListener('mouseup', stopDrag);
-  body.addEventListener('mouseleave', stopDrag);
 
-  // Touch pinch zoom + single-finger pan
+  // Touch pinch zoom + single-finger pan + UV torch
   body.addEventListener('touchstart', (e) => {
     if (e.touches.length === 2) {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       docViewerState.lastDist = Math.hypot(dx, dy);
-    } else if (e.touches.length === 1 && docViewerState.scale > 1) {
-      docViewerState.isDragging = true;
+    } else if (e.touches.length === 1) {
+      if (docViewerState.scale > 1) {
+        docViewerState.isDragging = true;
+      }
       docViewerState.lastX = e.touches[0].clientX;
       docViewerState.lastY = e.touches[0].clientY;
+      _uvTorchTrack(e.touches[0].clientX, e.touches[0].clientY);
     }
   }, { passive: true });
 
@@ -1768,19 +1883,63 @@ function initDocViewerEvents() {
       docViewerState.lastDist = dist;
       if (docViewerState.scale <= docViewerState.minScale) { docViewerState.panX = 0; docViewerState.panY = 0; }
       applyDocTransform();
-    } else if (e.touches.length === 1 && docViewerState.isDragging) {
-      docViewerState.panX += e.touches[0].clientX - docViewerState.lastX;
-      docViewerState.panY += e.touches[0].clientY - docViewerState.lastY;
-      docViewerState.lastX = e.touches[0].clientX;
-      docViewerState.lastY = e.touches[0].clientY;
-      applyDocTransform();
+    } else if (e.touches.length === 1) {
+      _uvTorchTrack(e.touches[0].clientX, e.touches[0].clientY);
+      if (docViewerState.isDragging) {
+        docViewerState.panX += e.touches[0].clientX - docViewerState.lastX;
+        docViewerState.panY += e.touches[0].clientY - docViewerState.lastY;
+        docViewerState.lastX = e.touches[0].clientX;
+        docViewerState.lastY = e.touches[0].clientY;
+        applyDocTransform();
+      }
     }
   }, { passive: false });
 
   body.addEventListener('touchend', () => {
     docViewerState.isDragging = false;
     docViewerState.lastDist   = 0;
+    const uvImg = $('doc-image-uv');
+    if (uvImg) { uvImg.style.setProperty('--tx', '-999px'); uvImg.style.setProperty('--ty', '-999px'); }
   });
+}
+
+// ── New Doc Alert ─────────────────────────────────────────
+function showNewDocAlert(docId) {
+  const docDef = DOCUMENTS.find(d => d.id === docId);
+  if (!docDef) return;
+  _newDocAlertId = docId;
+  const thumb  = $('doc-new-thumb');
+  const name   = $('doc-new-docname');
+  const alert  = $('doc-new-alert');
+  if (thumb)  thumb.src = docDef.image;
+  if (name)   name.textContent = docDef.title;
+  if (alert) {
+    alert.classList.remove('hidden', 'doc-new-dismiss-out');
+    void alert.offsetWidth;
+    alert.classList.add('doc-new-visible');
+  }
+}
+
+function dismissNewDocAlert(openDoc = false) {
+  const alert = $('doc-new-alert');
+  if (!alert) return;
+  alert.classList.remove('doc-new-visible');
+  alert.classList.add('doc-new-dismiss-out');
+  const pendingId = _newDocAlertId;
+  _newDocAlertId = null;
+  setTimeout(() => {
+    alert.classList.add('hidden');
+    alert.classList.remove('doc-new-dismiss-out');
+    if (openDoc && pendingId && docsReleasedState.includes(pendingId)) {
+      // Switch to docs tab and open the viewer
+      if (state.currentTab !== 'docs') {
+        window.App.switchTab('docs');
+        setTimeout(() => openDocViewer(pendingId), 300);
+      } else {
+        openDocViewer(pendingId);
+      }
+    }
+  }, 400);
 }
 
 // ── GM Docs Panel ─────────────────────────────────────────
@@ -1874,7 +2033,9 @@ window.App = {
   closeDocViewer,
   toggleDocUV,
   saveDocAnnotation,
-  gmToggleDocRelease
+  gmToggleDocRelease,
+  dismissNewDocAlert,
+  markDocRead
 };
 
 // ──────────────────────────────────────────────────────────
@@ -1882,6 +2043,12 @@ window.App = {
 // ──────────────────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    // Dismiss new doc alert first
+    const newAlert = $('doc-new-alert');
+    if (newAlert && !newAlert.classList.contains('hidden')) {
+      dismissNewDocAlert(false);
+      return;
+    }
     // Close doc viewer first
     const viewer = $('doc-viewer');
     if (viewer && !viewer.classList.contains('hidden')) {

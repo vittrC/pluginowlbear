@@ -416,12 +416,36 @@
       <div class="doc-uv-light hidden" id="doc-uv-light"></div>
       <div class="doc-zoom-container" id="doc-zoom-container">
         <img class="doc-image" id="doc-image" src="" alt="" draggable="false" />
+        <img class="doc-image doc-image-uv" id="doc-image-uv" src="" alt="" draggable="false" />
+      </div>
+      <div class="doc-scan-line" id="doc-scan-line"></div>
+      <div class="doc-classified-wrap hidden" id="doc-classified-wrap">
+        <div class="doc-classified-stamp">CLASSIFICADO</div>
       </div>
     </div>
     <div class="doc-annotation-bar">
       <div class="doc-ann-label">&#9658; ANOTAÇÕES</div>
       <textarea class="doc-ann-input" id="doc-ann-input" placeholder="Suas anotações sobre este documento..." rows="3"></textarea>
       <button class="doc-ann-save" onclick="App.saveDocAnnotation()">SALVAR</button>
+    </div>
+  </div>
+
+  <!-- ARQUIVO RECEBIDO ALERT -->
+  <div id="doc-new-alert" class="doc-new-alert hidden">
+    <div class="doc-new-noise"></div>
+    <div class="doc-new-inner">
+      <div class="doc-new-header">[ TRANSMISS&#xC3;O RECEBIDA ]</div>
+      <div class="doc-new-title">ARQUIVO RECEBIDO</div>
+      <div class="doc-new-thumb-wrap">
+        <img class="doc-new-thumb" id="doc-new-thumb" src="" alt="" />
+        <div class="doc-new-thumb-scan"></div>
+      </div>
+      <div class="doc-new-docname" id="doc-new-docname">&#8212;</div>
+      <div class="doc-new-access">// ACESSO LIBERADO //</div>
+      <div class="doc-new-actions">
+        <button class="doc-new-btn-view" id="doc-new-btn-view" onclick="App.dismissNewDocAlert(true)">&#9658; VISUALIZAR ARQUIVO</button>
+        <button class="doc-new-btn-dismiss" onclick="App.dismissNewDocAlert(false)">FECHAR</button>
+      </div>
     </div>
   </div>
 
