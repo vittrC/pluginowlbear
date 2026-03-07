@@ -7,6 +7,7 @@
   <title>VYPER // AGENT SYSTEM</title>
   <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="icones/logo.png" type="image/png">
 </head>
 <body>
 
@@ -57,7 +58,7 @@
       <button class="lform-btn" onclick="App.loginGM()">[ ACESSO CENTRAL ]</button>
       <div class="lform-err hidden" id="login-error-gm"></div>
     </div>
-    <div class="login-footer">ACESSO NAO AUTORIZADO SERA REGISTRADO E PUNIDO</div>
+    <div class="login-footer">ACESSO NAO AUTORIZADO ATIVARA AUTODESTRUIÇÃO INSTANTANEA DO DISPOSITIVO</div>
   </div>
 </div>
 
@@ -126,6 +127,27 @@
           </div>
         </div>
       </div>
+
+      <!-- PATENTE -->
+      <div class="patente-wrap">
+        <div class="patente-section-title">&#9658; PATENTE</div>
+        <div class="patente-grid">
+          <div class="patente-item patente-active" id="patente-item-1" onclick="App.setPatente(1)">
+            <img src="icones/patente1.png" class="patente-img" />
+            <div class="patente-name">VENOM</div>
+          </div>
+          <div class="patente-item patente-locked" id="patente-item-2" onclick="App.setPatente(2)">
+            <img src="icones/patente2.png" class="patente-img" />
+            <div class="patente-name">SNAKE</div>
+          </div>
+          <div class="patente-item patente-locked" id="patente-item-3" onclick="App.setPatente(3)">
+            <img src="icones/patente3.png" class="patente-img" />
+            <div class="patente-name">VYPER</div>
+          </div>
+        </div>
+        <div class="patente-desc" id="patente-desc">Recruta de campo. Preparado para missões de alta periculosidade.</div>
+      </div>
+
     </div><!-- /s-left -->
 
     <!-- CENTER -->
@@ -164,7 +186,6 @@
             <div class="attr-icon-area"><img src="icones/4.png" class="attr-img" /></div>
             <div class="attr-foot">
               <span class="attr-grade" id="grade-resiliencia">&#8212;</span>
-              <img src="icones/4.png" class="attr-foot-ico" />
             </div>
             <div class="attr-cut"></div>
           </div>
@@ -173,7 +194,6 @@
             <div class="attr-icon-area"><img src="icones/5.png" class="attr-img" /></div>
             <div class="attr-foot">
               <span class="attr-grade" id="grade-presenca">&#8212;</span>
-              <img src="icones/5.png" class="attr-foot-ico" />
             </div>
             <div class="attr-cut"></div>
           </div>
@@ -189,6 +209,8 @@
           <div class="integrity-bar active" data-index="2" onclick="App.toggleIntegrity(2)"></div>
           <div class="integrity-bar active" data-index="3" onclick="App.toggleIntegrity(3)"></div>
           <div class="integrity-bar active" data-index="4" onclick="App.toggleIntegrity(4)"></div>
+          <div class="integrity-bar bar-hidden" data-index="5" onclick="App.toggleIntegrity(5)"></div>
+          <div class="integrity-bar bar-hidden" data-index="6" onclick="App.toggleIntegrity(6)"></div>
         </div>
         <span class="integ-count hidden" id="integrity-count">5/5</span>
       </div>

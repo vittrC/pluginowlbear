@@ -282,6 +282,9 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
 .integrity-bar[data-index="2"] { width: 70%; }
 .integrity-bar[data-index="3"] { width: 55%; }
 .integrity-bar[data-index="4"] { width: 38%; }
+.integrity-bar[data-index="5"] { width: 25%; }
+.integrity-bar[data-index="6"] { width: 14%; }
+.integrity-bar.bar-hidden { display: none; }
 .integrity-bar.active { background: var(--white); }
 .integrity-bars.warn-low  .integrity-bar.active { background: var(--yellow); }
 .integrity-bars.warn-crit .integrity-bar.active { background: var(--red); }
@@ -303,6 +306,73 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
 .sec-badge.alerta       { color: var(--yellow); animation: pulseyellow 1.4s ease-in-out infinite; }
 .sec-badge.comprometido { color: var(--red);    animation: pulsered   .7s ease-in-out infinite; }
 .sec-badge.inativo      { color: var(--dim); }
+
+/* ── PATENTE ─────────────────────────────────────────── */
+.patente-wrap {
+  border-top: 1px solid var(--border);
+  padding: 10px 14px 14px;
+  display: flex; flex-direction: column; gap: 0;
+}
+.patente-section-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--off);
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+.patente-grid {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.patente-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  transition: opacity .15s, filter .15s, border-color .15s;
+}
+.patente-item.patente-locked {
+  opacity: 0.22;
+  filter: grayscale(1);
+}
+.patente-item:not(.patente-active):hover {
+  opacity: 0.55;
+  filter: grayscale(0.4);
+}
+.patente-item.patente-active {
+  opacity: 1;
+  filter: none;
+  border-color: var(--white);
+}
+.patente-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.patente-name {
+  font-family: var(--vt);
+  font-size: 13px;
+  color: var(--off);
+  letter-spacing: 2px;
+}
+.patente-item.patente-active .patente-name {
+  color: var(--white);
+}
+.patente-desc {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--off);
+  line-height: 1.5;
+  text-align: center;
+  letter-spacing: 0.3px;
+  padding: 0 4px;
+}
 
 /* ── RIGHT NAV ──────────────────────────────────────── */
 .s-nav {

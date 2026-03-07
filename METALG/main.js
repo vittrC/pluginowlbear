@@ -89,6 +89,7 @@ const DEFAULT_CHAR = () => ({
   statusAtivo:"ativo",    // ativo | inativo | morto
   security:   "seguro",   // seguro | alerta | comprometido
   integrity:  5,
+  patente:    1,
   attrs: {
     fisico:      "D",
     intelecto:   "D",
@@ -102,6 +103,12 @@ const DEFAULT_CHAR = () => ({
 // ──────────────────────────────────────────────────────────
 //  FIREBASE INIT
 // ──────────────────────────────────────────────────────────
+const PATENTES = {
+  1: { nome: 'VENOM', desc: 'Recruta de campo. Preparado para missões de alta periculosidade.' },
+  2: { nome: 'SNAKE', desc: 'Operador especializado. Sete protocolos de eliminação habilitados.' },
+  3: { nome: 'VYPER', desc: 'Fantasma. Identidade apagada. Existe apenas a missão.' },
+};
+
 let db = null;
 let firebaseOk = false;
 let docsReleasedState = [];   // IDs de documentos liberados pelo GM
@@ -439,8 +446,10 @@ function renderSheet(data) {
     setAttrGrade(a, grade);
   });
 
-  // Integrity
-  updateIntegrityDisplay(data.integrity ?? 5);
+  // Patente
+  updatePatenteDisplay(data.patente ?? 1);
+
+  // Integrity (called inside updatePatenteDisplay)
 
   // Security
   updateSecurityDisplay(data.security || 'seguro');
@@ -473,15 +482,23 @@ function updateSecurityDisplay(security) {
 }
 
 function updateIntegrityDisplay(integrity) {
-  const val     = typeof integrity === 'number' ? integrity : 5;
-  const bars    = document.querySelectorAll('#integrity-bars .integrity-bar');
-  const countEl = $('integrity-count');
-  const section = document.getElementById('integrity-bars');
+  const patente  = state.character?.patente ?? 1;
+  const maxBars  = 4 + patente; // Venom=5, Snake=6, Vyper=7
+  const val      = typeof integrity === 'number' ? Math.min(integrity, maxBars) : maxBars;
+  const bars     = document.querySelectorAll('#integrity-bars .integrity-bar');
+  const countEl  = $('integrity-count');
+  const section  = document.getElementById('integrity-bars');
 
   bars.forEach((bar, i) => {
-    bar.classList.toggle('active', i < val);
+    if (i >= maxBars) {
+      bar.classList.add('bar-hidden');
+      bar.classList.remove('active');
+    } else {
+      bar.classList.remove('bar-hidden');
+      bar.classList.toggle('active', i < val);
+    }
   });
-  if (countEl) countEl.textContent = val + '/5';
+  if (countEl) countEl.textContent = val + '/' + maxBars;
 
   // Visual warning levels
   if (section) {
@@ -489,6 +506,31 @@ function updateIntegrityDisplay(integrity) {
     if (val <= 1) section.classList.add('warn-crit');
     else if (val <= 2) section.classList.add('warn-low');
   }
+}
+
+function updatePatenteDisplay(patente) {
+  const p = Math.max(1, Math.min(3, patente || 1));
+  for (let i = 1; i <= 3; i++) {
+    const item = $('patente-item-' + i);
+    if (!item) continue;
+    item.classList.toggle('patente-active', i === p);
+    item.classList.toggle('patente-locked', i !== p);
+  }
+  const descEl = $('patente-desc');
+  if (descEl) descEl.textContent = PATENTES[p]?.desc || '';
+
+  // Update integrity display with new max
+  const currentIntegrity = state.character?.integrity ?? (4 + p);
+  updateIntegrityDisplay(currentIntegrity);
+}
+
+async function setPatente(level) {
+  if (state.role !== 'player' || !state.character) return;
+  const p = Math.max(1, Math.min(3, level));
+  state.character.patente = p;
+  updatePatenteDisplay(p);
+  sfx('select');
+  await persistChar({ patente: p });
 }
 
 function updateStatusAtivoDisplay(status) {
@@ -596,7 +638,9 @@ function closeGradeModal(event) {
 async function toggleIntegrity(index) {
   if (!state.character && state.role !== 'player') return;
 
-  const current = state.character?.integrity ?? 5;
+  const patente  = state.character?.patente ?? 1;
+  const maxBars  = 4 + patente;
+  const current  = state.character?.integrity ?? maxBars;
   // Clicking a bar sets integrity to index+1 if it was off, or index if it was on (last active)
   let newVal;
   if (index < current) {
@@ -606,7 +650,7 @@ async function toggleIntegrity(index) {
     // Clicking an inactive bar — set integrity to index+1
     newVal = index + 1;
   }
-  newVal = Math.max(0, Math.min(5, newVal));
+  newVal = Math.max(0, Math.min(maxBars, newVal));
 
   if (state.character) state.character.integrity = newVal;
   updateIntegrityDisplay(newVal);
@@ -2020,15 +2064,17 @@ const MISSAO_DETAILS = [
     status:   'LOCALIZADO',
     priority: 'ALPHA',
     summary:
-      'Identidade real desconhecida. Codinome atribuído pela inteligência Vyper após análise ' +
-      'de padrões de comunicação interceptados. Trata-se do intermediário principal entre ' +
+      'Identidade real desconhecida. Codinome dado graças a sua fama como figura de relevancia militar. Trata-se do intermediário principal entre ' +
       'os Filhos do Arcanjo e forças externas ainda não identificadas.\n\n' +
-      '[ PLACEHOLDER — aguardando briefing completo do controle central. ]',
+      'O soldado lendário, é considerado um alvo de extremo perigo, toda cautela é necessária para sua abordagem e neutralização. ' +
+      'Retornou a ativa após ser declarado morto em campo.\n'+
+      'Eliminação autorizada, mas a captura para interrogatório é preferível caso as condições permitam.\n\n' +
+      '[ — aguardando briefing completo do controle central. ]',
     intel:
       '— Última localização confirmada: setor industrial, zona norte.\n' +
       '— Possui escolta armada de alto nível de treinamento.\n' +
       '— Conhece a identidade de pelo menos dois agentes Vyper ativos.\n\n' +
-      '[ PLACEHOLDER — dados adicionais classificados. ]',
+      '[ — CLASSIFICADO. ]',
     notes:
       '[ Nenhuma nota de campo registrada. ]',
   },
@@ -2048,9 +2094,9 @@ const MISSAO_DETAILS = [
       '— Portador de implantes cibernéticos de combate — capacidades aumentadas.\n' +
       '— Histórico: 23 anos de serviço ativo, especialização em guerra urbana.\n' +
       '— Última aparição confirmada: 72 horas atrás, reunião com alvo OBJ. 02.\n\n' +
-      '[ PLACEHOLDER — dados adicionais classificados. ]',
+      '[ — dados adicionais classificados. ]',
     notes:
-      '[ Nenhuma nota de campo registrada. ]',
+      '[ Seus implantes cibernéticos não foram identificados pela equipe de inteligencia, então não sabemos do potencial de sua cibernética. ]',
   },
 ];
 
@@ -2325,7 +2371,8 @@ window.App = {
   markDocRead,
   gmSaveMissaoText,
   openMissaoDetail,
-  closeMissaoDetail
+  closeMissaoDetail,
+  setPatente
 };
 
 // ──────────────────────────────────────────────────────────
