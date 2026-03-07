@@ -87,7 +87,7 @@ const DEFAULT_CHAR = () => ({
   origem:     "[CONFIDENCIAL]",
   photo:      "",
   statusAtivo:"ativo",    // ativo | inativo | morto
-  security:   "seguro",   // seguro | alerta | comprometido
+  security:   "seguro",   // seguro | alerta | perigo | comprometido
   integrity:  5,
   patente:    1,
   attrs: {
@@ -105,8 +105,8 @@ const DEFAULT_CHAR = () => ({
 // ──────────────────────────────────────────────────────────
 const PATENTES = {
   1: { nome: 'VENOM', desc: 'Recruta de campo. Preparado para missões de alta periculosidade.' },
-  2: { nome: 'SNAKE', desc: 'Operador especializado. Sete protocolos de eliminação habilitados.' },
-  3: { nome: 'VYPER', desc: 'Fantasma. Identidade apagada. Existe apenas a missão.' },
+  2: { nome: 'SNAKE', desc: 'Operador especializado. Seu nome é mais conhecido.' },
+  3: { nome: 'VYPER', desc: 'Um Vyper de verdade. Identidade apagada. Existe apenas a missão. Seu nome causa medo' },
 };
 
 let db = null;
@@ -477,7 +477,7 @@ function updateSecurityDisplay(security) {
   const badge = $('security-display');
   const text  = $('security-text');
   badge.className = 'sec-badge ' + (security || 'seguro');
-  const labels = { seguro: 'SEGURO', alerta: 'ALERTA', comprometido: 'COMPROMETIDO', inativo: 'INATIVO' };
+  const labels = { seguro: 'SEGURO', alerta: 'ALERTA', perigo: 'PERIGO', comprometido: 'COMPROMETIDO', inativo: 'INATIVO' };
   text.textContent = labels[security] || 'SEGURO';
 }
 
@@ -551,6 +551,7 @@ function triggerStatusChangeEffect(newSecurity) {
   const alerts = {
     seguro:       '🟢 STATUS: SEGURO',
     alerta:       '⚠ ALERTA — possível ameaça detectada!',
+    perigo:       '🟠 PERIGO — contato hostil confirmado!',
     comprometido: '🔴 COMPROMETIDO — identidade exposta!'
   };
   showToast(alerts[newSecurity] || '', newSecurity === 'seguro' ? 'success' : 'error', 4000);
@@ -1279,7 +1280,7 @@ function buildGMCard(char) {
   card.id = 'gm-card-' + char.codename;
 
   const statusLabel = { ativo: 'ATIVO', inativo: 'INATIVO', morto: 'K.I.A.' };
-  const secLabel    = { seguro: 'SEGURO', alerta: 'ALERTA', comprometido: 'COMPROMETIDO' };
+  const secLabel    = { seguro: 'SEGURO', alerta: 'ALERTA', perigo: 'PERIGO', comprometido: 'COMPROMETIDO' };
   const patente     = char.patente ?? 1;
   const maxBars     = 4 + patente; // Venom=5, Snake=6, Vyper=7
   const integ       = Math.min(char.integrity ?? maxBars, maxBars);
@@ -1300,7 +1301,7 @@ function buildGMCard(char) {
           onclick="App.gmSetIntegrity('${char.codename}', ${i+1 > integ ? i+1 : i})" ></div>`
   ).join('');
 
-  const secBtns = ['seguro','alerta','comprometido'].map(s =>
+  const secBtns = ['seguro','alerta','perigo','comprometido'].map(s =>
     `<button class="gm-sec-btn ${char.security === s ? 'active-'+s : ''}"
              onclick="App.gmSetSecurity('${char.codename}','${s}')">
        ${secLabel[s]}
