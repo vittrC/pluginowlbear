@@ -663,6 +663,11 @@ function switchTab(tab) {
     if (tab === 'mald')  { loadMaldicoes().then(renderMaldicoesTab); }
     if (tab === 'docs')  renderDocsTab();
     if (tab === 'equip') enterMissaoTab();
+    // Close mission detail when leaving
+    if (tab !== 'equip') {
+      const panel = $('missao-detail-panel');
+      if (panel) panel.classList.remove('mdp-open', 'mdp-out');
+    }
   }
 }
 
@@ -1960,7 +1965,111 @@ function dismissNewDocAlert(openDoc = false) {
 //  MISSÃO TAB
 // ──────────────────────────────────────────────────────────
 
-// Decodes a string letter by letter into a target element
+const MISSAO_DETAILS = [
+  {
+    tag:      'OBJ. 01',
+    action:   'NEUTRALIZAR',
+    title:    'FILHOS DO ARCANJO',
+    threat:   '◆◆◆◆◇',
+    status:   'ATIVO',
+    priority: 'ALPHA',
+    summary:
+      'Facção religiosa extremista operando nas sombras do submundo. ' +
+      'Acredita-se que seus membros infiltraram estruturas de segurança e política local. ' +
+      'São a espinha dorsal logística e ideológica da OPERAÇÃO HERESIA.\n\n' +
+      '[ PLACEHOLDER — aguardando briefing completo do controle central. ]',
+    intel:
+      '— Liderança desconhecida. Possível figura religiosa de alto escalão.\n' +
+      '— Estimativa: 40–80 operativos ativos na região.\n' +
+      '— Utilizam locais de culto como pontos de encontro e armazenamento.\n\n' +
+      '[ PLACEHOLDER — dados adicionais classificados. ]',
+    notes:
+      '[ Nenhuma nota de campo registrada. ]',
+  },
+  {
+    tag:      'OBJ. 02',
+    action:   'ELIMINAR',
+    title:    'O HOMEM QUE VENDEU O MUNDO',
+    threat:   '◆◆◆◆◆',
+    status:   'LOCALIZADO',
+    priority: 'ALPHA',
+    summary:
+      'Identidade real desconhecida. Codinome atribuído pela inteligência Vyper após análise ' +
+      'de padrões de comunicação interceptados. Trata-se do intermediário principal entre ' +
+      'os Filhos do Arcanjo e forças externas ainda não identificadas.\n\n' +
+      '[ PLACEHOLDER — aguardando briefing completo do controle central. ]',
+    intel:
+      '— Última localização confirmada: setor industrial, zona norte.\n' +
+      '— Possui escolta armada de alto nível de treinamento.\n' +
+      '— Conhece a identidade de pelo menos dois agentes Vyper ativos.\n\n' +
+      '[ PLACEHOLDER — dados adicionais classificados. ]',
+    notes:
+      '[ Nenhuma nota de campo registrada. ]',
+  },
+  {
+    tag:      'OBJ. 03',
+    action:   'ELIMINAR',
+    title:    'GENERAL HUSK',
+    threat:   '◆◆◆◆◆',
+    status:   'ATIVO',
+    priority: 'OMEGA',
+    summary:
+      'Ex-oficial militar de alta patente, afastado por atividades não sancionadas. ' +
+      'Atualmente lidera uma força paramilitar que presta serviços aos Filhos do Arcanjo. ' +
+      'Considerado alvo de máxima periculosidade — eliminação autorizada em qualquer contexto.\n\n' +
+      '[ PLACEHOLDER — aguardando briefing completo do controle central. ]',
+    intel:
+      '— Portador de implantes cibernéticos de combate — capacidades aumentadas.\n' +
+      '— Histórico: 23 anos de serviço ativo, especialização em guerra urbana.\n' +
+      '— Última aparição confirmada: 72 horas atrás, reunião com alvo OBJ. 02.\n\n' +
+      '[ PLACEHOLDER — dados adicionais classificados. ]',
+    notes:
+      '[ Nenhuma nota de campo registrada. ]',
+  },
+];
+
+function openMissaoDetail(idx) {
+  const d = MISSAO_DETAILS[idx];
+  if (!d) return;
+
+  $('mdp-op-tag').textContent   = d.tag;
+  $('mdp-action').textContent   = d.action;
+  $('mdp-title').textContent    = d.title;
+  $('mdp-threat').textContent   = d.threat;
+  $('mdp-priority').textContent = d.priority;
+
+  const statusEl = $('mdp-status');
+  statusEl.textContent = d.status;
+  statusEl.className   = 'mdp-meta-val';
+  if (d.status === 'ATIVO' || d.status === 'LOCALIZADO') statusEl.classList.add('mdp-status-active');
+  if (d.status === 'ELIMINADO' || d.status === 'NEUTRO')  statusEl.classList.add('mdp-status-done');
+
+  // Render text with newlines as <br>
+  const renderText = (id, text) => {
+    const el = $(id);
+    el.innerHTML = text.split('\n').map(l => l ? `<span>${l}</span>` : '<br>').join('<br>');
+  };
+  renderText('mdp-summary', d.summary);
+  renderText('mdp-intel',   d.intel);
+  renderText('mdp-notes',   d.notes);
+
+  // Reset scroll and animate in
+  const panel = $('missao-detail-panel');
+  const body  = $('mdp-body');
+  if (body) body.scrollTop = 0;
+  panel.classList.remove('mdp-out');
+  panel.classList.add('mdp-open');
+}
+
+function closeMissaoDetail() {
+  const panel = $('missao-detail-panel');
+  panel.classList.add('mdp-out');
+  setTimeout(() => {
+    panel.classList.remove('mdp-open', 'mdp-out');
+  }, 340);
+}
+
+
 function _decodeText(elId, finalText, charDelay) {
   const el = $(elId);
   if (!el) return;
@@ -2186,7 +2295,9 @@ window.App = {
   gmToggleDocRelease,
   dismissNewDocAlert,
   markDocRead,
-  gmSaveMissaoText
+  gmSaveMissaoText,
+  openMissaoDetail,
+  closeMissaoDetail
 };
 
 // ──────────────────────────────────────────────────────────

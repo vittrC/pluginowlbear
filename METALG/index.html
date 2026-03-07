@@ -431,26 +431,29 @@
             <div class="missao-obj-col">
               <div class="missao-obj-heading">OBJETIVOS PRIM&#xC1;RIOS</div>
               <div class="missao-obj-list">
-                <div class="missao-obj-item" id="mobj-0">
+                <div class="missao-obj-item" id="mobj-0" onclick="App.openMissaoDetail(0)">
                   <div class="missao-obj-num">01</div>
                   <div class="missao-obj-right">
                     <div class="missao-obj-label">NEUTRALIZAR</div>
                     <div class="missao-obj-name">FILHOS DO ARCANJO</div>
                   </div>
+                  <div class="missao-obj-arrow">&#9658;</div>
                 </div>
-                <div class="missao-obj-item" id="mobj-1">
+                <div class="missao-obj-item" id="mobj-1" onclick="App.openMissaoDetail(1)">
                   <div class="missao-obj-num">02</div>
                   <div class="missao-obj-right">
                     <div class="missao-obj-label">ELIMINAR</div>
                     <div class="missao-obj-name">O HOMEM QUE VENDEU O MUNDO</div>
                   </div>
+                  <div class="missao-obj-arrow">&#9658;</div>
                 </div>
-                <div class="missao-obj-item" id="mobj-2">
+                <div class="missao-obj-item" id="mobj-2" onclick="App.openMissaoDetail(2)">
                   <div class="missao-obj-num">03</div>
                   <div class="missao-obj-right">
                     <div class="missao-obj-label">ELIMINAR</div>
                     <div class="missao-obj-name">GENERAL HUSK</div>
                   </div>
+                  <div class="missao-obj-arrow">&#9658;</div>
                 </div>
               </div>
             </div>
@@ -479,6 +482,31 @@
 
         </div><!-- /missao-scroll -->
       </div><!-- /missao-content -->
+
+      <!-- ── mission detail panel ── -->
+      <div id="missao-detail-panel" class="missao-detail-panel">
+        <div class="mdp-header">
+          <button class="mdp-close" onclick="App.closeMissaoDetail()">&#9668; FECHAR</button>
+          <span class="mdp-op-tag" id="mdp-op-tag">OBJ. 01</span>
+        </div>
+        <div class="mdp-body" id="mdp-body">
+          <div class="mdp-action" id="mdp-action">NEUTRALIZAR</div>
+          <div class="mdp-title" id="mdp-title">FILHOS DO ARCANJO</div>
+          <div class="mdp-divider"></div>
+          <div class="mdp-meta-row">
+            <div class="mdp-meta-item"><span class="mdp-meta-key">AMEA&#xC7;A</span><span class="mdp-meta-val" id="mdp-threat">&#9646;&#9646;&#9646;&#9646;&#9646;</span></div>
+            <div class="mdp-meta-item"><span class="mdp-meta-key">STATUS</span><span class="mdp-meta-val mdp-status-active" id="mdp-status">ATIVO</span></div>
+            <div class="mdp-meta-item"><span class="mdp-meta-key">PRIORIDADE</span><span class="mdp-meta-val" id="mdp-priority">ALPHA</span></div>
+          </div>
+          <div class="mdp-divider"></div>
+          <div class="mdp-section-title">RESUMO OPERACIONAL</div>
+          <div class="mdp-text" id="mdp-summary"></div>
+          <div class="mdp-section-title" style="margin-top:14px">INTEL DISPON&#xCD;VEL</div>
+          <div class="mdp-text" id="mdp-intel"></div>
+          <div class="mdp-section-title" style="margin-top:14px">NOTAS DE CAMPO</div>
+          <div class="mdp-text" id="mdp-notes"></div>
+        </div>
+      </div>
 
     </div>
   </div>
