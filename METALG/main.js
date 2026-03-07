@@ -111,6 +111,25 @@ let _newDocAlertId = null;     // docId pendente no alerta de novo arquivo
 let missaoText  = '';          // texto de missão atual (GM)
 let missaoUnsub = null;        // listener firestore de missão
 
+// ──────────────────────────────────────────────────────────
+//  AUDIO
+// ──────────────────────────────────────────────────────────
+const SFX = {
+  open:   new Audio('codecopen.wav'),
+  close:  new Audio('codecover.wav'),
+  select: new Audio('select.wav'),
+};
+SFX.open.volume   = 0.55;
+SFX.close.volume  = 0.55;
+SFX.select.volume = 0.45;
+
+function sfx(name) {
+  const a = SFX[name];
+  if (!a) return;
+  a.currentTime = 0;
+  a.play().catch(() => {});
+}
+
 try {
   const app = initializeApp(firebaseConfig);
   db      = getFirestore(app);
@@ -651,9 +670,11 @@ function switchTab(tab) {
   const tabContent = $('tab-content');
 
   if (tab === 'main') {
+    sfx('close');
     tabContent.classList.add('hidden');
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
   } else {
+    sfx('open');
     tabContent.classList.remove('hidden');
     document.querySelectorAll('.tab-panel').forEach(p => {
       p.classList.toggle('hidden', p.id !== 'tab-panel-' + tab);
@@ -1417,6 +1438,7 @@ function renderMaldicoesTab() {
 }
 
 function maldSelectElement(elem) {
+  sfx('select');
   malState.elemento = elem;
   _maldShowView('grid');
   const titleEl   = $('mald-grid-title');
@@ -1461,6 +1483,7 @@ function _renderMaldSlots(elem) {
 }
 
 function maldShowDetail(id) {
+  sfx('select');
   const m = maldicoesData.find(x => x.id === id);
   if (!m) return;
   malState.maldicaoId = id;
@@ -1494,6 +1517,7 @@ function maldShowDetail(id) {
 }
 
 function maldBack(to) {
+  sfx('close');
   if (to === 'elem') {
     _maldShowView('elem');
   } else if (to === 'grid' && malState.elemento) {
@@ -1675,6 +1699,7 @@ const docViewerState = {
 };
 
 function openDocViewer(docId) {
+  sfx('open');
   const docDef = DOCUMENTS.find(d => d.id === docId);
   if (!docDef) return;
 
@@ -1743,6 +1768,7 @@ function openDocViewer(docId) {
 }
 
 function closeDocViewer() {
+  sfx('close');
   $('doc-viewer').classList.add('hidden');
   docViewerState.docId  = null;
   docViewerState.uvMode = false;
@@ -1990,7 +2016,7 @@ const MISSAO_DETAILS = [
     tag:      'OBJ. 02',
     action:   'ELIMINAR',
     title:    'O HOMEM QUE VENDEU O MUNDO',
-    threat:   '◆◆◆◆◆',
+    threat:   '◆◆◆◆◆◆◆◆◆',
     status:   'LOCALIZADO',
     priority: 'ALPHA',
     summary:
@@ -2010,7 +2036,7 @@ const MISSAO_DETAILS = [
     tag:      'OBJ. 03',
     action:   'ELIMINAR',
     title:    'GENERAL HUSK',
-    threat:   '◆◆◆◆◆',
+    threat:   '◆◆◆◆◆◆◆',
     status:   'ATIVO',
     priority: 'OMEGA',
     summary:
@@ -2029,6 +2055,7 @@ const MISSAO_DETAILS = [
 ];
 
 function openMissaoDetail(idx) {
+  sfx('open');
   const d = MISSAO_DETAILS[idx];
   if (!d) return;
 
@@ -2062,6 +2089,7 @@ function openMissaoDetail(idx) {
 }
 
 function closeMissaoDetail() {
+  sfx('close');
   const panel = $('missao-detail-panel');
   panel.classList.add('mdp-out');
   setTimeout(() => {
