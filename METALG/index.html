@@ -233,7 +233,7 @@
       </div>
       <div class="nav-tab" id="nav-equip" onclick="App.switchTab('equip')">
         <div class="nav-ico-box nav-red"><img src="icones/10.png" class="nav-ico" /></div>
-        <span class="nav-lbl">/EQUIP</span>
+        <span class="nav-lbl">/MISS&#xC3;O</span>
       </div>
     </div><!-- /s-nav -->
 
@@ -402,7 +402,96 @@
 
       </div>
     </div>
-    <div id="tab-panel-equip" class="tab-panel hidden"><div class="cs"><span class="cs-ico">&#9672;</span><span class="cs-title">EQUIPAMENTOS</span><span class="cs-sub">[ EM DESENVOLVIMENTO ]</span></div></div>
+    <div id="tab-panel-equip" class="tab-panel missao-panel hidden">
+
+      <!-- ── boot overlay ── -->
+      <div id="missao-boot" class="missao-boot hidden">
+        <div class="missao-boot-inner">
+          <div class="m-boot-diamond">&#9671;</div>
+          <div class="m-boot-access">ACESSO CONCEDIDO</div>
+          <div class="m-boot-enc">ENC: 7F-A3-D1 // VYPER PROTOCOL v4.7</div>
+          <div class="m-boot-bars">
+            <div class="m-boot-bar"><div class="m-boot-fill"></div></div>
+            <div class="m-boot-bar"><div class="m-boot-fill" style="animation-delay:.25s"></div></div>
+            <div class="m-boot-bar"><div class="m-boot-fill" style="animation-delay:.5s"></div></div>
+          </div>
+          <div class="m-boot-status" id="m-boot-status">DESCRIPTOGRAFANDO DOSSIE...</div>
+        </div>
+      </div>
+
+      <!-- ── mission content ── -->
+      <div id="missao-content" class="missao-content">
+        <div class="missao-scroll">
+
+          <!-- top classification bar -->
+          <div class="missao-topbar">
+            <span>&#9646; CLASSIFICADO &#9646;</span>
+            <span class="missao-opcode">OP-7742-H</span>
+            <span>&#9646; VYPER EYES ONLY &#9646;</span>
+          </div>
+
+          <!-- operation title -->
+          <div class="missao-title-block">
+            <div class="missao-op-pre">OPERAS&#xC3;O</div>
+            <div class="missao-op-title" id="missao-op-title">&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;</div>
+          </div>
+
+          <!-- body: objectives + target image -->
+          <div class="missao-body">
+
+            <div class="missao-obj-col">
+              <div class="missao-obj-heading">OBJETIVOS PRIM&#xC1;RIOS</div>
+              <div class="missao-obj-list">
+                <div class="missao-obj-item" id="mobj-0">
+                  <div class="missao-obj-num">01</div>
+                  <div class="missao-obj-right">
+                    <div class="missao-obj-label">NEUTRALIZAR</div>
+                    <div class="missao-obj-name">FILHOS DO ARCANJO</div>
+                  </div>
+                </div>
+                <div class="missao-obj-item" id="mobj-1">
+                  <div class="missao-obj-num">02</div>
+                  <div class="missao-obj-right">
+                    <div class="missao-obj-label">ELIMINAR</div>
+                    <div class="missao-obj-name">O HOMEM QUE VENDEU O MUNDO</div>
+                  </div>
+                </div>
+                <div class="missao-obj-item" id="mobj-2">
+                  <div class="missao-obj-num">03</div>
+                  <div class="missao-obj-right">
+                    <div class="missao-obj-label">ELIMINAR</div>
+                    <div class="missao-obj-name">GENERAL HUSK</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="missao-img-col">
+              <div class="missao-target-frame" id="missao-target-frame">
+                <img class="missao-target-img" src="miss&#xE3;o/ohomemquevendeuomundo.jpg" alt="" draggable="false" />
+                <div class="missao-target-scan"></div>
+                <div class="missao-target-overlay"></div>
+                <div class="missao-target-label">ALVO PRIM&#xC1;RIO</div>
+              </div>
+            </div>
+
+          </div><!-- /missao-body -->
+
+          <!-- GM live transmission -->
+          <div class="missao-atual-wrap" id="missao-atual-wrap">
+            <div class="missao-atual-header">
+              <span class="missao-live-dot"></span>
+              TRANSMISS&#xC3;O DO CONTROLE CENTRAL
+            </div>
+            <div class="missao-atual-body" id="missao-atual-text">
+              <span class="missao-awaiting">[ AGUARDANDO TRANSMISS&#xC3;O... ]</span>
+            </div>
+          </div>
+
+        </div><!-- /missao-scroll -->
+      </div><!-- /missao-content -->
+
+    </div>
   </div>
 
   <!-- DOC VIEWER -->
@@ -499,6 +588,11 @@
         <img id="gm-mald-icone-preview" src="" alt="" class="hidden" style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border2)" />
         <button class="gm-fita-upload-btn" onclick="App.gmAddMaldicao()" style="margin-left:auto">ADICIONAR</button>
       </div>
+    </div>
+    <div class="gm-sec-title">&#9658; MISS&#xC3;O ATUAL</div>
+    <div class="gm-missao-wrap">
+      <textarea id="gm-missao-input" class="gm-text-input gm-missao-textarea" rows="4" placeholder="texto da miss&#xE3;o atual para os agentes..."></textarea>
+      <button class="gm-fita-upload-btn gm-missao-btn" onclick="App.gmSaveMissaoText()">&#9654; TRANSMITIR</button>
     </div>
     <div class="gm-sec-title">&#9658; DOCUMENTOS</div>
     <div id="gm-docs-list" class="gm-docs-list"><div class="gm-fitas-empty">Carregando documentos...</div></div>

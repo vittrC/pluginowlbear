@@ -108,6 +108,8 @@ let docsReleasedState = [];   // IDs de documentos liberados pelo GM
 let docsUnsub = null;         // listener firestore de docs
 let docsReadSet   = new Set(); // IDs de docs já abertos pelo jogador
 let _newDocAlertId = null;     // docId pendente no alerta de novo arquivo
+let missaoText  = '';          // texto de missão atual (GM)
+let missaoUnsub = null;        // listener firestore de missão
 
 try {
   const app = initializeApp(firebaseConfig);
@@ -340,6 +342,13 @@ async function loginPlayer() {
       if (justReleased.length > 0) showNewDocAlert(justReleased[0]);
       if (state.currentTab === 'docs') renderDocsTab();
     });
+
+    // Realtime listener — mission current text
+    if (missaoUnsub) missaoUnsub();
+    missaoUnsub = onSnapshot(doc(db, 'gameState', 'mission'), (snap) => {
+      missaoText = snap.exists() ? (snap.data().text || '') : '';
+      if (state.currentTab === 'equip') renderMissaoAtualText();
+    });
   }
 }
 
@@ -367,9 +376,11 @@ function logout() {
   if (state.unsubscribe)    state.unsubscribe();
   if (state.gmCharsUnsub)   state.gmCharsUnsub();
   if (docsUnsub)            { docsUnsub(); docsUnsub = null; }
+  if (missaoUnsub)          { missaoUnsub(); missaoUnsub = null; }
   docsReleasedState = [];
   docsReadSet = new Set();
   _newDocAlertId = null;
+  missaoText = '';
   state = {
     role: null, codename: null, character: null,
     unsubscribe: null, currentTab: 'main',
@@ -651,6 +662,7 @@ function switchTab(tab) {
     if (tab === 'radio') renderRadioTab();
     if (tab === 'mald')  { loadMaldicoes().then(renderMaldicoesTab); }
     if (tab === 'docs')  renderDocsTab();
+    if (tab === 'equip') enterMissaoTab();
   }
 }
 
@@ -1160,6 +1172,7 @@ function loadGMDashboard() {
   loadNpcPresets();
   renderGMMaldicoes();
   loadDocsState().then(() => renderGMDocs());
+  loadMissaoTextGM();
 
   if (firebaseOk) {
     if (state.gmCharsUnsub) state.gmCharsUnsub();
@@ -1943,6 +1956,143 @@ function dismissNewDocAlert(openDoc = false) {
 }
 
 // ── GM Docs Panel ─────────────────────────────────────────
+// ──────────────────────────────────────────────────────────
+//  MISSÃO TAB
+// ──────────────────────────────────────────────────────────
+
+// Decodes a string letter by letter into a target element
+function _decodeText(elId, finalText, charDelay) {
+  const el = $(elId);
+  if (!el) return;
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#@!%&';
+  let revealed = 0;
+  function step() {
+    let display = '';
+    for (let i = 0; i < finalText.length; i++) {
+      if (i < revealed) {
+        display += finalText[i];
+      } else if (finalText[i] === ' ') {
+        display += ' ';
+      } else {
+        display += chars[Math.floor(Math.random() * chars.length)];
+      }
+    }
+    el.textContent = display;
+    if (revealed <= finalText.length) {
+      revealed++;
+      setTimeout(step, charDelay);
+    } else {
+      el.textContent = finalText;
+    }
+  }
+  step();
+}
+
+function renderMissaoAtualText() {
+  const el = $('missao-atual-text');
+  if (!el) return;
+  if (missaoText && missaoText.trim()) {
+    el.innerHTML = '';
+    // Split by newlines and render as paragraphs
+    missaoText.trim().split('\n').forEach(line => {
+      const p = document.createElement('p');
+      p.style.margin = '0 0 6px';
+      p.textContent = line;
+      el.appendChild(p);
+    });
+  } else {
+    el.innerHTML = '<span class="missao-awaiting">[ AGUARDANDO TRANSMISSÃO... ]</span>';
+  }
+}
+
+function enterMissaoTab() {
+  // Reset animation state
+  const content = $('missao-content');
+  const boot    = $('missao-boot');
+  if (!content || !boot) return;
+
+  // Hide content, reset objective visibility
+  content.classList.remove('m-revealed');
+  document.querySelectorAll('.missao-obj-item').forEach(el => el.classList.remove('m-obj-show'));
+  const frame = $('missao-target-frame');
+  if (frame) frame.classList.remove('m-img-show');
+  const atual = $('missao-atual-wrap');
+  if (atual) atual.classList.remove('m-atual-show');
+
+  // Show boot overlay
+  boot.classList.remove('hidden');
+  boot.classList.add('m-boot-in');
+
+  // Status messages sequence
+  const statuses = [
+    'VERIFICANDO CREDENCIAIS...',
+    'ACESSANDO SERVIDOR VYPER...',
+    'DESCRIPTOGRAFANDO DOSSIE...',
+    'CARREGANDO BRIEFING...'
+  ];
+  const statusEl = $('m-boot-status');
+  let idx = 0;
+  const statusInterval = setInterval(() => {
+    idx++;
+    if (idx < statuses.length && statusEl) statusEl.textContent = statuses[idx];
+    else clearInterval(statusInterval);
+  }, 550);
+
+  // After boot: fade out, reveal mission
+  setTimeout(() => {
+    boot.classList.add('m-boot-out');
+    setTimeout(() => {
+      clearInterval(statusInterval);
+      boot.classList.add('hidden');
+      boot.classList.remove('m-boot-in', 'm-boot-out');
+      content.classList.add('m-revealed');
+      // Decode title
+      _decodeText('missao-op-title', 'HERESIA', 55);
+      // Stagger objectives
+      [0, 1, 2].forEach(i => {
+        setTimeout(() => {
+          const el = $('mobj-' + i);
+          if (el) el.classList.add('m-obj-show');
+        }, 500 + i * 340);
+      });
+      // Image reveal
+      setTimeout(() => { if (frame) frame.classList.add('m-img-show'); }, 400);
+      // MISSÃO ATUAL section
+      setTimeout(() => {
+        if (atual) atual.classList.add('m-atual-show');
+        renderMissaoAtualText();
+      }, 1500);
+    }, 500);
+  }, 2400);
+}
+
+async function loadMissaoTextGM() {
+  if (!firebaseOk) return;
+  try {
+    const snap = await getDoc(doc(db, 'gameState', 'mission'));
+    const text = snap.exists() ? (snap.data().text || '') : '';
+    const inp = $('gm-missao-input');
+    if (inp) inp.value = text;
+  } catch (e) {
+    console.error('loadMissaoTextGM:', e);
+  }
+}
+
+async function gmSaveMissaoText() {
+  const inp = $('gm-missao-input');
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!firebaseOk) { showToast('Firebase offline.', 'error'); return; }
+  try {
+    await setDoc(doc(db, 'gameState', 'mission'), { text });
+    showToast('Transmissão enviada.', 'ok');
+  } catch (e) {
+    console.error('gmSaveMissaoText:', e);
+    showToast('Erro ao transmitir.', 'error');
+  }
+}
+
+// ──────────────────────────────────────────────────────────
 function renderGMDocs() {
   const listEl = $('gm-docs-list');
   if (!listEl) return;
@@ -2035,7 +2185,8 @@ window.App = {
   saveDocAnnotation,
   gmToggleDocRelease,
   dismissNewDocAlert,
-  markDocRead
+  markDocRead,
+  gmSaveMissaoText
 };
 
 // ──────────────────────────────────────────────────────────

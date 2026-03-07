@@ -1227,6 +1227,213 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
 .gm-doc-btn-lock:hover { background: var(--dim); color: var(--bg); }
 
 /* ══════════════════════════════════════════════════════
+   GM — MISSÃO SECTION
+══════════════════════════════════════════════════════ */
+.gm-missao-wrap {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-bottom: 10px;
+}
+.gm-missao-textarea {
+  width: 100%; resize: vertical; min-height: 70px; box-sizing: border-box;
+}
+.gm-missao-btn {
+  align-self: flex-end; background: transparent;
+  border: 1px solid var(--green); color: var(--green);
+  font-family: var(--font); font-size: 11px; letter-spacing: 1.5px;
+  padding: 6px 16px; cursor: pointer; transition: all .15s;
+}
+.gm-missao-btn:hover { background: var(--green); color: var(--bg); }
+
+/* ══════════════════════════════════════════════════════
+   MISSÃO TAB — BOOT OVERLAY
+══════════════════════════════════════════════════════ */
+.missao-panel {
+  position: relative; height: 100%; overflow: hidden;
+  background: var(--bg);
+}
+.missao-boot {
+  position: absolute; inset: 0; z-index: 20;
+  background: #000; display: flex; align-items: center;
+  justify-content: center; transition: opacity .5s;
+}
+.missao-boot.m-boot-in  { opacity: 1; }
+.missao-boot.m-boot-out { opacity: 0; pointer-events: none; }
+.missao-boot-inner { text-align: center; padding: 24px; }
+.m-boot-diamond {
+  font-size: 36px; color: var(--green);
+  animation: m-blink-ico 1.2s steps(1) infinite;
+}
+.m-boot-access {
+  font-family: var(--font); font-size: 16px; letter-spacing: 5px;
+  color: var(--green); margin: 14px 0 4px;
+  animation: m-glitch-flicker 3.5s infinite;
+}
+.m-boot-enc {
+  font-size: 9px; color: var(--dim); letter-spacing: 1.5px;
+  margin-bottom: 22px;
+}
+.m-boot-bars {
+  display: flex; flex-direction: column; gap: 6px;
+  width: 220px; margin: 0 auto 18px;
+}
+.m-boot-bar {
+  height: 3px; background: rgba(255,255,255,.08);
+  border-radius: 2px; overflow: hidden;
+}
+.m-boot-fill {
+  height: 100%; width: 0%; background: var(--green);
+  animation: m-boot-load 1.8s ease forwards;
+}
+.m-boot-status {
+  font-size: 10px; color: var(--dim); letter-spacing: 1.5px;
+  animation: m-status-blink 1s steps(1) infinite;
+}
+@keyframes m-boot-load   { to { width: 100% } }
+@keyframes m-blink-ico   { 50% { opacity: .15 } }
+@keyframes m-status-blink { 50% { opacity: 0 } }
+@keyframes m-glitch-flicker {
+  0%,96%,100%  { opacity:1; text-shadow: none }
+  97%          { opacity:.4; text-shadow: 2px 0 var(--red) }
+  98%          { opacity:1; text-shadow:-2px 0 cyan }
+  99%          { opacity:.7 }
+}
+
+/* ══════════════════════════════════════════════════════
+   MISSÃO TAB — CONTENT
+══════════════════════════════════════════════════════ */
+.missao-content {
+  height: 100%; overflow: hidden;
+  opacity: 0; transition: opacity .4s;
+}
+.missao-content.m-revealed { opacity: 1; }
+
+.missao-scroll {
+  height: 100%; overflow-y: auto;
+  padding: 12px 14px 24px;
+  box-sizing: border-box;
+}
+
+/* top classification bar */
+.missao-topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 8px; letter-spacing: 2px; color: var(--red);
+  border-bottom: 1px solid rgba(255,40,40,.35);
+  padding-bottom: 6px; margin-bottom: 14px;
+}
+.missao-opcode { color: var(--dim); font-size: 9px; }
+
+/* operation title */
+.missao-title-block { margin-bottom: 16px; }
+.missao-op-pre {
+  font-size: 9px; letter-spacing: 4px; color: var(--dim);
+  margin-bottom: 2px;
+}
+.missao-op-title {
+  font-family: var(--vt); font-size: 30px; color: var(--green);
+  letter-spacing: 5px; line-height: 1;
+  text-shadow: 0 0 18px rgba(0,255,80,.5);
+}
+
+/* body layout */
+.missao-body {
+  display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start;
+}
+.missao-obj-col { flex: 1; min-width: 0; }
+.missao-img-col { flex-shrink: 0; width: 130px; }
+
+/* objectives */
+.missao-obj-heading {
+  font-size: 8px; letter-spacing: 2.5px; color: var(--dim);
+  margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px;
+}
+.missao-obj-item {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 8px 10px;
+  background: var(--bg2); border-left: 2px solid var(--red);
+  margin-bottom: 6px;
+  opacity: 0; transform: translateX(-24px);
+  transition: opacity .45s ease, transform .45s ease;
+}
+.missao-obj-item.m-obj-show { opacity: 1; transform: translateX(0); }
+.missao-obj-num {
+  font-family: var(--vt); font-size: 28px; color: var(--red);
+  opacity: .55; flex-shrink: 0; line-height: 1; margin-top: 2px;
+}
+.missao-obj-right  { min-width: 0; }
+.missao-obj-label  { font-size: 8px; color: var(--dim); letter-spacing: 1.5px; margin-bottom: 2px; }
+.missao-obj-name   {
+  font-family: var(--font); font-size: 11px; color: var(--white);
+  letter-spacing: .8px; line-height: 1.4; word-break: break-word;
+}
+
+/* target image */
+.missao-target-frame {
+  position: relative; overflow: hidden;
+  border: 1px solid var(--border2);
+  background: #000;
+}
+.missao-target-img {
+  width: 100%; display: block;
+  filter: grayscale(.35) contrast(1.15);
+  opacity: 0; transform: scale(1.06);
+  transition: opacity .7s, transform .7s;
+}
+.missao-target-frame.m-img-show .missao-target-img {
+  opacity: 1; transform: scale(1);
+}
+.missao-target-scan {
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: rgba(0,255,80,.6);
+  top: -10%;
+}
+.missao-target-frame.m-img-show .missao-target-scan {
+  animation: m-target-scan 1.8s ease-in-out forwards .2s;
+}
+@keyframes m-target-scan { 0% { top: 0 } 100% { top: 105% } }
+
+.missao-target-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(255,30,30,.05), transparent 40%);
+  pointer-events: none;
+}
+.missao-target-label {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  font-size: 8px; color: var(--red); letter-spacing: 1.5px;
+  text-align: center; padding: 4px 2px;
+  background: rgba(0,0,0,.75);
+}
+
+/* missão atual section */
+.missao-atual-wrap {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-left: 2px solid var(--green);
+  padding: 10px 12px;
+  opacity: 0; transform: translateY(12px);
+  transition: opacity .5s, transform .5s;
+}
+.missao-atual-wrap.m-atual-show {
+  opacity: 1; transform: translateY(0);
+}
+.missao-atual-header {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 8px; letter-spacing: 2px; color: var(--green);
+  margin-bottom: 8px;
+}
+.missao-live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--red); flex-shrink: 0;
+  animation: m-live-pulse 1.4s ease infinite;
+}
+@keyframes m-live-pulse { 50% { opacity: .1; transform: scale(.7) } }
+
+.missao-atual-body {
+  font-size: 11px; color: var(--white);
+  line-height: 1.75; letter-spacing: .4px;
+}
+.missao-awaiting { color: var(--dim); font-size: 10px; letter-spacing: 1px; }
+
+/* ══════════════════════════════════════════════════════
    UV TORCH LAYER
 ══════════════════════════════════════════════════════ */
 .doc-image-uv {
