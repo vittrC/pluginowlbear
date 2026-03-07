@@ -126,7 +126,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
 .s-left {
   border-right: 1px solid var(--border2);
   display: flex; flex-direction: column;
-  overflow-y: auto; overflow-x: hidden;
+  overflow: hidden;
   background: var(--bg);
 }
 
@@ -135,14 +135,14 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
   flex-shrink: 0;
   position: relative;
   background: var(--white);
-  padding: 5px 5px 16px 5px;
+  padding: 4px 4px 12px 4px;
   cursor: pointer;
   overflow: hidden;
 }
 .photo-inner {
   position: relative;
   width: 100%;
-  aspect-ratio: 3/4;
+  height: 250px;
   background: #111;
   overflow: hidden;
 }
@@ -166,7 +166,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
 }
 
 /* Registro */
-.reg-wrap { flex: 1; min-height: 0; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; overflow-x: hidden; }
+.reg-wrap { flex-shrink: 0; padding: 7px 14px 6px; display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
 .reg-title { font-family: var(--vt); font-size: 19px; letter-spacing: 1px; color: var(--white); border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 2px; }
 .reg-field { display: flex; flex-direction: column; gap: 0; }
 .reg-indent { margin-left: 4px; }
@@ -310,7 +310,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
 /* ── PATENTE ─────────────────────────────────────────── */
 .patente-wrap {
   border-top: 1px solid var(--border);
-  padding: 10px 14px 14px;
+  padding: 7px 14px 10px;
   display: flex; flex-direction: column; gap: 0;
 }
 .patente-section-title {
@@ -318,21 +318,21 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
   font-size: 10px;
   color: var(--off);
   letter-spacing: 2px;
-  margin-bottom: 10px;
+  margin-bottom: 7px;
 }
 .patente-grid {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   justify-content: center;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .patente-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   cursor: pointer;
-  padding: 6px 8px;
+  padding: 4px 6px;
   border: 1px solid transparent;
   transition: opacity .15s, filter .15s, border-color .15s;
 }

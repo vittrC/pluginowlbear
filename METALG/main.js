@@ -1280,7 +1280,9 @@ function buildGMCard(char) {
 
   const statusLabel = { ativo: 'ATIVO', inativo: 'INATIVO', morto: 'K.I.A.' };
   const secLabel    = { seguro: 'SEGURO', alerta: 'ALERTA', comprometido: 'COMPROMETIDO' };
-  const integ       = char.integrity ?? 5;
+  const patente     = char.patente ?? 1;
+  const maxBars     = 4 + patente; // Venom=5, Snake=6, Vyper=7
+  const integ       = Math.min(char.integrity ?? maxBars, maxBars);
 
   const photoHtml = char.photo
     ? `<img class="gm-agent-photo-sm" src="${char.photo}" alt="foto" />`
@@ -1293,7 +1295,7 @@ function buildGMCard(char) {
     </div>`
   ).join('');
 
-  const intBarsHtml = Array.from({length:5}, (_,i) =>
+  const intBarsHtml = Array.from({length: maxBars}, (_,i) =>
     `<div class="gm-int-bar ${i < integ ? 'active' : ''}"
           onclick="App.gmSetIntegrity('${char.codename}', ${i+1 > integ ? i+1 : i})" ></div>`
   ).join('');
@@ -1320,7 +1322,7 @@ function buildGMCard(char) {
         <div class="gm-card-meta">
           <span>${char.nome || '—'}</span>
           <span>${statusLabel[char.statusAtivo] || 'ATIVO'}</span>
-          <span>INT: ${integ}/5</span>
+          <span>INT: ${integ}/${maxBars}</span>
         </div>
       </div>
       <div class="gm-status-dot ${char.security || 'seguro'}"></div>
@@ -1380,7 +1382,17 @@ async function gmSetSecurity(codename, security) {
 }
 
 async function gmSetIntegrity(codename, val) {
-  const newVal = Math.max(0, Math.min(5, val));
+  let maxBars = 5; // default Venom
+  if (firebaseOk) {
+    try {
+      const snap = await getDoc(doc(db, 'characters', codename));
+      if (snap.exists()) maxBars = 4 + (snap.data().patente ?? 1);
+    } catch (_) {}
+  } else {
+    const char = LocalDB.getChar(codename);
+    if (char) maxBars = 4 + (char.patente ?? 1);
+  }
+  const newVal = Math.max(0, Math.min(maxBars, val));
   await gmUpdateChar(codename, { integrity: newVal });
 }
 
