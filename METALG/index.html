@@ -645,6 +645,21 @@
 <!-- TOAST -->
 <div id="toast" class="toast hidden"></div>
 
+<!-- DICA POPUP -->
+<div id="dica-popup" class="dica-popup hidden">
+  <div class="dica-popup-inner">
+    <div class="dica-popup-header">
+      <span class="dica-popup-tag">&#9658; DICA DE CAMPO</span>
+      <span class="dica-popup-titulo" id="dica-popup-titulo"></span>
+      <button class="dica-popup-close" onclick="App.closeDicaPopup()">&#10005;</button>
+    </div>
+    <div class="dica-popup-body">
+      <img id="dica-popup-img" src="" alt="" />
+      <div class="dica-popup-texto" id="dica-popup-texto"></div>
+    </div>
+  </div>
+</div>
+
 <!-- GRADE MODAL -->
 <div id="grade-modal" class="modal-bg hidden" onclick="App.closeGradeModal(event)">
   <div class="modal-panel">

@@ -103,6 +103,18 @@ const DEFAULT_CHAR = () => ({
 // ──────────────────────────────────────────────────────────
 //  FIREBASE INIT
 // ──────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────
+//  DICAS DE CAMPO — presets
+// ──────────────────────────────────────────────────────────
+const DICAS_PRESETS = [
+  {
+    id:     'campo_visao',
+    titulo: 'CAMPO DE VIS\u00c3O',
+    texto:  'Analise o ambiente em setores. Verde: zona segura — sem amea\u00e7as vis\u00edveis. Amarelo: zona de aten\u00e7\u00e3o — poss\u00edvel contato. Vermelho: contato hostil confirmado — entre em posi\u00e7\u00e3o.',
+    imagem: 'dicas/campo_visao.png'
+  }
+];
+
 const PATENTES = {
   1: { nome: 'VENOM', desc: 'Recruta de campo. Preparado para missões de alta periculosidade.' },
   2: { nome: 'SNAKE', desc: 'Operador especializado. Seu nome é mais conhecido.' },
@@ -351,6 +363,11 @@ async function loginPlayer() {
         triggerStatusChangeEffect(data.security);
       }
 
+      // Detect new dica sent by GM
+      const oldDicaTs = old?.radio?.dicaAtual?.ts;
+      const newDicaTs = data.radio?.dicaAtual?.ts;
+      if (newDicaTs && newDicaTs !== oldDicaTs) showDicaPopup(data.radio.dicaAtual.id);
+
       // Refresh fitas tab if open
       if (state.currentTab === 'fitas') renderFitasTab();
       // Refresh radio tab if open
@@ -506,6 +523,29 @@ function updateIntegrityDisplay(integrity) {
     if (val <= 1) section.classList.add('warn-crit');
     else if (val <= 2) section.classList.add('warn-low');
   }
+}
+
+// ──────────────────────────────────────────────────────────
+//  DICAS — player popup
+// ──────────────────────────────────────────────────────────
+function showDicaPopup(dicaId) {
+  const dica = DICAS_PRESETS.find(d => d.id === dicaId);
+  if (!dica) return;
+  const popup = $('dica-popup');
+  if (!popup) return;
+  $('dica-popup-titulo').textContent = dica.titulo;
+  $('dica-popup-texto').textContent  = dica.texto;
+  const img = $('dica-popup-img');
+  if (dica.imagem) { img.src = dica.imagem; img.style.display = ''; }
+  else             { img.style.display = 'none'; }
+  popup.classList.remove('hidden');
+  sfx('open');
+}
+
+function closeDicaPopup() {
+  const popup = $('dica-popup');
+  if (popup) popup.classList.add('hidden');
+  sfx('close');
 }
 
 function updatePatenteDisplay(patente) {
@@ -1086,11 +1126,27 @@ function buildGMRadioHtml(char) {
         <button class="gm-toggle-btn active-morto" onclick="App.gmRadioRecusar('${char.codename}')">RECUSAR</button>
       </div>`;
   } else if (status === 'conectado') {
+    const dicaOpts = DICAS_PRESETS.map((d, i) =>
+      `<option value="${i}">${escHtml(d.titulo)}</option>`).join('');
     html += `
-      <div class="gm-radio-freq">FREQ: ${freq} — ${escHtml(radio.npcNome || '?')}</div>
-      <button class="gm-toggle-btn active-morto" onclick="App.gmRadioDesconectar('${char.codename}')">DESCONECTAR</button>`;
+      <div class="gm-radio-freq">FREQ: ${freq} &mdash; ${escHtml(radio.npcNome || '?')}</div>
+      <button class="gm-toggle-btn active-morto" onclick="App.gmRadioDesconectar('${char.codename}')">DESCONECTAR</button>
+      <div class="gm-dica-row">
+        <select id="gm-dica-sel-${char.codename}" class="gm-select gm-dica-sel">${dicaOpts}</select>
+        <button class="gm-toggle-btn active-ativo gm-dica-btn" onclick="App.gmEnviarDica('${char.codename}')">&#9658; DICA</button>
+      </div>`;
   }
   return html;
+}
+
+async function gmEnviarDica(codename) {
+  const sel = document.getElementById('gm-dica-sel-' + codename);
+  const idx = sel ? parseInt(sel.value) : 0;
+  const dica = DICAS_PRESETS[idx];
+  if (!dica) return;
+  await gmUpdateChar(codename, { 'radio.dicaAtual': { id: dica.id, ts: Date.now() } });
+  sfx('select');
+  showToast('Dica enviada: ' + dica.titulo, 'success', 2000);
 }
 
 function buildGMFitasListHtml(codename, tapes) {
@@ -2385,7 +2441,9 @@ window.App = {
   gmSaveMissaoText,
   openMissaoDetail,
   closeMissaoDetail,
-  setPatente
+  setPatente,
+  gmEnviarDica,
+  closeDicaPopup
 };
 
 // ──────────────────────────────────────────────────────────
