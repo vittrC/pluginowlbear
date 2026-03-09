@@ -491,6 +491,79 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
 .gm-attr-mini-name { font-size: 7px; color: var(--dim); letter-spacing: .5px; text-align: center; }
 
 /* ══════════════════════════════════════════════════════
+   ARMAS — player slots
+══════════════════════════════════════════════════════ */
+.armas-wrap {
+  flex-shrink: 0;
+  padding: 6px 10px 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 5px;
+}
+.arma-slot {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--border);
+  padding: 5px 8px;
+  cursor: default;
+  transition: border-color .12s;
+  min-height: 38px;
+}
+.arma-slot.arma-equipada { cursor: pointer; border-color: var(--border2); }
+.arma-slot.arma-equipada:hover { border-color: var(--white); }
+.arma-slot-ico {
+  width: 36px; height: 36px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.arma-img { width: 36px; height: 36px; object-fit: contain; filter: brightness(0.9); }
+.arma-slot-empty { font-family: var(--vt); font-size: 20px; color: var(--dim); }
+.arma-slot-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.arma-slot-nome-row { display: flex; align-items: center; gap: 5px; }
+.arma-slot-nome { font-family: var(--vt); font-size: 14px; color: var(--dim); letter-spacing: 1px; }
+.arma-slot.arma-equipada .arma-slot-nome { color: var(--white); }
+.arma-letal-badge { font-family: var(--mono); font-size: 7px; letter-spacing: 1px; padding: 1px 4px; border: 1px solid; flex-shrink: 0; line-height: 1.4; }
+.arma-letal-mortal { color: #ff3333; border-color: #ff3333; background: rgba(255,51,51,.1); }
+.arma-letal-neu    { color: #44ccff; border-color: #44ccff; background: rgba(68,204,255,.08); }
+.arma-slot-stats { font-family: var(--mono); font-size: 8px; color: var(--dim); letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arma-slot-inspect { font-family: var(--mono); font-size: 8px; color: var(--red); letter-spacing: 1px; flex-shrink: 0; }
+
+/* Arma inspect popup */
+.arma-inspect-popup {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.82); z-index: 600;
+  display: flex; align-items: center; justify-content: center;
+  animation: fadein .2s ease;
+}
+.arma-inspect-popup.hidden { display: none; }
+.arma-inspect-inner {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-top: 2px solid var(--red);
+  width: 100%; max-width: 440px;
+  display: flex; flex-direction: column;
+  animation: slideup-modal .25s ease;
+}
+.arma-inspect-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px 8px; border-bottom: 1px solid var(--border);
+}
+.arma-inspect-tag { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; color: var(--red); flex-shrink: 0; }
+.arma-inspect-nome { font-family: var(--vt); font-size: 18px; letter-spacing: 3px; color: var(--white); flex: 1; }
+.arma-inspect-body { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px; }
+#arma-inspect-img { max-width: 300px; max-height: 90px; object-fit: contain; border: 1px solid var(--border); width: 100%; }
+.arma-inspect-stats-grid { width: 100%; display: flex; flex-direction: column; gap: 4px; }
+.arma-stat-row { display: flex; gap: 8px; align-items: baseline; border-bottom: 1px solid var(--border); padding-bottom: 3px; }
+.arma-stat-key { font-family: var(--mono); font-size: 8px; letter-spacing: 2px; color: var(--dim); width: 110px; flex-shrink: 0; }
+.arma-stat-val { font-family: var(--vt); font-size: 15px; color: var(--off); letter-spacing: 1px; }
+.arma-inspect-descricao { font-family: var(--mono); font-size: 10px; color: var(--off); line-height: 1.65; width: 100%; padding: 8px 4px; border-top: 1px solid var(--border); white-space: pre-wrap; }
+
+/* GM arma forms */
+.gm-arma-form { border: 1px solid var(--border); padding: 8px; display: flex; flex-direction: column; gap: 4px; margin-bottom: 5px; }
+.gm-arma-form:last-child { margin-bottom: 0; }
+.gm-arma-form-title { font-family: var(--mono); font-size: 9px; color: var(--dim); letter-spacing: 2px; margin-bottom: 2px; }
+.gm-arma-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.gm-arma-row .gm-text-input, .gm-arma-row .gm-select { flex: 1; min-width: 55px; }
+.gm-arma-desc { resize: none; }
+.gm-arma-btns { display: flex; gap: 4px; }
+
+/* ══════════════════════════════════════════════════════
 /* ══════════════════════════════════════════════════════
    DICA POPUP
 ══════════════════════════════════════════════════════ */

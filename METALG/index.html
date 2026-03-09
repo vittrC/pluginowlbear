@@ -215,6 +215,38 @@
         <span class="integ-count hidden" id="integrity-count">5/5</span>
       </div>
 
+      <!-- weapons -->
+      <div class="armas-wrap" id="armas-wrap">
+        <div class="arma-slot" id="arma-slot-0" onclick="App.inspecionarArma(0)">
+          <div class="arma-slot-ico">
+            <img id="arma-ico-0" src="" class="arma-img hidden" alt="" />
+            <span class="arma-slot-empty" id="arma-empty-0">—</span>
+          </div>
+          <div class="arma-slot-info">
+            <div class="arma-slot-nome-row">
+              <div class="arma-slot-nome" id="arma-nome-0">SLOT I</div>
+              <span class="arma-letal-badge hidden" id="arma-letal-0"></span>
+            </div>
+            <div class="arma-slot-stats" id="arma-stats-0"></div>
+          </div>
+          <div class="arma-slot-inspect hidden" id="arma-insp-btn-0">&#9658; VER</div>
+        </div>
+        <div class="arma-slot" id="arma-slot-1" onclick="App.inspecionarArma(1)">
+          <div class="arma-slot-ico">
+            <img id="arma-ico-1" src="" class="arma-img hidden" alt="" />
+            <span class="arma-slot-empty" id="arma-empty-1">—</span>
+          </div>
+          <div class="arma-slot-info">
+            <div class="arma-slot-nome-row">
+              <div class="arma-slot-nome" id="arma-nome-1">SLOT II</div>
+              <span class="arma-letal-badge hidden" id="arma-letal-1"></span>
+            </div>
+            <div class="arma-slot-stats" id="arma-stats-1"></div>
+          </div>
+          <div class="arma-slot-inspect hidden" id="arma-insp-btn-1">&#9658; VER</div>
+        </div>
+      </div>
+
       <!-- security -->
       <div class="sec-wrap">
         <div id="security-display" class="sec-badge seguro">
@@ -644,6 +676,22 @@
 
 <!-- TOAST -->
 <div id="toast" class="toast hidden"></div>
+
+<!-- ARMA INSPECIONAR POPUP -->
+<div id="arma-inspect-popup" class="arma-inspect-popup hidden">
+  <div class="arma-inspect-inner">
+    <div class="arma-inspect-header">
+      <span class="arma-inspect-tag">&#9658; ARMAMENTO</span>
+      <span class="arma-inspect-nome" id="arma-inspect-nome"></span>
+      <button class="dica-popup-close" onclick="App.fecharArmaInspect()">&#10005;</button>
+    </div>
+    <div class="arma-inspect-body">
+      <img id="arma-inspect-img" src="" alt="" />
+      <div class="arma-inspect-stats-grid" id="arma-inspect-stats"></div>
+      <div class="arma-inspect-descricao" id="arma-inspect-descricao"></div>
+    </div>
+  </div>
+</div>
 
 <!-- DICA POPUP -->
 <div id="dica-popup" class="dica-popup hidden">

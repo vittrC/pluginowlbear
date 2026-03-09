@@ -90,6 +90,7 @@ const DEFAULT_CHAR = () => ({
   security:   "seguro",   // seguro | alerta | perigo | comprometido
   integrity:  5,
   patente:    1,
+  armas:      [null, null],
   attrs: {
     fisico:      "D",
     intelecto:   "D",
@@ -109,11 +110,25 @@ const DEFAULT_CHAR = () => ({
 const DICAS_PRESETS = [
   {
     id:     'campo_visao',
-    titulo: 'CAMPO DE VIS\u00c3O',
-    texto:  'Analise o ambiente em setores. Verde: zona segura — sem amea\u00e7as vis\u00edveis. Amarelo: zona de aten\u00e7\u00e3o — poss\u00edvel contato. Vermelho: contato hostil confirmado — entre em posi\u00e7\u00e3o.',
-    imagem: 'dicas/campo_visao.png'
+    titulo: 'CAMPO DE VIS\u00c3O / ALERTA',
+    texto:  'Quando um inimigo entra em ALERTA.',
+    imagem: 'dicas/campo_visao_alerta.png'
+  },
+  {
+    id:     'campo_visao1',
+    titulo: 'CAMPO DE VIS\u00c3O / NORMAL',
+    texto:  'Quando um inimigo não suspeita de nada.',
+    imagem: 'dicas/campo_visao_normal.png'
   }
 ];
+
+const ARMA_TIPOS = {
+  pistola:    { label: 'PISTOLA',    img: 'icones/pistola.png' },
+  espingarda: { label: 'ESPINGARDA', img: 'icones/espingarda.png' },
+  sniper:     { label: 'SNIPER',     img: '' },
+  revolver:   { label: 'REVOLVER',   img: '' },
+  outro:      { label: 'OUTRO',      img: '' },
+};
 
 const PATENTES = {
   1: { nome: 'VENOM', desc: 'Recruta de campo. Preparado para missões de alta periculosidade.' },
@@ -357,6 +372,7 @@ async function loginPlayer() {
       updateSecurityDisplay(data.security);
       updateIntegrityDisplay(data.integrity);
       updateStatusAtivoDisplay(data.statusAtivo);
+      updateArmaDisplay(data.armas);
 
       // Notify player if status changed
       if (old && old.security !== data.security) {
@@ -468,6 +484,9 @@ function renderSheet(data) {
 
   // Integrity (called inside updatePatenteDisplay)
 
+  // Armas
+  updateArmaDisplay(data.armas);
+
   // Security
   updateSecurityDisplay(data.security || 'seguro');
 
@@ -571,6 +590,95 @@ async function setPatente(level) {
   updatePatenteDisplay(p);
   sfx('select');
   await persistChar({ patente: p });
+}
+
+// ──────────────────────────────────────────────────────────
+//  ARMAS — player display & inspect
+// ──────────────────────────────────────────────────────────
+function updateArmaDisplay(armas) {
+  armas = armas || [null, null];
+  for (let i = 0; i < 2; i++) {
+    const arma  = armas[i] || null;
+    const slot  = $('arma-slot-' + i);
+    const ico   = $('arma-ico-' + i);
+    const empt  = $('arma-empty-' + i);
+    const nome  = $('arma-nome-' + i);
+    const stats = $('arma-stats-' + i);
+    const inspB = $('arma-insp-btn-' + i);
+    const letal = $('arma-letal-' + i);
+    if (!slot) continue;
+    if (arma && arma.tipo) {
+      const tipo = ARMA_TIPOS[arma.tipo] || ARMA_TIPOS.outro;
+      if (tipo.img) {
+        ico.src = tipo.img;
+        ico.classList.remove('hidden');
+        empt.style.display = 'none';
+      } else {
+        ico.classList.add('hidden');
+        empt.style.display = '';
+        empt.textContent = '\u25c8';
+      }
+      nome.textContent = arma.nome || tipo.label;
+      const parts = [];
+      if (arma.dano)    parts.push('DMG: ' + arma.dano);
+      if (arma.alcance) parts.push('ALC: ' + arma.alcance);
+      stats.textContent = parts.join(' \u00b7 ');
+      // Lethality badge
+      if (letal) {
+        if (arma.tipoDano === 'mortal') {
+          letal.textContent = 'MRT';
+          letal.className = 'arma-letal-badge arma-letal-mortal';
+        } else if (arma.tipoDano === 'neutralizador') {
+          letal.textContent = 'NEU';
+          letal.className = 'arma-letal-badge arma-letal-neu';
+        } else {
+          letal.textContent = '';
+          letal.className = 'arma-letal-badge hidden';
+        }
+      }
+      inspB.classList.remove('hidden');
+      slot.classList.add('arma-equipada');
+    } else {
+      ico.classList.add('hidden');
+      empt.style.display = '';
+      empt.textContent = '\u2014';
+      nome.textContent = i === 0 ? 'SLOT I' : 'SLOT II';
+      stats.textContent = '';
+      if (letal) { letal.textContent = ''; letal.className = 'arma-letal-badge hidden'; }
+      inspB.classList.add('hidden');
+      slot.classList.remove('arma-equipada');
+    }
+  }
+}
+
+function inspecionarArma(slot) {
+  const arma = state.character?.armas?.[slot];
+  if (!arma || !arma.tipo) return;
+  const tipo = ARMA_TIPOS[arma.tipo] || ARMA_TIPOS.outro;
+  $('arma-inspect-nome').textContent = arma.nome || tipo.label;
+  const img = $('arma-inspect-img');
+  if (tipo.img) { img.src = tipo.img; img.style.display = ''; }
+  else          { img.style.display = 'none'; }
+  const mods = (arma.modificadores || []).join(', ') || '\u2014';
+  $('arma-inspect-stats').innerHTML = [
+    ['TIPO',           tipo.label],
+    ['DANO',           arma.dano     || '\u2014'],
+    ['ALCANCE',        arma.alcance  || '\u2014'],
+    ['TIPO DE DANO',   arma.tipoDano === 'mortal' ? 'MORTAL' : 'NEUTRALIZADOR'],
+    ['MODIFICADORES',  mods],
+  ].map(([k, v]) =>
+    `<div class="arma-stat-row"><span class="arma-stat-key">${k}</span><span class="arma-stat-val">${escHtml(String(v))}</span></div>`
+  ).join('');
+  const desc = $('arma-inspect-descricao');
+  desc.textContent = arma.descricao || '';
+  desc.style.display = arma.descricao ? '' : 'none';
+  $('arma-inspect-popup').classList.remove('hidden');
+  sfx('open');
+}
+
+function fecharArmaInspect() {
+  $('arma-inspect-popup').classList.add('hidden');
+  sfx('close');
 }
 
 function updateStatusAtivoDisplay(status) {
@@ -1105,6 +1213,96 @@ function fitaSeek(event) {
 }
 
 // ──────────────────────────────────────────────────────────
+//  ARMAS — GM CONTROLS
+// ──────────────────────────────────────────────────────────
+function buildGMArmasHtml(char) {
+  const armas = char.armas || [null, null];
+  const labels = ['PRIM\u00c1RIA I', 'PRIM\u00c1RIA II'];
+  return [0, 1].map(i => {
+    const arma = armas[i] || {};
+    const tipoOpts = Object.entries(ARMA_TIPOS).map(([k, v]) =>
+      `<option value="${k}" ${arma.tipo === k ? 'selected' : ''}>${v.label}</option>`
+    ).join('');
+    const tipoDanoOpts = ['mortal','neutralizador'].map(t =>
+      `<option value="${t}" ${(arma.tipoDano || 'mortal') === t ? 'selected' : ''}>${t.toUpperCase()}</option>`
+    ).join('');
+    const modsVal = (arma.modificadores || []).join(', ');
+    const hasArma = !!arma.tipo;
+    const title = hasArma
+      ? `${labels[i]} \u2014 ${ARMA_TIPOS[arma.tipo]?.label || ''}${arma.nome ? ' ('+escHtml(arma.nome)+')' : ''}`
+      : labels[i];
+    return `
+      <div class="gm-arma-form">
+        <div class="gm-arma-form-title">${title}</div>
+        <div class="gm-arma-row">
+          <select class="gm-select" id="gm-arma-tipo-${char.codename}-${i}">${tipoOpts}</select>
+          <input class="gm-text-input" id="gm-arma-nome-${char.codename}-${i}" placeholder="nome (opcional)" value="${escHtml(arma.nome || '')}" maxlength="30" />
+        </div>
+        <div class="gm-arma-row">
+          <input class="gm-text-input" id="gm-arma-dano-${char.codename}-${i}" placeholder="dano (ex: 2d6)" value="${escHtml(arma.dano || '')}" maxlength="20" />
+          <input class="gm-text-input" id="gm-arma-alcance-${char.codename}-${i}" placeholder="alcance" value="${escHtml(arma.alcance || '')}" maxlength="20" />
+          <select class="gm-select" id="gm-arma-tdano-${char.codename}-${i}">${tipoDanoOpts}</select>
+        </div>
+        <input class="gm-text-input" id="gm-arma-mods-${char.codename}-${i}" placeholder="modificadores (sep. por v\u00edrgulas)" value="${escHtml(modsVal)}" maxlength="120" />
+        <textarea class="gm-text-input gm-arma-desc" id="gm-arma-desc-${char.codename}-${i}" placeholder="descri\u00e7\u00e3o..." rows="2">${escHtml(arma.descricao || '')}</textarea>
+        <div class="gm-arma-btns">
+          <button class="gm-toggle-btn active-ativo" onclick="App.gmSalvarArma('${char.codename}',${i})">SALVAR</button>
+          <button class="gm-toggle-btn active-morto"  onclick="App.gmLimparArma('${char.codename}',${i})">LIMPAR</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function gmSalvarArma(codename, slot) {
+  const get = id => document.getElementById(id);
+  const tipo        = get(`gm-arma-tipo-${codename}-${slot}`)?.value;
+  const nome        = get(`gm-arma-nome-${codename}-${slot}`)?.value.trim();
+  const dano        = get(`gm-arma-dano-${codename}-${slot}`)?.value.trim();
+  const alcance     = get(`gm-arma-alcance-${codename}-${slot}`)?.value.trim();
+  const tipoDano    = get(`gm-arma-tdano-${codename}-${slot}`)?.value || 'mortal';
+  const modsRaw     = get(`gm-arma-mods-${codename}-${slot}`)?.value || '';
+  const descricao   = get(`gm-arma-desc-${codename}-${slot}`)?.value.trim();
+  const modificadores = modsRaw.split(',').map(s => s.trim()).filter(Boolean);
+  const arma = { tipo, nome, dano, alcance, tipoDano, modificadores, descricao };
+
+  let currentArmas = [null, null];
+  if (firebaseOk) {
+    try {
+      const snap = await getDoc(doc(db, 'characters', codename));
+      if (snap.exists()) currentArmas = snap.data().armas || [null, null];
+    } catch (_) {}
+  } else {
+    const ch = LocalDB.getChar(codename);
+    if (ch) currentArmas = ch.armas || [null, null];
+  }
+  const newArmas = [...currentArmas];
+  while (newArmas.length < 2) newArmas.push(null);
+  newArmas[slot] = arma;
+  await gmUpdateChar(codename, { armas: newArmas });
+  sfx('select');
+  showToast(`Arma salva no slot ${slot + 1}.`, 'success', 1500);
+}
+
+async function gmLimparArma(codename, slot) {
+  let currentArmas = [null, null];
+  if (firebaseOk) {
+    try {
+      const snap = await getDoc(doc(db, 'characters', codename));
+      if (snap.exists()) currentArmas = snap.data().armas || [null, null];
+    } catch (_) {}
+  } else {
+    const ch = LocalDB.getChar(codename);
+    if (ch) currentArmas = ch.armas || [null, null];
+  }
+  const newArmas = [...currentArmas];
+  while (newArmas.length < 2) newArmas.push(null);
+  newArmas[slot] = null;
+  await gmUpdateChar(codename, { armas: newArmas });
+  sfx('select');
+  showToast(`Slot ${slot + 1} limpo.`, 'success', 1500);
+}
+
+// ──────────────────────────────────────────────────────────
 //  FITAS — GM CONTROLS
 // ──────────────────────────────────────────────────────────
 function buildGMRadioHtml(char) {
@@ -1404,6 +1602,10 @@ function buildGMCard(char) {
       <div class="gm-ctrl-group">
         <div class="gm-ctrl-label">⬡ STATUS DO OPERADOR</div>
         <div class="gm-active-toggle">${statusBtns}</div>
+      </div>
+      <div class="gm-ctrl-group">
+        <div class="gm-ctrl-label">⬡ ARMAMENTO</div>
+        ${buildGMArmasHtml(char)}
       </div>
       <div class="gm-ctrl-group">
         <div class="gm-ctrl-label">⬡ RÁDIO</div>
@@ -2442,6 +2644,10 @@ window.App = {
   openMissaoDetail,
   closeMissaoDetail,
   setPatente,
+  inspecionarArma,
+  fecharArmaInspect,
+  gmSalvarArma,
+  gmLimparArma,
   gmEnviarDica,
   closeDicaPopup
 };
