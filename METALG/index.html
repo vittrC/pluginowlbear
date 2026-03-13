@@ -228,6 +228,7 @@
               <span class="arma-letal-badge hidden" id="arma-letal-0"></span>
             </div>
             <div class="arma-slot-stats" id="arma-stats-0"></div>
+            <div class="arma-mods-strip hidden" id="arma-mods-0"></div>
           </div>
           <div class="arma-slot-inspect hidden" id="arma-insp-btn-0">&#9658; VER</div>
           <button class="arma-bolsa-btn hidden" id="arma-bolsa-btn-0" onclick="event.stopPropagation(); App.armaParaBolsa(0)">&#9660; BOLSA</button>
@@ -243,6 +244,7 @@
               <span class="arma-letal-badge hidden" id="arma-letal-1"></span>
             </div>
             <div class="arma-slot-stats" id="arma-stats-1"></div>
+            <div class="arma-mods-strip hidden" id="arma-mods-1"></div>
           </div>
           <div class="arma-slot-inspect hidden" id="arma-insp-btn-1">&#9658; VER</div>
           <button class="arma-bolsa-btn hidden" id="arma-bolsa-btn-1" onclick="event.stopPropagation(); App.armaParaBolsa(1)">&#9660; BOLSA</button>
@@ -573,24 +575,46 @@
   <!-- BOLSA INVENTÁRIO -->
   <div id="tab-panel-bolsa" class="tab-panel bolsa-tab-panel hidden">
     <div class="bolsa-wrap">
-      <div class="bolsa-header">
-        <span class="bolsa-title">&#9649; BOLSA DE CAMPO</span>
-        <span class="bolsa-space-info" id="bolsa-space-info">35/35 LIVRES</span>
-      </div>
-      <div class="bolsa-grid-container" id="bolsa-grid-container">
-        <div class="bolsa-grid" id="bolsa-grid">
-          <!-- 7×5 cells rendered by JS -->
+
+      <!-- COLUNA ESQUERDA: header + grid -->
+      <div class="bolsa-col-left">
+        <div class="bolsa-header">
+          <span class="bolsa-title">&#9649; BOLSA DE CAMPO</span>
+          <span class="bolsa-space-info" id="bolsa-space-info">35/35 LIVRES</span>
+        </div>
+        <div class="bolsa-grid-container" id="bolsa-grid-container">
+          <div class="bolsa-grid" id="bolsa-grid">
+            <!-- 7×5 cells rendered by JS -->
+          </div>
         </div>
       </div>
-      <div class="bolsa-actions" id="bolsa-actions">
-        <div class="bolsa-hint">&#9658; Selecione um item para interagir</div>
-      </div>
-      <div class="bolsa-staged-area">
-        <div class="bolsa-staged-title">&#9649; AGUARDANDO ESPA&#xC7;O</div>
-        <div class="bolsa-staged-list" id="bolsa-staged-list">
-          <div class="bolsa-staged-empty">&#8212; VAZIO &#8212;</div>
+
+      <!-- COLUNA DIREITA: ações + fila + camuflagem -->
+      <div class="bolsa-col-right">
+        <div class="bolsa-actions" id="bolsa-actions">
+          <div class="bolsa-hint">&#9658; Selecione um item para interagir</div>
+        </div>
+        <div class="bolsa-staged-area">
+          <div class="bolsa-staged-title">&#9649; AGUARDANDO ESPA&#xC7;O</div>
+          <div class="bolsa-staged-list" id="bolsa-staged-list">
+            <div class="bolsa-staged-empty">&#8212; VAZIO &#8212;</div>
+          </div>
+        </div>
+
+        <!-- CAMUFLAGEM -->
+        <div class="bolsa-camo-section" id="bolsa-camo-section">
+          <div class="bolsa-camo-strip-hdr" onclick="App.bolsaCamoToggle()">
+            <span class="bolsa-camo-strip-ico">&#9670;</span>
+            <span class="bolsa-camo-strip-title">CAMUFLAGEM</span>
+            <span class="bolsa-camo-eq-badge" id="bolsa-camo-eq-badge">NENHUMA</span>
+            <span class="bolsa-camo-chevron" id="bolsa-camo-chevron">&#9658;</span>
+          </div>
+          <div class="bolsa-camo-body hidden" id="bolsa-camo-body">
+            <!-- rendered by renderCamuflagem() -->
+          </div>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -778,6 +802,17 @@
       </div>
       <div class="gm-section-body">
         <div id="gm-docs-list" class="gm-docs-list"><div class="gm-fitas-empty">Carregando documentos...</div></div>
+      </div>
+    </div>
+
+    <!-- ── Camuflagens ─────────────────────────────────── -->
+    <div class="gm-section gm-section-collapsed" id="gmsec-camuflagens">
+      <div class="gm-sec-title gm-sec-toggle" onclick="App.gmToggleSection('camuflagens')">
+        <span>&#9658; CAMUFLAGENS</span>
+        <span class="gm-sec-chevron">&#9660;</span>
+      </div>
+      <div class="gm-section-body">
+        <div id="gm-camos-list" class="gm-camos-list"><div class="gm-fitas-empty">Carregando camuflagens...</div></div>
       </div>
     </div>
 

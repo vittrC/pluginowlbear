@@ -2099,19 +2099,90 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
 .nav-bolsa-ico { background: #1a3a28; }
 .nav-ico-char { font-size: 20px; color: #fff; line-height: 1; font-family: monospace; }
 
-/* Tab panel override — pinned top, internal scroll */
-.bolsa-tab-panel { flex-direction: column; align-items: center; justify-content: flex-start; overflow: hidden; }
-
-.bolsa-wrap {
-  display: flex; flex-direction: column;
+/* Tab panel override */
+.bolsa-tab-panel {
+  flex-direction: column;
   align-items: center;
-  background: var(--bg); padding: 8px; gap: 8px;
-  width: 100%; max-width: 360px;
-  flex: 1; min-height: 0; overflow-y: auto;
+  justify-content: flex-start;
+  overflow: hidden;
 }
+
+/* ── Wrap: mobile = single column ── */
+.bolsa-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg);
+  padding: 8px;
+  gap: 8px;
+  width: 100%;
+  max-width: 380px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* Columns (stacked on mobile) */
+.bolsa-col-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 100%;
+}
+.bolsa-col-right {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 8px;
+}
+
+/* ── PC: two-column side-by-side layout ── */
+@media (min-width: 640px) {
+  .bolsa-tab-panel {
+    overflow-y: auto;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 14px 20px;
+  }
+  .bolsa-wrap {
+    flex-direction: row;
+    align-items: flex-start;
+    width: auto;
+    max-width: none;
+    flex: 0 0 auto;
+    gap: 20px;
+    padding: 0;
+    overflow: visible;
+  }
+  /* Left col: exactly as wide as the 7×5 grid */
+  .bolsa-col-left {
+    width: 330px;
+    flex-shrink: 0;
+    align-items: flex-start;
+    border-right: 1px solid #1a3a20;
+    padding-right: 20px;
+    box-sizing: content-box;
+  }
+  /* Right col: fixed width, full height of grid, scrollable */
+  .bolsa-col-right {
+    width: 300px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+    max-height: calc(5 * 47px + 40px);
+  }
+  .bolsa-actions { min-height: 70px; padding: 10px; }
+  .bolsa-staged-area { padding: 8px 10px; }
+}
+
 .bolsa-header {
   display: flex; align-items: center; justify-content: space-between;
-  flex-shrink: 0; width: 100%;
+  flex-shrink: 0; width: 330px;
+  padding-bottom: 6px;
 }
 .bolsa-title { font-size: 10px; letter-spacing: 2px; color: var(--green); }
 .bolsa-space-info { font-size: 9px; color: var(--dim); letter-spacing: 1px; }
@@ -2199,7 +2270,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
 /* Actions panel */
 .bolsa-actions {
   flex-shrink: 0; background: #09140a; border: 1px solid #1a3a1e;
-  padding: 8px; min-height: 52px; width: 100%;
+  padding: 8px; min-height: 52px; width: 100%; box-sizing: border-box;
 }
 .bolsa-hint { font-size: 8px; color: #2a4a2a; letter-spacing: .8px; text-align: center; padding: 6px 0; }
 .bolsa-move-hint { font-size: 8px; color: #2a5a30; letter-spacing: 1px; margin-top: 4px; text-align: center; }
@@ -2268,10 +2339,116 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
 .bolsa-uso-zero { color: #aa3333; }
 /* Consumível badge in actions */
 .bolsa-badge-consumivel { border-color: #1a4a2a; color: #3a9a5a; background: #081408; }
-/* USAR button */
+/* USAR button (legacy) */
 .bolsa-btn-usar { border-color: #1a5a2a !important; color: #3a9a5a !important; font-weight: bold; }
 .bolsa-btn-usar:hover:not([disabled]) { background: #0d2a10 !important; color: #00ff80 !important; }
 .bolsa-btn-usar[disabled] { opacity: .4; cursor: default; }
+
+/* ── Mini usage bar inside the grid cell ───────────────────────────── */
+.bolsa-uso-bar-wrap {
+  position: absolute; bottom: 4px; left: 4px; right: 4px;
+  height: 3px; background: #0a140a; border-radius: 1px; overflow: hidden;
+}
+.bolsa-uso-bar-fill {
+  height: 100%; transition: width 0.4s ease; border-radius: 1px;
+}
+/* Per-type tinted border for consumable grid cells */
+.bic-kit_medico   { border-color: #4a1a1a !important; }
+.bic-racao        { border-color: #4a3a10 !important; }
+.bic-curativo     { border-color: #1a4a2a !important; }
+.bic-estimulante  { border-color: #361a4a !important; }
+.bic-municao      { border-color: #1a2a4a !important; }
+.bic-granada      { border-color: #4a2a10 !important; }
+.bic-kit_medico.bolsa-selected   { border-color: #dd4444 !important; box-shadow: 0 0 10px #dd444466, inset 0 0 6px #dd444411 !important; }
+.bic-racao.bolsa-selected        { border-color: #aa8833 !important; box-shadow: 0 0 10px #aa883366, inset 0 0 6px #aa883311 !important; }
+.bic-curativo.bolsa-selected     { border-color: #44bb66 !important; box-shadow: 0 0 10px #44bb6666, inset 0 0 6px #44bb6611 !important; }
+.bic-estimulante.bolsa-selected  { border-color: #9944cc !important; box-shadow: 0 0 10px #9944cc66, inset 0 0 6px #9944cc11 !important; }
+.bic-municao.bolsa-selected      { border-color: #4488cc !important; box-shadow: 0 0 10px #4488cc66, inset 0 0 6px #4488cc11 !important; }
+.bic-granada.bolsa-selected      { border-color: #cc6622 !important; box-shadow: 0 0 10px #cc662266, inset 0 0 6px #cc662211 !important; }
+
+/* ── Consumable panel in actions area ──────────────────────────────── */
+.bolsa-uso-panel {
+  padding: 8px 6px 6px; display: flex; flex-direction: column; gap: 6px;
+}
+.bolsa-uso-panel-top {
+  display: flex; align-items: center; gap: 8px;
+}
+.bolsa-uso-ico {
+  font-size: 20px; flex-shrink: 0; width: 28px; text-align: center;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+.bolsa-uso-info { flex: 1; min-width: 0; }
+.bolsa-uso-nome { font-size: 11px; letter-spacing: 0.12em; font-family: var(--vt); }
+.bolsa-uso-count { font-size: 10px; color: #4a7a4a; letter-spacing: 0.08em; margin-top: 1px; }
+.bolsa-uso-slash { color: #2a4a2a; }
+.bolsa-uso-desc { font-size: 8px; color: #3a5a3a; letter-spacing: 0.05em; font-style: italic; padding: 0 2px; }
+.bolsa-uso-bar-large {
+  height: 6px; background: #0a140a; border: 1px solid #1a2a1a; border-radius: 1px; overflow: hidden;
+}
+.bolsa-uso-bar-large-fill {
+  height: 100%; transition: width 0.5s cubic-bezier(0.22,1,0.36,1); border-radius: 1px;
+}
+.bolsa-btn-usar-big {
+  display: block; width: 100%; padding: 7px 0;
+  font-size: 11px; letter-spacing: 0.18em; font-family: var(--font);
+  background: transparent; border-width: 1px; border-style: solid;
+  cursor: pointer; text-align: center; text-transform: uppercase;
+  transition: background 0.15s, opacity 0.15s;
+}
+.bolsa-btn-usar-big:hover:not([disabled]) { background: rgba(255,255,255,0.06); }
+.bolsa-btn-usar-big[disabled] { opacity: 0.35; cursor: not-allowed; }
+/* bottom-row shared buttons */
+.bolsa-btns-bottom { margin-top: 4px; padding-top: 4px; border-top: 1px solid #111e11; }
+
+/* ── Weapon mod slots in actions area ──────────────────────────────── */
+.bolsa-mods-panel {
+  padding: 5px 4px; border: 1px solid #0e1e0e; background: #040a04; margin-bottom: 4px;
+}
+.bolsa-mods-title {
+  font-size: 8px; color: #2a4a2a; letter-spacing: 0.12em; margin-bottom: 5px;
+}
+.bolsa-mods-slots { display: flex; gap: 4px; }
+.bolsa-mod-slot {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 5px 2px; border: 1px solid #0e1e0e; background: #040804;
+}
+.bolsa-mod-slot.bolsa-mod-filled {
+  border-color: #2a4a2a; background: #060f06;
+  box-shadow: inset 0 0 6px rgba(0,200,80,0.06);
+}
+.bolsa-mod-ico { font-size: 13px; color: #1a3a1a; }
+.bolsa-mod-slot.bolsa-mod-filled .bolsa-mod-ico { color: #44aa55; }
+.bolsa-mod-name { font-size: 7px; color: #2a3a2a; letter-spacing: 0.06em; text-align: center; }
+.bolsa-mod-slot.bolsa-mod-filled .bolsa-mod-name { color: #558855; }
+.bolsa-mod-on {
+  font-size: 7px; color: #00cc66; letter-spacing: 0.1em;
+  background: #041208; border: 1px solid #1a4a2a; padding: 0 3px;
+}
+
+/* ── Mod strip on arma-slot (character panel) ───────────────────────── */
+.arma-mods-strip {
+  display: flex; gap: 4px; margin-top: 3px; flex-wrap: wrap;
+}
+.arma-mod-dot {
+  font-size: 9px; color: #1a3a1a; opacity: 0.5;
+  border: 1px solid #0e1e0e; padding: 1px 3px; background: #030703;
+}
+.arma-mod-dot-on {
+  color: #44aa55; opacity: 1;
+  border-color: #2a4a2a; background: #060f06;
+  text-shadow: 0 0 6px #00cc6644;
+}
+
+/* ── GM arma mod checkboxes ─────────────────────────────────────────── */
+.gm-arma-mods-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+.gm-mod-check {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 9px; color: #4a7a4a; letter-spacing: 0.06em; cursor: pointer;
+  border: 1px solid #1a3a1a; padding: 3px 6px; background: #060c06;
+  user-select: none; transition: background 0.1s, border-color 0.1s;
+}
+.gm-mod-check:hover { background: #0a140a; border-color: #2a4a2a; }
+.gm-mod-check input { accent-color: #44aa55; width: 11px; height: 11px; cursor: pointer; }
 
 /* Tooltip */
 .bolsa-tooltip {
@@ -2370,3 +2547,443 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
   margin-top: 4px;
   letter-spacing: 0.05em;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   CAMUFLAGEM
+   ═══════════════════════════════════════════════════════════ */
+
+/* Header strip */
+.bolsa-camo-section {
+  margin-top: 0;
+  border-top: 1px solid #1e2a1e;
+  width: 100%;
+  box-sizing: border-box;
+}
+.bolsa-camo-strip-hdr {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 8px 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.bolsa-camo-strip-hdr:hover { background: #0e160e; }
+.bolsa-camo-strip-ico {
+  color: #33aa44;
+  font-size: 12px;
+}
+.bolsa-camo-strip-title {
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: #44aa55;
+  flex: 1;
+}
+.bolsa-camo-eq-badge {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: #558855;
+  background: #0a1a0a;
+  border: 1px solid #1a3a1a;
+  padding: 1px 6px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.3s, border-color 0.3s;
+}
+.bolsa-camo-badge-flash {
+  color: #aaffaa !important;
+  border-color: #44aa44 !important;
+  animation: camo-badge-pop 0.8s ease-out;
+}
+@keyframes camo-badge-pop {
+  0%   { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+.bolsa-camo-chevron {
+  font-size: 10px;
+  color: #336633;
+  transition: transform 0.2s;
+}
+
+/* Body */
+.bolsa-camo-body {
+  padding: 8px 6px 12px;
+}
+
+/* Equipped panel */
+.bolsa-camo-eq-wrap {
+  margin-bottom: 12px;
+}
+.bolsa-camo-nenhuma {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px dashed #1a2a1a;
+  color: #335533;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+.bolsa-camo-nenhuma-ico { font-size: 14px; color: #2a3a2a; }
+.bolsa-camo-equipped {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #2a3a2a;
+  background: #060c06;
+  position: relative;
+  overflow: hidden;
+}
+.bolsa-camo-equipped::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--cc, #1a3010);
+  opacity: 0.18;
+  pointer-events: none;
+}
+.bolsa-camo-equip-show {
+  animation: camo-eq-appear 0.4s ease-out;
+}
+@keyframes camo-eq-appear {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.bolsa-camo-equip-anim::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  animation: camo-scan-line 0.9s ease-out forwards;
+}
+@keyframes camo-scan-line {
+  from { left: -60%; }
+  to   { left: 120%; }
+}
+.bolsa-camo-eq-icon {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.bolsa-camo-eq-info {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+.bolsa-camo-eq-nome {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: #cceecc;
+  margin-bottom: 2px;
+}
+.bolsa-camo-eq-amb {
+  font-size: 9px;
+  color: #446644;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+.bolsa-camo-eq-efeito {
+  font-size: 9px;
+  color: #669966;
+  letter-spacing: 0.06em;
+  margin-top: 5px;
+}
+.bolsa-camo-remove-btn {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid #3a2a2a;
+  color: #775555;
+  font-family: inherit;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  padding: 4px 8px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.15s, color 0.15s;
+}
+.bolsa-camo-remove-btn:hover { background: #2a0808; border-color: #884444; color: #cc6666; }
+
+/* Camo index bar */
+.bolsa-camo-index-bar {
+  position: relative;
+  height: 6px;
+  background: #0a140a;
+  border: 1px solid #1a2a1a;
+}
+.bolsa-camo-bar-fill {
+  position: absolute;
+  top: 0; left: 0; height: 100%;
+  transition: width 0.6s cubic-bezier(0.22,1,0.36,1);
+}
+.bolsa-camo-bar-label {
+  position: absolute;
+  right: 4px;
+  top: -14px;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+/* List title */
+.bolsa-camo-list-title {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: #335533;
+  padding: 6px 0 6px 2px;
+  border-bottom: 1px solid #0e1e0e;
+  margin-bottom: 6px;
+}
+
+/* Camo list */
+.bolsa-camo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bolsa-camo-card {
+  border: 1px solid #111e11;
+  background: #040804;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  overflow: hidden;
+}
+.bolsa-camo-card:hover { border-color: #2a4a2a; background: #060e06; }
+.bolsa-camo-card.equipped { border-color: #2a4a2a; }
+.bolsa-camo-card.expanded { border-color: #336633; }
+.bolsa-camo-card-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+}
+.bolsa-camo-card-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.02em;
+  border: 1px solid #1a2a1a;
+  border-radius: 1px;
+}
+.bolsa-camo-card-info { flex: 1; min-width: 0; }
+.bolsa-camo-card-nome {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: #aaccaa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bolsa-camo-card-amb {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  color: #3a5a3a;
+  margin-top: 1px;
+}
+.bolsa-camo-eq-tag {
+  font-size: 8px;
+  background: #1a3a1a;
+  color: #55aa55;
+  padding: 1px 4px;
+  letter-spacing: 0.1em;
+  border: 1px solid #2a4a2a;
+}
+.bolsa-camo-card-pct {
+  flex-shrink: 0;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  font-weight: bold;
+  min-width: 36px;
+  text-align: right;
+}
+
+/* Expanded detail */
+.bolsa-camo-card-detail {
+  padding: 8px 10px 10px;
+  border-top: 1px solid #1a2a1a;
+  background: #030603;
+}
+.bolsa-camo-detail-efeito {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+.txt-hl {
+  color: #f0d060;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 8px rgba(240, 200, 60, 0.45);
+}
+/* *palavra* — vermelho, pulsa */
+.txt-danger {
+  color: #ff4444;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 6px rgba(255, 60, 60, 0.7);
+  animation: txt-danger-pulse 1.4s ease-in-out infinite;
+}
+@keyframes txt-danger-pulse {
+  0%, 100% { opacity: 1; text-shadow: 0 0 6px rgba(255,60,60,0.7); }
+  50%       { opacity: 0.65; text-shadow: 0 0 14px rgba(255,80,80,1); }
+}
+/* ^palavra — ciano tech com underline pontilhado */
+.txt-tech {
+  color: #40e0ff;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: #40e0ff88;
+  text-shadow: 0 0 10px rgba(64, 224, 255, 0.5);
+}
+/* ~palavra — fantasma: desbotado, itálico, riscado */
+.txt-ghost {
+  color: #88aa88;
+  font-style: italic;
+  opacity: 0.6;
+  text-decoration: line-through;
+  text-decoration-color: #88aa8866;
+  letter-spacing: 0.03em;
+}
+/* @palavra — verde neon terminal intenso */
+.txt-neon {
+  color: #00ff88;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 4px #00ff88, 0 0 12px rgba(0, 255, 136, 0.6), 0 0 24px rgba(0,255,136,0.2);
+}
+/* #palavra — branco cru, ênfase máxima */
+.txt-white {
+  color: #ffffff;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8), 0 0 16px rgba(255,255,255,0.25);
+}
+.bolsa-camo-detail-sabor {
+  font-size: 9px;
+  color: #446644;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+  font-style: italic;
+}
+.bolsa-camo-equip-btn {
+  background: transparent;
+  border: 1px solid #336633;
+  color: #55aa55;
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+.bolsa-camo-equip-btn:hover { background: #0a1e0a; }
+.bolsa-camo-equipped-btn {
+  border-color: #3a2a2a;
+  color: #775555;
+}
+.bolsa-camo-equipped-btn:hover { background: #1a0808; color: #cc6666; border-color: #884444; }
+
+/* Locked camo cards (player side) */
+.bolsa-camo-locked-card {
+  cursor: default;
+  opacity: 0.55;
+}
+.bolsa-camo-locked-card:hover { border-color: #1a1a1a; background: #040804; }
+.bolsa-camo-icon-locked {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  background: #101010;
+  border: 1px dashed #2a2a2a;
+  color: #444;
+  border-radius: 1px;
+}
+.bolsa-camo-nome-locked { color: #3a4a3a; }
+.bolsa-camo-amb-locked  { color: #2a3a2a; }
+.bolsa-camo-pct-locked  { color: #334433; font-size: 11px; letter-spacing: 0.04em; }
+.bolsa-camo-locked-divider {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: #2a3a2a;
+  padding: 8px 0 4px;
+  border-top: 1px dashed #141e14;
+  margin-top: 4px;
+}
+.bolsa-camo-count {
+  font-size: 9px;
+  color: #335533;
+  background: #0a1a0a;
+  border: 1px solid #1a2a1a;
+  padding: 1px 5px;
+  margin-left: 6px;
+  letter-spacing: 0.08em;
+}
+
+/* GM camos list */
+.gm-camos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0;
+}
+.gm-camo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid #111e11;
+  background: #040804;
+}
+.gm-camo-icon {
+  flex-shrink: 0;
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit; font-size: 10px; font-weight: bold;
+  letter-spacing: 0.02em;
+  border: 1px solid #1a2a1a;
+}
+.gm-camo-info { flex: 1; min-width: 0; }
+.gm-camo-nome {
+  font-size: 10px; letter-spacing: 0.12em; color: #aaccaa;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gm-camo-amb { font-size: 8px; letter-spacing: 0.08em; color: #3a5a3a; margin-top: 1px; }
+.gm-camo-status { font-size: 8px; letter-spacing: 0.1em; margin-top: 2px; }
+.gm-camo-released { color: #44aa55; }
+.gm-camo-locked   { color: #666; }
+.gm-camo-toggle-btn {
+  flex-shrink: 0;
+  background: transparent;
+  font-family: inherit; font-size: 9px; letter-spacing: 0.1em;
+  padding: 4px 10px; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.gm-camo-btn-release {
+  border: 1px solid #2a4a2a; color: #55aa55;
+}
+.gm-camo-btn-release:hover { background: #0a1e0a; color: #88ee88; }
+.gm-camo-btn-lock {
+  border: 1px solid #4a2a2a; color: #aa5555;
+}
+.gm-camo-btn-lock:hover { background: #1e0a0a; color: #ee8888; }

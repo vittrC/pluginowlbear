@@ -97,7 +97,8 @@ const DEFAULT_CHAR = () => ({
   integrity:  5,
   patente:    1,
   armas:      [null, null],
-  bolsa:      { items: [], staged: [] },
+  bolsa:        { items: [], staged: [] },
+  camuflagem:   null,
   attrs: {
     fisico:      "D",
     intelecto:   "D",
@@ -141,9 +142,12 @@ const ARMA_TIPOS = {
   revolver:   { label: 'REVOLVER',   img: '' },
   outro:      { label: 'OUTRO',      img: '' },
   // Consumíveis
-  kit_medico: { label: 'KIT MÉDICO', img: '', consumivel: true },
-  municao:    { label: 'MUNIÇÃO',    img: '', consumivel: true },
-  granada:    { label: 'GRANADA',    img: '', consumivel: true },
+  kit_medico:  { label: 'KIT MÉDICO',     img: '', consumivel: true, ico: '✚' },
+  municao:     { label: 'MUNIÇÃO',         img: '', consumivel: true, ico: '◈' },
+  granada:     { label: 'GRANADA',         img: '', consumivel: true, ico: '⊛' },
+  racao:       { label: 'RAÇÃO DE CAMPO',  img: '', consumivel: true, ico: '▣' },
+  curativo:    { label: 'CURATIVO',        img: '', consumivel: true, ico: '✦' },
+  estimulante: { label: 'ESTIMULANTE',     img: '', consumivel: true, ico: '◉' },
 };
 
 // Inventory sizes (cols × rows) for each weapon / consumable type
@@ -154,13 +158,33 @@ const ARMA_SIZES = {
   sniper:     { w: 2, h: 4 },
   outro:      { w: 1, h: 2 },
   // Consumíveis — 1×1
-  kit_medico: { w: 1, h: 1 },
-  municao:    { w: 1, h: 1 },
-  granada:    { w: 1, h: 1 },
+  kit_medico:  { w: 1, h: 1 },
+  municao:     { w: 1, h: 1 },
+  granada:     { w: 1, h: 1 },
+  racao:       { w: 1, h: 1 },
+  curativo:    { w: 1, h: 1 },
+  estimulante: { w: 1, h: 1 },
 };
 
 // Default uses per consumable type
-const CONSUMIVEL_USOS = { kit_medico: 3, municao: 6, granada: 1 };
+const CONSUMIVEL_USOS = { kit_medico: 3, municao: 6, granada: 1, racao: 4, curativo: 3, estimulante: 2 };
+
+// Weapon attachment slot definitions
+const ARMA_MODS = {
+  supressor:  { label: 'SUPRESSOR',   ico: '▣', desc: 'Suprime assinatura de disparo.' },
+  mira:       { label: 'MIRA TÁTICA', ico: '⊕', desc: 'Aumenta precisão a longa distância.' },
+  carregador: { label: 'CARREGADOR+', ico: '▥', desc: 'Capacidade de munição estendida.' },
+};
+
+// Accent color per consumable type
+const CONSUMIVEL_COR = {
+  kit_medico:  '#dd4444',
+  municao:     '#4488cc',
+  granada:     '#cc6622',
+  racao:       '#aa8833',
+  curativo:    '#44bb66',
+  estimulante: '#9944cc',
+};
 
 const BOLSA_COLS  = 7;
 const BOLSA_ROWS  = 5;
@@ -174,12 +198,175 @@ const PATENTES = {
   3: { nome: 'VYPER', desc: 'Um Vyper de verdade. Identidade apagada. Existe apenas a missão. Seu nome causa medo' },
 };
 
+const CAMUFLAGENS = [
+  {
+    id: 'florestal',
+    nome: 'FLORESTAL',
+    ambiente: 'MATA DENSA',
+    camo: 72,
+    cor: '#1a3010',
+    acento: '#5aaa2a',
+    iconeChar: 'FL',
+    efeito: '+2 em furtividade em mata fechada e florestas',
+    sabor: 'O padrão clássico. Sombras e folhas se tornam seu escudo. Operadores veteranos ainda confiam nele em todo engajamento na selva.',
+    equipText: 'Você desaparece entre as sombras verdes.\nA floresta te aceita como um dos seus.'
+  },
+  {
+    id: 'urban_ops',
+    nome: 'URBAN OPS',
+    ambiente: 'AMBIENTE URBANO',
+    camo: 65,
+    cor: '#2a2a2a',
+    acento: '#aaaaaa',
+    iconeChar: 'UO',
+    efeito: '+2 em furtividade em zonas urbanas e instalações',
+    sabor: 'Concreto, asfalto, grades de aço. Você vira parte da estrutura urbana. Mais um civil no caos da cidade.',
+    equipText: 'Você se torna a paisagem.\nAnônimo. Invisível. Mais um rosto sem nome.'
+  },
+  {
+    id: 'arcturo',
+    nome: '~ARCTURO',
+    ambiente: 'NEVE / GELO',
+    camo: 78,
+    cor: '#1a2a3a',
+    acento: '#88ccee',
+    iconeChar: 'AR',
+    efeito: '+3 em furtividade em terreno nevado e ártico',
+    sabor: 'Branco absoluto. Na neve você é um fantasma que nunca existiu. O frio apaga rastros melhor do que qualquer treinamento.',
+    equipText: 'O frio te abraça.\nVocê se torna a neve em si.'
+  },
+  {
+    id: 'digital',
+    nome: 'DIGITAL GRID',
+    ambiente: 'INSTALAÇÕES TECH',
+    camo: 62,
+    cor: '#081420',
+    acento: '#00aaff',
+    iconeChar: 'DG',
+    efeito: 'Reduz detecção por câmeras e sensores eletrônicos em -15',
+    sabor: 'Padrão quadriculado que distorce reconhecimento de forma em sistemas de câmera. Não funciona para olhos humanos — só para sensores.',
+    equipText: 'Sistemas de vigilância registram seu movimento\ncomo ruído estático. Você é só glitch.'
+  },
+  {
+    id: 'fantasma',
+    nome: 'FANTASMA',
+    ambiente: 'OPERAÇÕES NOTURNAS',
+    camo: 55,
+    cor: '#080808',
+    acento: '#5555aa',
+    iconeChar: 'FA',
+    efeito: '+4 em furtividade à noite. -2 durante o dia.',
+    sabor: 'Preto absoluto. Não foi feito para ser visto. Nunca. De dia é um risco, mas na escuridão você deixa de existir.',
+    equipText: 'Você some na escuridão.\nNem sua sombra é visível.'
+  },
+  {
+    id: 'serpente',
+    nome: '!PADRÃO !SERPENTE',
+    ambiente: 'CAMPO ABERTO',
+    camo: 85,
+    cor: '#1a0e04',
+    acento: '#e0a020',
+    gradient: 'linear-gradient(135deg, #c8860a 0%, #f0c040 40%, #ffd700 60%, #b07010 100%)',
+    iconeChar: 'SN',
+    efeito: 'Alto índice em qualquer ambiente. Pertenceu a uma lenda. +4 resistencia a dano',
+    sabor: 'Alguém o deixou para trás. Representa um tempo que se foi, e agora, seu legado está em suas mãos.',
+    equipText: '...\nVocê sente o peso de quem usou isso antes de você.'
+  },
+  {
+    id: 'biomimet',
+    nome: '@BIOMIMÉTICO',
+    ambiente: 'ADAPTÁVEL',
+    camo: 82,
+    cor: '#0e201a',
+    acento: '#33cc88',
+    iconeChar: 'BM',
+    efeito: 'Índice de camuflagem se adapta ao ambiente detectado pelo operador',
+    sabor: 'Tecido vivo infundido com proteínas de cefalópodo. Muda de textura e cor, mas só um pouco. O suficiente.',
+    equipText: 'Sua pele formiga. O tecido pulsa.\nDepois: silêncio perfeito.'
+  },
+  {
+    id: 'arido',
+    nome: 'ÁRIDO',
+    ambiente: 'DESERTO / RUÍNAS',
+    camo: 68,
+    cor: '#1e1408',
+    acento: '#cc9944',
+    iconeChar: 'ÁR',
+    efeito: '+2 em furtividade em terreno árido, deserto e ruínas',
+    sabor: 'Pedra, areia, silêncio. Os desertos escondem muita coisa. Agora, inclusive você.',
+    equipText: 'Você se torna pedra. Areia.\nCalor distante no horizonte.'
+  },
+  {
+    id: 'fluvial',
+    nome: 'FLUVIAL',
+    ambiente: 'RIOS / PÂNTANOS',
+    camo: 70,
+    cor: '#081422',
+    acento: '#3388aa',
+    iconeChar: 'FV',
+    efeito: '+3 em furtividade em terreno aquático, pântanos e chuva',
+    sabor: 'Lama, musgo, reflexo na água. Para quem luta no lodo sem reclamar.',
+    equipText: 'O pântano te reconhece como um dos seus.\nA lama cobre seus rastros.'
+  },
+  {
+    id: 'termico',
+    nome: '*TÉRMICO*',
+    ambiente: 'CONTRA-VIGILÂNCIA',
+    camo: 75,
+    cor: '#0a0018',
+    acento: '#8844cc',
+    iconeChar: 'TC',
+    efeito: 'Oculta assinatura térmica. Invisível para câmeras infravermelho.',
+    sabor: 'Bloqueia o calor corporal por até 90 minutos de uso contínuo. Depois disso, você começa a sobreaquece.',
+    equipText: 'Você some dos sensores de calor.\nPara os scanners, você não existe.'
+  },
+  {
+    id: 'frondosa',
+    nome: 'FRONDOSA',
+    ambiente: 'MATA CERRADA',
+    camo: 80,
+    cor: '#122210',
+    acento: '#88cc44',
+    iconeChar: 'FR',
+    efeito: 'Índice máximo em vegetação densa. Penalidade em espaços abertos.',
+    sabor: 'Folhas costuradas à mão, uma a uma. Leva dias para construir. Um segundo para reconhecer que você vale o esforço.',
+    equipText: 'Você não está na floresta.\nVocê é a floresta.'
+  },
+  {
+    id: 'ecrasm',
+    nome: 'ECRÃ',
+    ambiente: '[CLASSIFICADO]',
+    camo: 94,
+    cor: '#04040e',
+    acento: '#00ffcc',
+    iconeChar: '◈',
+    efeito: '[CLASSIFICADO] Camuflagem óptica adaptativa de última geração.',
+    sabor: '[ACESSO RESTRITO — NÍVEL VYPER] Projeto ECRÃ. Desenvolvido em cooperação com [REDACTED]. Protótipo. Instável acima de 40 minutos de uso contínuo.',
+    equipText: 'use com moderação.'
+  },
+  {
+    id: 'bandana',
+    nome: '!BANDANA',
+    ambiente: '◪ ITEM - ESPECIAL ◪',
+    camo: 99,
+    cor: '#1a0e04',
+    acento: '#e0a020',
+    gradient: 'linear-gradient(135deg, #c8860a 0%, #f0c040 40%, #ffd700 60%, #b07010 100%)',
+    iconeChar: 'お',
+    efeito: 'Faça parte da lenda',
+    sabor: 'Não te oferece nenhum bônus, apenas um estilo inconfundível. Dizem que foi usada pelo próprio !Vyper durante a operação *FUMAÇA* *VERMELHA*.',
+    equipText: 'essa é a sensação, de ser um !VYPER de verdade.'
+  }
+];
+
 let db         = null;
 let auth       = null;
 let firebaseOk = false;
 let authOk     = false;  // true depois que signInAnonymously resolver com sucesso
 let docsReleasedState = [];   // IDs de documentos liberados pelo GM
 let docsUnsub = null;         // listener firestore de docs
+let camoReleasedState = [];   // IDs de camuflagens liberadas pelo GM
+let camoUnsub = null;         // listener firestore de camos
 let docsReadSet   = new Set(); // IDs de docs já abertos pelo jogador
 let _newDocAlertId = null;     // docId pendente no alerta de novo arquivo
 let missaoText  = '';          // texto de missão atual (GM)
@@ -190,24 +377,26 @@ let _gmDeleteArmed = null;     // codename aguardando confirmação de deleção
 let bolsaSelected    = null;   // index into bolsa.items currently selected
 let bolsaDiscardArmed = false; // true after first discard click (confirm step)
 let _bolsaKeyHandler  = null;  // ref to the keydown listener
+let _camoSelected     = null;  // id da camo expandida no painel
 
 // ──────────────────────────────────────────────────────────
 //  AUDIO
 // ──────────────────────────────────────────────────────────
-const SFX = {
-  open:   new Audio('codecopen.wav'),
-  close:  new Audio('codecover.wav'),
-  select: new Audio('select.wav'),
+const SFX_SRCS = {
+  open:   'codecopen.wav',
+  close:  'codecover.wav',
+  select: 'select.wav',
 };
-SFX.open.volume   = 0.55;
-SFX.close.volume  = 0.55;
-SFX.select.volume = 0.45;
+const SFX_VOL = { open: 0.55, close: 0.55, select: 0.45 };
 
 function sfx(name) {
-  const a = SFX[name];
-  if (!a) return;
-  a.currentTime = 0;
-  a.play().catch(() => {});
+  const src = SFX_SRCS[name];
+  if (!src) return;
+  try {
+    const a = new Audio(src);
+    a.volume = SFX_VOL[name] ?? 0.5;
+    a.play().catch(() => {});
+  } catch (_) {}
 }
 
 try {
@@ -293,7 +482,7 @@ function showScreen(id) {
 
 function showToast(msg, type = 'info', duration = 2500) {
   const t = $('toast');
-  t.textContent = msg;
+  t.innerHTML = fmtCamo(msg);
   t.className = 'toast ' + type;
   t.classList.remove('hidden');
   clearTimeout(t._timeout);
@@ -398,6 +587,7 @@ async function loginPlayer() {
       state.role = 'player'; state.codename = codename; state.character = charData;
       renderSheet(charData); showScreen('screen-sheet');
       await loadDocsState();
+      await loadCamoState();
       return;
     }
 
@@ -439,6 +629,7 @@ async function loginPlayer() {
 
   // Load docs released state then render
   await loadDocsState();
+  await loadCamoState();
 
   // Realtime listener — character
   if (firebaseOk) {
@@ -503,6 +694,16 @@ async function loginPlayer() {
       if (state.currentTab === 'docs') renderDocsTab();
     });
 
+    // Realtime listener — camo released state
+    if (camoUnsub) camoUnsub();
+    camoUnsub = onSnapshot(doc(db, 'gameState', 'camos'), (snap) => {
+      const prev = [...camoReleasedState];
+      camoReleasedState = snap.exists() ? (snap.data().released || []) : [];
+      const justReleased = camoReleasedState.filter(id => !prev.includes(id));
+      if (justReleased.length > 0) showToast('\u25c8 Nova camuflagem desbloqueada!', 'success', 2500);
+      if (state.currentTab === 'bolsa') renderCamuflagem();
+    });
+
     // Realtime listener — mission current text
     if (missaoUnsub) missaoUnsub();
     missaoUnsub = onSnapshot(doc(db, 'gameState', 'mission'), (snap) => {
@@ -554,8 +755,10 @@ function logout() {
   if (state.unsubscribe)    state.unsubscribe();
   if (state.gmCharsUnsub)   state.gmCharsUnsub();
   if (docsUnsub)            { docsUnsub(); docsUnsub = null; }
+  if (camoUnsub)            { camoUnsub(); camoUnsub = null; }
   if (missaoUnsub)          { missaoUnsub(); missaoUnsub = null; }
   docsReleasedState = [];
+  camoReleasedState = [];
   docsReadSet = new Set();
   _newDocAlertId = null;
   missaoText = '';
@@ -808,6 +1011,20 @@ function updateArmaDisplay(armas) {
       }
       inspB.classList.remove('hidden');
       slot.classList.add('arma-equipada');
+      // Mod strip
+      const modsEl = $('arma-mods-' + i);
+      if (modsEl) {
+        const mods = arma.mods || {};
+        const anyMod = Object.keys(ARMA_MODS).some(k => mods[k]);
+        if (anyMod) {
+          modsEl.innerHTML = Object.entries(ARMA_MODS).map(([k, m]) =>
+            `<span class="arma-mod-dot${mods[k] ? ' arma-mod-dot-on' : ''}" title="${m.label}">${m.ico}</span>`
+          ).join('');
+          modsEl.classList.remove('hidden');
+        } else {
+          modsEl.innerHTML = ''; modsEl.classList.add('hidden');
+        }
+      }
     } else {
       ico.classList.add('hidden');
       empt.style.display = '';
@@ -817,6 +1034,8 @@ function updateArmaDisplay(armas) {
       if (letal) { letal.textContent = ''; letal.className = 'arma-letal-badge hidden'; }
       inspB.classList.add('hidden');
       slot.classList.remove('arma-equipada');
+      const modsElE = $('arma-mods-' + i);
+      if (modsElE) { modsElE.innerHTML = ''; modsElE.classList.add('hidden'); }
     }
     const bolsaBtn = $('arma-bolsa-btn-' + i);
     if (bolsaBtn) bolsaBtn.classList.toggle('hidden', !(arma && arma.tipo));
@@ -1050,19 +1269,26 @@ function renderBolsa() {
     const isSel = idx === bolsaSelected;
     el.className   = 'bolsa-item' + (isSel ? ' bolsa-selected' : '') +
                      (item.tipoDano === 'neutralizador' ? ' bolsa-item-neutr' : '') +
-                     (item.rotated ? ' bolsa-item-rotated' : '');
+                     (item.rotated ? ' bolsa-item-rotated' : '') +
+                     (isConsumivel(item.tipo) ? ` bic-${item.tipo}` : '');
     el.dataset.idx = idx;
     el.style.left   = (item.col * BOLSA_STEP) + 'px';
     el.style.top    = (item.row * BOLSA_STEP) + 'px';
     el.style.width  = (s.w * BOLSA_STEP - 1) + 'px';
     el.style.height = (s.h * BOLSA_STEP - 1) + 'px';
     const tipo    = ARMA_TIPOS[item.tipo] || ARMA_TIPOS.outro;
+    const icoColor = CONSUMIVEL_COR[item.tipo] || '';
     const imgHtml = tipo.img
       ? `<img src="${tipo.img}" class="bolsa-item-img" alt="" />`
-      : `<span class="bolsa-item-icon">◈</span>`;
+      : `<span class="bolsa-item-icon" ${icoColor ? `style="color:${icoColor}"` : ''}>${tipo.ico || '◈'}</span>`;
     const rotBadge  = item.rotated ? '<div class="bolsa-rot-badge">↻</div>' : '';
-    const usosBadge = item.usos !== undefined
-      ? `<div class="bolsa-uso-badge${item.usos === 0 ? ' bolsa-uso-zero' : ''}">${item.usos}</div>`
+    // Mini usage bar for consumables
+    const hasUsos  = item.usos !== undefined;
+    const usoMax   = item.usoMax || item.usos || 1;
+    const usoPct   = hasUsos ? Math.max(0, Math.round((item.usos / usoMax) * 100)) : 100;
+    const usoBgCol = usoPct > 60 ? '#00cc66' : usoPct > 25 ? '#ccaa00' : '#cc3333';
+    const usosBadge = hasUsos
+      ? `<div class="bolsa-uso-bar-wrap"><div class="bolsa-uso-bar-fill" style="width:${usoPct}%;background:${usoBgCol}"></div></div><div class="bolsa-uso-badge${item.usos === 0 ? ' bolsa-uso-zero' : ''}">${item.usos}</div>`
       : '';
     el.innerHTML = `<div class="bolsa-item-inner">${imgHtml}<div class="bolsa-item-label">${escHtml(item.nome || tipo.label)}</div>${rotBadge}${usosBadge}</div>`;
     if (bolsaSelected === null) {
@@ -1104,6 +1330,14 @@ function renderBolsa() {
       }).join('');
     }
   }
+
+  // Sync camo header badge (without re-rendering the full panel)
+  const camoBadge = document.getElementById('bolsa-camo-eq-badge');
+  if (camoBadge) {
+    const equipadoId = state.character?.camuflagem || null;
+    const eq = equipadoId ? CAMUFLAGENS.find(c => c.id === equipadoId) : null;
+    camoBadge.textContent = eq ? eq.nome : 'NENHUMA';
+  }
 }
 
 function renderBolsaActions() {
@@ -1111,50 +1345,94 @@ function renderBolsaActions() {
   if (!panel) return;
   if (bolsaSelected === null) {
     bolsaDiscardArmed = false;
-    panel.innerHTML = '<div class="bolsa-hint">&#9658; Clique para selecionar &nbsp;·&nbsp; 2× clique para equipar no SLOT I &nbsp;·&nbsp; ESC cancela</div>';
+    panel.innerHTML = '<div class="bolsa-hint">&#9658; Clique para selecionar &nbsp;&middot;&nbsp; 2x usar/equipar &nbsp;&middot;&nbsp; ESC cancela</div>';
     return;
   }
   const bolsa = state.character?.bolsa || { items: [], staged: [] };
   const item  = bolsa.items[bolsaSelected];
   if (!item) { bolsaSelected = null; bolsaDiscardArmed = false; panel.innerHTML = ''; return; }
-  const tipo   = ARMA_TIPOS[item.tipo] || ARMA_TIPOS.outro;
-  const s      = bolsaGetSize(item);
-  const slotA  = state.character?.armas?.[0];
-  const slotB  = state.character?.armas?.[1];
-  const slotALabel = slotA ? escHtml(slotA.nome || (ARMA_TIPOS[slotA.tipo]?.label) || 'EQUIPADO') : 'VAZIO';
-  const slotBLabel = slotB ? escHtml(slotB.nome || (ARMA_TIPOS[slotB.tipo]?.label) || 'EQUIPADO') : 'VAZIO';
-  const tdBadge = item.tipoDano === 'neutralizador'
-    ? '<span class="bolsa-badge bolsa-badge-neutr">NEUTR.</span>'
-    : '<span class="bolsa-badge bolsa-badge-mortal">MORTAL</span>';
-  const rotLabel = item.rotated ? '&#8635; NORMAL' : '&#8635; GIRAR';
+  const tipo    = ARMA_TIPOS[item.tipo] || ARMA_TIPOS.outro;
+  const s       = bolsaGetSize(item);
+  const isCons  = isConsumivel(item.tipo);
+  const consCor = CONSUMIVEL_COR[item.tipo] || '#44aa55';
   const dropLabel = bolsaDiscardArmed ? '&#10003; CONFIRMAR' : '&#10005; DESCARTAR';
   const dropClass = bolsaDiscardArmed ? 'bolsa-btn-drop-confirm' : 'bolsa-btn-drop';
+
+  let mainSection = '';
+  if (isCons) {
+    const hasUsos = item.usos !== undefined;
+    const usoMax  = item.usoMax || item.usos || 1;
+    const usoPct  = hasUsos ? Math.max(0, Math.round((item.usos / usoMax) * 100)) : 100;
+    const usoBg   = usoPct > 60 ? '#00cc66' : usoPct > 25 ? '#ccaa00' : '#cc3333';
+    const esgotado = hasUsos && item.usos <= 0;
+    mainSection = `
+      <div class="bolsa-uso-panel">
+        <div class="bolsa-uso-panel-top">
+          <span class="bolsa-uso-ico" style="color:${consCor}">${tipo.ico || '&#9672;'}</span>
+          <div class="bolsa-uso-info">
+            <div class="bolsa-uso-nome" style="color:${consCor}">${escHtml(item.nome || tipo.label)}</div>
+            ${hasUsos ? `<div class="bolsa-uso-count">${item.usos} <span class="bolsa-uso-slash">/</span> ${usoMax} USOS</div>` : ''}
+          </div>
+        </div>
+        ${item.descricao ? `<div class="bolsa-uso-desc">${escHtml(item.descricao)}</div>` : ''}
+        ${hasUsos ? `<div class="bolsa-uso-bar-large"><div class="bolsa-uso-bar-large-fill" style="width:${usoPct}%;background:${usoBg}"></div></div>` : ''}
+        <button class="bolsa-btn bolsa-btn-usar-big" style="border-color:${esgotado ? '#333' : consCor};color:${esgotado ? '#444' : consCor}"
+                onclick="App.bolsaUsarItem(${bolsaSelected})" ${esgotado ? 'disabled' : ''}>
+          ${esgotado ? '&#10005; ESGOTADO' : '&#9654; USAR'}
+        </button>
+      </div>`;
+  } else {
+    const slotA = state.character?.armas?.[0];
+    const slotB = state.character?.armas?.[1];
+    const slotALabel = slotA ? escHtml(slotA.nome || (ARMA_TIPOS[slotA.tipo]?.label) || 'EQUIPADO') : 'VAZIO';
+    const slotBLabel = slotB ? escHtml(slotB.nome || (ARMA_TIPOS[slotB.tipo]?.label) || 'EQUIPADO') : 'VAZIO';
+    const tdBadge = item.tipoDano === 'neutralizador'
+      ? '<span class="bolsa-badge bolsa-badge-neutr">NEUTR.</span>'
+      : '<span class="bolsa-badge bolsa-badge-mortal">MORTAL</span>';
+    const rotLabel = item.rotated ? '&#8635; NORMAL' : '&#8635; GIRAR';
+    const modsHtml = Object.entries(ARMA_MODS).map(([k, m]) => {
+      const on = !!(item.mods?.[k]);
+      return `<div class="bolsa-mod-slot${on ? ' bolsa-mod-filled' : ''}">
+        <span class="bolsa-mod-ico">${on ? m.ico : '&#9633;'}</span>
+        <span class="bolsa-mod-name">${m.label}</span>
+        ${on ? '<span class="bolsa-mod-on">ON</span>' : ''}
+      </div>`;
+    }).join('');
+    mainSection = `
+      <div class="bolsa-sel-header">
+        <div class="bolsa-sel-name">${escHtml(item.nome || tipo.label)}</div>
+        <div class="bolsa-sel-badges">${tdBadge}<span class="bolsa-badge bolsa-badge-size">${s.w}&#215;${s.h}</span></div>
+      </div>
+      <div class="bolsa-sel-stats">
+        ${item.dano    ? `<span><span class="bolsa-stat-k">DANO</span> ${escHtml(item.dano)}</span>` : ''}
+        ${item.alcance ? `<span><span class="bolsa-stat-k">ALC.</span> ${escHtml(item.alcance)}</span>` : ''}
+        ${item.descricao ? `<span class="bolsa-sel-desc">${escHtml(item.descricao)}</span>` : ''}
+      </div>
+      <div class="bolsa-mods-panel">
+        <div class="bolsa-mods-title">&#9635; MODIFICA&#199;&#213;ES</div>
+        <div class="bolsa-mods-slots">${modsHtml}</div>
+      </div>
+      <div class="bolsa-sel-btns">
+        <button class="bolsa-btn bolsa-btn-equip" onclick="App.bolsaEquipar(0)">
+          <span class="bolsa-btn-slot-label">I</span> ${slotALabel === 'VAZIO' ? 'EQUIPAR' : slotALabel}
+        </button>
+        <button class="bolsa-btn bolsa-btn-equip" onclick="App.bolsaEquipar(1)">
+          <span class="bolsa-btn-slot-label">II</span> ${slotBLabel === 'VAZIO' ? 'EQUIPAR' : slotBLabel}
+        </button>
+        <button class="bolsa-btn bolsa-btn-rotate" onclick="App.bolsaGirar()">${rotLabel} <span class="bolsa-kbd">R</span></button>
+      </div>`;
+  }
+
   panel.innerHTML = `
-    <div class="bolsa-sel-header">
-      <div class="bolsa-sel-name">${escHtml(item.nome || tipo.label)}</div>
-      <div class="bolsa-sel-badges">${tdBadge}<span class="bolsa-badge bolsa-badge-size">${s.w}×${s.h}</span></div>
-    </div>
-    <div class="bolsa-sel-stats">
-      ${item.dano    ? `<span><span class="bolsa-stat-k">DANO</span> ${escHtml(item.dano)}</span>` : ''}
-      ${item.alcance ? `<span><span class="bolsa-stat-k">ALC.</span> ${escHtml(item.alcance)}</span>` : ''}
-      ${item.descricao ? `<span class="bolsa-sel-desc">${escHtml(item.descricao)}</span>` : ''}
-    </div>
-    <div class="bolsa-sel-btns">
-      <button class="bolsa-btn bolsa-btn-equip" onclick="App.bolsaEquipar(0)" title="Substituir slot I">
-        <span class="bolsa-btn-slot-label">I</span> ${slotALabel === 'VAZIO' ? 'EQUIPAR' : slotALabel}
-      </button>
-      <button class="bolsa-btn bolsa-btn-equip" onclick="App.bolsaEquipar(1)" title="Substituir slot II">
-        <span class="bolsa-btn-slot-label">II</span> ${slotBLabel === 'VAZIO' ? 'EQUIPAR' : slotBLabel}
-      </button>
-      <button class="bolsa-btn bolsa-btn-rotate" onclick="App.bolsaGirar()">${rotLabel} <span class="bolsa-kbd">R</span></button>
+    ${mainSection}
+    <div class="bolsa-sel-btns bolsa-btns-bottom">
       <button class="bolsa-btn bolsa-btn-transfer" onclick="App.bolsaAbrirTransferencia()">&#8644; TRANSFERIR</button>
       <button class="bolsa-btn ${dropClass}" onclick="App.bolsaJogarFora()">${dropLabel}</button>
       <button class="bolsa-btn bolsa-btn-cancel" onclick="App.bolsaDeselecionar()">CANCELAR <span class="bolsa-kbd">ESC</span></button>
     </div>
-    <div class="bolsa-move-hint">&#9660; Clique no grid para mover item</div>
+    ${!isCons ? '<div class="bolsa-move-hint">&#9660; Clique no grid para mover</div>' : ''}
   `;
 }
-
 function bolsaItemClick(idx) {
   bolsaSelected = (bolsaSelected === idx) ? null : idx;
   renderBolsa();
@@ -1779,6 +2057,181 @@ async function bolsaTransferir(targetCodename) {
 }
 
 // ──────────────────────────────────────────────────────────
+//  CAMUFLAGEM
+// ──────────────────────────────────────────────────────────
+
+function bolsaCamoToggle() {
+  const body    = document.getElementById('bolsa-camo-body');
+  const chevron = document.getElementById('bolsa-camo-chevron');
+  if (!body) return;
+  const opening = body.classList.toggle('hidden');
+  // classList.toggle returns true when classList has the class AFTER toggling
+  // So 'opening' = false means we just removed hidden = opened it
+  if (!opening) {
+    chevron && (chevron.textContent = '▾');
+    renderCamuflagem();
+  } else {
+    chevron && (chevron.textContent = '►');
+    _camoSelected = null;
+  }
+}
+
+function bolsaCamoSelect(id) {
+  _camoSelected = (_camoSelected === id) ? null : id;
+  renderCamuflagem();
+}
+
+function renderCamuflagem() {
+  const el = document.getElementById('bolsa-camo-body');
+  if (!el || el.classList.contains('hidden')) return;
+
+  const equipadoId = state.character?.camuflagem || null;
+  const equipado   = equipadoId ? CAMUFLAGENS.find(c => c.id === equipadoId) : null;
+
+  // Update header badge
+  const badge = document.getElementById('bolsa-camo-eq-badge');
+  if (badge) badge.textContent = equipado ? equipado.nome : 'NENHUMA';
+
+  // Equipped panel
+  const eqHtml = equipado
+    ? `<div class="bolsa-camo-equipped bolsa-camo-equip-show" id="bolsa-camo-eq-panel"
+            style="--cc:${equipado.cor}; --ca:${equipado.acento}">
+        <div class="bolsa-camo-eq-icon" style="background:${equipado.gradient || equipado.cor}; color:${equipado.gradient ? 'transparent' : equipado.acento}; -webkit-background-clip:${equipado.gradient ? 'text' : 'unset'}; background-clip:${equipado.gradient ? 'text' : 'unset'}; border:1px solid ${equipado.acento}44">
+          <span style="background:${equipado.gradient || 'none'}; -webkit-background-clip:${equipado.gradient ? 'text' : 'unset'}; background-clip:${equipado.gradient ? 'text' : 'unset'}; color:${equipado.gradient ? 'transparent' : equipado.acento}; font-weight:bold">${escHtml(equipado.iconeChar)}</span>
+        </div>
+        <div class="bolsa-camo-eq-info">
+          <div class="bolsa-camo-eq-nome">${fmtCamo(equipado.nome)}</div>
+          <div class="bolsa-camo-eq-amb">${fmtCamo(equipado.ambiente)}</div>
+          <div class="bolsa-camo-index-bar">
+            <div class="bolsa-camo-bar-fill" style="width:${equipado.camo}%; background:${equipado.gradient || equipado.acento}"></div>
+            <div class="bolsa-camo-bar-label" style="color:${equipado.acento}">${equipado.camo}%</div>
+          </div>
+          <div class="bolsa-camo-eq-efeito" style="color:${equipado.acento}">${fmtCamo(equipado.efeito)}</div>
+        </div>
+        <button class="bolsa-camo-remove-btn" onclick="App.equiparCamuflagem(null)">REMOVER</button>
+      </div>`
+    : `<div class="bolsa-camo-nenhuma" id="bolsa-camo-eq-panel">
+        <span class="bolsa-camo-nenhuma-ico">&#9671;</span>
+        NENHUMA CAMUFLAGEM EQUIPADA
+      </div>`;
+
+  // Camo list — split into unlocked and locked
+  const unlockedHtml = [];
+  const lockedHtml   = [];
+
+  CAMUFLAGENS.forEach(c => {
+    const isReleased = camoReleasedState.includes(c.id);
+    const isEq  = c.id === equipadoId;
+    const isSel = c.id === _camoSelected;
+    const camoColor = camoIndexColor(c.camo);
+
+    if (!isReleased) {
+      // Locked entry — no expand, no equip
+      lockedHtml.push(`<div class="bolsa-camo-card bolsa-camo-locked-card">
+        <div class="bolsa-camo-card-row">
+          <div class="bolsa-camo-card-icon bolsa-camo-icon-locked">&#128274;</div>
+          <div class="bolsa-camo-card-info">
+            <div class="bolsa-camo-card-nome bolsa-camo-nome-locked">[ACESSO RESTRITO]</div>
+            <div class="bolsa-camo-card-amb bolsa-camo-amb-locked">BLOQUEADA PELO GM</div>
+          </div>
+          <div class="bolsa-camo-card-pct bolsa-camo-pct-locked">???%</div>
+        </div>
+      </div>`);
+      return;
+    }
+
+    unlockedHtml.push(`<div class="bolsa-camo-card${isEq ? ' equipped' : ''}${isSel ? ' expanded' : ''}"
+                 onclick="App.bolsaCamoSelect('${c.id}')">
+      <div class="bolsa-camo-card-row">
+        <div class="bolsa-camo-card-icon" style="background:${c.cor}; border-color:${c.acento}22; position:relative; overflow:hidden">
+          ${c.gradient
+            ? `<span style="background:${c.gradient}; -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:bold; font-size:11px; letter-spacing:0.02em">${escHtml(c.iconeChar)}</span>`
+            : `<span style="color:${c.acento}; font-weight:bold">${escHtml(c.iconeChar)}</span>`
+          }
+        </div>
+        <div class="bolsa-camo-card-info">
+          <div class="bolsa-camo-card-nome">${fmtCamo(c.nome)}${isEq ? ' <span class="bolsa-camo-eq-tag">EQUIPADA</span>' : ''}</div>
+          <div class="bolsa-camo-card-amb">${fmtCamo(c.ambiente)}</div>
+        </div>
+        <div class="bolsa-camo-card-pct" style="color:${camoColor}">${c.camo}%</div>
+      </div>
+      ${isSel ? `
+        <div class="bolsa-camo-card-detail" style="border-color:${c.acento}33">
+          <div class="bolsa-camo-index-bar" style="margin-bottom:8px">
+            <div class="bolsa-camo-bar-fill" style="width:${c.camo}%; background:${c.gradient || c.acento}"></div>
+            <div class="bolsa-camo-bar-label" style="color:${camoColor}">${c.camo}% ÍNDICE</div>
+          </div>
+          <div class="bolsa-camo-detail-efeito" style="color:${c.acento}cc">${fmtCamo(c.efeito)}</div>
+          <div class="bolsa-camo-detail-sabor">${fmtCamo(c.sabor)}</div>
+          ${!isEq
+            ? `<button class="bolsa-camo-equip-btn" style="border-color:${c.acento}; ${c.gradient ? `background:${c.gradient}; -webkit-background-clip:text; background-clip:text; color:transparent;` : `color:${c.acento};`}"
+                       onclick="event.stopPropagation(); App.equiparCamuflagem('${c.id}')">
+                 &#9658; EQUIPAR
+               </button>`
+            : `<button class="bolsa-camo-equip-btn bolsa-camo-equipped-btn"
+                       onclick="event.stopPropagation(); App.equiparCamuflagem(null)">
+                 &#9724; REMOVER
+               </button>`
+          }
+        </div>` : ''}
+    </div>`);
+  });
+
+  const allListHtml = unlockedHtml.join('') +
+    (lockedHtml.length ? `<div class="bolsa-camo-locked-divider">&#128274; BLOQUEADAS (${lockedHtml.length})</div>` + lockedHtml.join('') : '');
+
+  const unlockedCount = unlockedHtml.length;
+  el.innerHTML = `
+    <div class="bolsa-camo-eq-wrap">${eqHtml}</div>
+    <div class="bolsa-camo-list-title">&#9658; CAMUFLAGENS DISPONÍVEIS <span class="bolsa-camo-count">${unlockedCount}/${CAMUFLAGENS.length}</span></div>
+    <div class="bolsa-camo-list">${allListHtml}</div>
+  `;
+}
+
+function camoIndexColor(pct) {
+  if (pct >= 80) return '#44cc66';
+  if (pct >= 65) return '#ccaa22';
+  return '#cc4422';
+}
+
+async function equiparCamuflagem(id) {
+  if (!state.character) return;
+  const camo = id ? CAMUFLAGENS.find(c => c.id === id) : null;
+
+  // Play equip experience
+  if (camo) {
+    // Flash the badge
+    const badge = document.getElementById('bolsa-camo-eq-badge');
+    if (badge) { badge.classList.add('bolsa-camo-badge-flash'); setTimeout(() => badge.classList.remove('bolsa-camo-badge-flash'), 800); }
+
+    // Dramatic toast with equip text
+    const lines = camo.equipText.split('\\n');
+    showToast(lines[0], 'info', 2000);
+    if (lines[1]) setTimeout(() => showToast(lines[1], 'info', 2500), 1800);
+    if (lines[2]) setTimeout(() => showToast(lines[2], 'info', 2500), 3200);
+
+    sfx('select');
+  }
+
+  state.character.camuflagem = id || null;
+  await persistChar({ camuflagem: id || null });
+
+  _camoSelected = null;
+  renderCamuflagem();
+
+  // Animate equipped panel after render
+  if (camo) {
+    requestAnimationFrame(() => {
+      const panel = document.getElementById('bolsa-camo-eq-panel');
+      if (panel) {
+        panel.classList.add('bolsa-camo-equip-anim');
+        setTimeout(() => panel.classList.remove('bolsa-camo-equip-anim'), 1200);
+      }
+    });
+  }
+}
+
+// ──────────────────────────────────────────────────────────
 //  PHOTO UPLOAD
 // ──────────────────────────────────────────────────────────
 function editPhoto() {
@@ -2064,6 +2517,17 @@ function escHtml(s) {
     ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 }
 
+// Escapa HTML e aplica destaque em palavras prefixadas com !
+function fmtCamo(s) {
+  return escHtml(String(s))
+    .replace(/\*([^\s&*]+)\*/g,  '<span class="txt-danger">$1</span>')   // *palavra* → vermelho perigo
+    .replace(/\^([^\s&^]+)/g,   '<span class="txt-tech">$1</span>')     // ^palavra  → ciano tech
+    .replace(/~([^\s&~]+)/g,    '<span class="txt-ghost">$1</span>')    // ~palavra  → fantasma
+    .replace(/@([^\s&@]+)/g,    '<span class="txt-neon">$1</span>')     // @palavra  → verde neon
+    .replace(/#([^\s&#]+)/g,    '<span class="txt-white">$1</span>')    // #palavra  → branco máximo
+    .replace(/!([^\s&!]+)/g,    '<span class="txt-hl">$1</span>');      // !palavra  → dourado
+}
+
 function formatFitaTime(s) {
   if (!s || isNaN(s)) return '0:00';
   return Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
@@ -2207,7 +2671,7 @@ function buildGMArmasHtml(char) {
   const labels = ['PRIM\u00c1RIA I', 'PRIM\u00c1RIA II'];
   return [0, 1].map(i => {
     const arma = armas[i] || {};
-    const tipoOpts = Object.entries(ARMA_TIPOS).map(([k, v]) =>
+    const tipoOpts = Object.entries(ARMA_TIPOS).filter(([,v]) => !v.consumivel).map(([k, v]) =>
       `<option value="${k}" ${arma.tipo === k ? 'selected' : ''}>${v.label}</option>`
     ).join('');
     const tipoDanoOpts = ['mortal','neutralizador'].map(t =>
@@ -2230,7 +2694,11 @@ function buildGMArmasHtml(char) {
           <input class="gm-text-input" id="gm-arma-alcance-${char.codename}-${i}" placeholder="alcance" value="${escHtml(arma.alcance || '')}" maxlength="20" />
           <select class="gm-select" id="gm-arma-tdano-${char.codename}-${i}">${tipoDanoOpts}</select>
         </div>
-        <input class="gm-text-input" id="gm-arma-mods-${char.codename}-${i}" placeholder="modificadores (sep. por v\u00edrgulas)" value="${escHtml(modsVal)}" maxlength="120" />
+        <div class="gm-arma-mods-row">
+          ${Object.entries(ARMA_MODS).map(([k, m]) =>
+            `<label class="gm-mod-check"><input type="checkbox" id="gm-arma-mod-${k}-${char.codename}-${i}" ${arma.mods?.[k] ? 'checked' : ''} /><span>${m.ico} ${m.label}</span></label>`
+          ).join('')}
+        </div>
         <textarea class="gm-text-input gm-arma-desc" id="gm-arma-desc-${char.codename}-${i}" placeholder="descri\u00e7\u00e3o..." rows="2">${escHtml(arma.descricao || '')}</textarea>
         <div class="gm-arma-btns">
           <button class="gm-toggle-btn active-ativo" onclick="App.gmSalvarArma('${char.codename}',${i})">SALVAR</button>
@@ -2247,10 +2715,12 @@ async function gmSalvarArma(codename, slot) {
   const dano        = get(`gm-arma-dano-${codename}-${slot}`)?.value.trim();
   const alcance     = get(`gm-arma-alcance-${codename}-${slot}`)?.value.trim();
   const tipoDano    = get(`gm-arma-tdano-${codename}-${slot}`)?.value || 'mortal';
-  const modsRaw     = get(`gm-arma-mods-${codename}-${slot}`)?.value || '';
   const descricao   = get(`gm-arma-desc-${codename}-${slot}`)?.value.trim();
-  const modificadores = modsRaw.split(',').map(s => s.trim()).filter(Boolean);
-  const arma = { tipo, nome, dano, alcance, tipoDano, modificadores, descricao };
+  const mods = Object.fromEntries(
+    Object.keys(ARMA_MODS).map(k => [k, !!(get(`gm-arma-mod-${k}-${codename}-${slot}`)?.checked)])
+  );
+  const modificadores = Object.entries(ARMA_MODS).filter(([k]) => mods[k]).map(([,m]) => m.label);
+  const arma = { tipo, nome, dano, alcance, tipoDano, mods, modificadores, descricao };
 
   let currentArmas = [null, null];
   if (firebaseOk) {
@@ -2494,6 +2964,7 @@ function loadGMDashboard() {
   loadNpcPresets();
   renderGMMaldicoes();
   loadDocsState().then(() => renderGMDocs());
+  loadCamoState().then(() => renderGMCamuflagens());
   loadMissaoTextGM();
   restoreGMSectionStates();
 
@@ -2817,8 +3288,8 @@ function gmToggleSection(sectionId) {
 
 function restoreGMSectionStates() {
   const states   = JSON.parse(localStorage.getItem('vyper_gm_sections') || '{}');
-  const defaults = { npc: true, mald: true, missao: true, loot: true, docs: true, agents: false };
-  ['npc','mald','missao','loot','docs','agents'].forEach(id => {
+  const defaults = { npc: true, mald: true, missao: true, loot: true, docs: true, camuflagens: true, agents: false };
+  ['npc','mald','missao','loot','docs','camuflagens','agents'].forEach(id => {
     const sec = document.getElementById('gmsec-' + id);
     if (!sec) return;
     const collapsed = id in states ? states[id] : defaults[id];
@@ -3111,6 +3582,65 @@ async function gmRemoveMaldicao(id) {
 // ══════════════════════════════════════════════════════════
 
 // ── Docs state (released list) ───────────────────────────
+async function loadCamoState() {
+  if (firebaseOk) {
+    try {
+      const snap = await getDoc(doc(db, 'gameState', 'camos'));
+      camoReleasedState = snap.exists() ? (snap.data().released || []) : [];
+    } catch (e) {
+      console.error('loadCamoState:', e);
+      camoReleasedState = [];
+    }
+  } else {
+    const raw = localStorage.getItem('vyper_camos_released');
+    camoReleasedState = raw ? JSON.parse(raw) : [];
+  }
+}
+
+async function saveCamoState() {
+  if (firebaseOk) {
+    try {
+      await setDoc(doc(db, 'gameState', 'camos'), { released: camoReleasedState });
+    } catch (e) {
+      console.error('saveCamoState:', e);
+      showToast('Erro ao salvar estado das camuflagens.', 'error');
+    }
+  } else {
+    localStorage.setItem('vyper_camos_released', JSON.stringify(camoReleasedState));
+  }
+}
+
+function renderGMCamuflagens() {
+  const listEl = $('gm-camos-list');
+  if (!listEl) return;
+  listEl.innerHTML = CAMUFLAGENS.map(c => {
+    const released = camoReleasedState.includes(c.id);
+    return `<div class="gm-camo-item">
+      <div class="gm-camo-icon" style="background:${c.cor}; color:${c.acento}; border-color:${c.acento}33">${escHtml(c.iconeChar)}</div>
+      <div class="gm-camo-info">
+        <div class="gm-camo-nome">${escHtml(c.nome)}</div>
+        <div class="gm-camo-amb">${escHtml(c.ambiente)}</div>
+        <div class="gm-camo-status ${released ? 'gm-camo-released' : 'gm-camo-locked'}">
+          ${released ? '&#9670; DESBLOQUEADA' : '&#128274; BLOQUEADA'}
+        </div>
+      </div>
+      <button class="gm-camo-toggle-btn ${released ? 'gm-camo-btn-lock' : 'gm-camo-btn-release'}"
+              onclick="App.gmToggleCamoRelease('${c.id}')">
+        ${released ? 'BLOQUEAR' : 'LIBERAR'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function gmToggleCamoRelease(camoId) {
+  const idx = camoReleasedState.indexOf(camoId);
+  if (idx === -1) camoReleasedState.push(camoId);
+  else camoReleasedState.splice(idx, 1);
+  await saveCamoState();
+  renderGMCamuflagens();
+  showToast(idx === -1 ? 'Camuflagem desbloqueada para os jogadores.' : 'Camuflagem bloqueada.', 'success', 2000);
+}
+
 async function loadDocsState() {
   if (firebaseOk) {
     try {
@@ -3855,6 +4385,10 @@ window.App = {
   gmLootRemoveItem,
   gmLootDistribuir,
   gmDeleteOperador,
+  bolsaCamoToggle,
+  bolsaCamoSelect,
+  equiparCamuflagem,
+  gmToggleCamoRelease,
 };
 
 // ──────────────────────────────────────────────────────────
