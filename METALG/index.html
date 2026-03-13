@@ -230,6 +230,7 @@
             <div class="arma-slot-stats" id="arma-stats-0"></div>
           </div>
           <div class="arma-slot-inspect hidden" id="arma-insp-btn-0">&#9658; VER</div>
+          <button class="arma-bolsa-btn hidden" id="arma-bolsa-btn-0" onclick="event.stopPropagation(); App.armaParaBolsa(0)">&#9660; BOLSA</button>
         </div>
         <div class="arma-slot" id="arma-slot-1" onclick="App.inspecionarArma(1)">
           <div class="arma-slot-ico">
@@ -244,6 +245,7 @@
             <div class="arma-slot-stats" id="arma-stats-1"></div>
           </div>
           <div class="arma-slot-inspect hidden" id="arma-insp-btn-1">&#9658; VER</div>
+          <button class="arma-bolsa-btn hidden" id="arma-bolsa-btn-1" onclick="event.stopPropagation(); App.armaParaBolsa(1)">&#9660; BOLSA</button>
         </div>
       </div>
 
@@ -277,6 +279,10 @@
       <div class="nav-tab" id="nav-equip" onclick="App.switchTab('equip')">
         <div class="nav-ico-box nav-red"><img src="icones/10.png" class="nav-ico" /></div>
         <span class="nav-lbl">/MISS&#xC3;O</span>
+      </div>
+      <div class="nav-tab" id="nav-bolsa" onclick="App.switchTab('bolsa')">
+        <div class="nav-ico-box nav-bolsa-ico"><span class="nav-ico-char">&#x229E;</span></div>
+        <span class="nav-lbl">/BOLSA</span>
       </div>
     </div><!-- /s-nav -->
 
@@ -563,7 +569,32 @@
       </div>
 
     </div>
+
+  <!-- BOLSA INVENTÁRIO -->
+  <div id="tab-panel-bolsa" class="tab-panel bolsa-tab-panel hidden">
+    <div class="bolsa-wrap">
+      <div class="bolsa-header">
+        <span class="bolsa-title">&#9649; BOLSA DE CAMPO</span>
+        <span class="bolsa-space-info" id="bolsa-space-info">35/35 LIVRES</span>
+      </div>
+      <div class="bolsa-grid-container" id="bolsa-grid-container">
+        <div class="bolsa-grid" id="bolsa-grid">
+          <!-- 7×5 cells rendered by JS -->
+        </div>
+      </div>
+      <div class="bolsa-actions" id="bolsa-actions">
+        <div class="bolsa-hint">&#9658; Selecione um item para interagir</div>
+      </div>
+      <div class="bolsa-staged-area">
+        <div class="bolsa-staged-title">&#9649; AGUARDANDO ESPA&#xC7;O</div>
+        <div class="bolsa-staged-list" id="bolsa-staged-list">
+          <div class="bolsa-staged-empty">&#8212; VAZIO &#8212;</div>
+        </div>
+      </div>
+    </div>
   </div>
+
+</div><!-- /tab-content -->
 
   <!-- DOC VIEWER -->
   <div id="doc-viewer" class="doc-viewer-overlay hidden">
@@ -620,57 +651,149 @@
     <button class="s-header-back" onclick="App.logout()">&#9167;</button>
   </div>
   <div class="gm-body">
-    <div class="gm-sec-title">&#9658; PRESETS DE NPC (R&#xC1;DIO)</div>
-    <div id="gm-npc-list" class="gm-npc-list"><div class="gm-fitas-empty">Nenhum preset.</div></div>
-    <div class="gm-fitas-add" style="margin-bottom:10px">
-      <input type="text" id="gm-npc-nome-input" placeholder="nome do npc..." class="gm-text-input" />
-      <label class="gm-fita-upload-btn">+ FOTO
-        <input type="file" accept="image/*" class="hidden" onchange="App.gmAddNpcPreset(this)" />
-      </label>
-    </div>
-    <div class="gm-sec-title">&#9658; MALDICOES</div>
-    <div id="gm-mald-list" class="gm-mald-list"><div class="gm-fitas-empty">Nenhuma maldi&ccedil;&atilde;o cadastrada.</div></div>
-    <div class="gm-fitas-add" style="flex-direction:column;align-items:stretch;gap:5px;margin-bottom:10px">
-      <input type="text" id="gm-mald-nome" placeholder="nome da maldição..." class="gm-text-input" style="width:100%" />
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <select id="gm-mald-elem" class="gm-select">
-          <option value="sangue">SANGUE</option>
-          <option value="morte">MORTE</option>
-          <option value="energia">ENERGIA</option>
-          <option value="conhecimento">CONHECIMENTO</option>
-        </select>
-        <input type="number" id="gm-mald-custo" placeholder="custo" class="gm-text-input" min="0" max="99" style="width:60px;flex:none" />
-        <label style="display:flex;align-items:center;gap:4px;color:var(--green);font-family:var(--font);font-size:11px;white-space:nowrap;cursor:pointer">
-          <input type="checkbox" id="gm-mald-detect" /> DETECT&Aacute;VEL
-        </label>
+
+    <!-- ── NPC presets ─────────────────────────────────── -->
+    <div class="gm-section gm-section-collapsed" id="gmsec-npc">
+      <div class="gm-sec-title gm-sec-toggle" onclick="App.gmToggleSection('npc')">
+        <span>&#9658; PRESETS DE NPC (R&#xC1;DIO)</span>
+        <span class="gm-sec-chevron">&#9660;</span>
       </div>
-      <textarea id="gm-mald-desc" placeholder="descrição..." class="gm-text-input" rows="2" style="width:100%;resize:vertical"></textarea>
-      <div class="gm-mald-tags-row">
-        <div id="gm-mald-tags-list" class="gm-mald-tags-list"></div>
-        <div style="display:flex;gap:4px;margin-top:4px">
-          <input type="text" id="gm-mald-tag-input" placeholder="adicionar tag..." class="gm-text-input" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();App.gmAddMaldTag()}" />
-          <button class="gm-fita-upload-btn" onclick="App.gmAddMaldTag()">+ TAG</button>
+      <div class="gm-section-body">
+        <div id="gm-npc-list" class="gm-npc-list"><div class="gm-fitas-empty">Nenhum preset.</div></div>
+        <div class="gm-fitas-add" style="margin-bottom:6px">
+          <input type="text" id="gm-npc-nome-input" placeholder="nome do npc..." class="gm-text-input" />
+          <label class="gm-fita-upload-btn">+ FOTO
+            <input type="file" accept="image/*" class="hidden" onchange="App.gmAddNpcPreset(this)" />
+          </label>
         </div>
       </div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <label class="gm-fita-upload-btn">&#43; &Iacute;CONE
-          <input type="file" accept="image/*" class="hidden" onchange="App.gmPreviewMaldIcon(this)" />
-        </label>
-        <img id="gm-mald-icone-preview" src="" alt="" class="hidden" style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border2)" />
-        <button class="gm-fita-upload-btn" onclick="App.gmAddMaldicao()" style="margin-left:auto">ADICIONAR</button>
+    </div>
+
+    <!-- ── Maldições ───────────────────────────────────── -->
+    <div class="gm-section gm-section-collapsed" id="gmsec-mald">
+      <div class="gm-sec-title gm-sec-toggle" onclick="App.gmToggleSection('mald')">
+        <span>&#9658; MALDICOES</span>
+        <span class="gm-sec-chevron">&#9660;</span>
+      </div>
+      <div class="gm-section-body">
+        <div id="gm-mald-list" class="gm-mald-list"><div class="gm-fitas-empty">Nenhuma maldi&ccedil;&atilde;o cadastrada.</div></div>
+        <div class="gm-fitas-add" style="flex-direction:column;align-items:stretch;gap:5px;margin-bottom:6px">
+          <input type="text" id="gm-mald-nome" placeholder="nome da maldição..." class="gm-text-input" style="width:100%" />
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <select id="gm-mald-elem" class="gm-select">
+              <option value="sangue">SANGUE</option>
+              <option value="morte">MORTE</option>
+              <option value="energia">ENERGIA</option>
+              <option value="conhecimento">CONHECIMENTO</option>
+            </select>
+            <input type="number" id="gm-mald-custo" placeholder="custo" class="gm-text-input" min="0" max="99" style="width:60px;flex:none" />
+            <label style="display:flex;align-items:center;gap:4px;color:var(--green);font-family:var(--font);font-size:11px;white-space:nowrap;cursor:pointer">
+              <input type="checkbox" id="gm-mald-detect" /> DETECT&Aacute;VEL
+            </label>
+          </div>
+          <textarea id="gm-mald-desc" placeholder="descrição..." class="gm-text-input" rows="2" style="width:100%;resize:vertical"></textarea>
+          <div class="gm-mald-tags-row">
+            <div id="gm-mald-tags-list" class="gm-mald-tags-list"></div>
+            <div style="display:flex;gap:4px;margin-top:4px">
+              <input type="text" id="gm-mald-tag-input" placeholder="adicionar tag..." class="gm-text-input" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();App.gmAddMaldTag()}" />
+              <button class="gm-fita-upload-btn" onclick="App.gmAddMaldTag()">+ TAG</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <label class="gm-fita-upload-btn">&#43; &Iacute;CONE
+              <input type="file" accept="image/*" class="hidden" onchange="App.gmPreviewMaldIcon(this)" />
+            </label>
+            <img id="gm-mald-icone-preview" src="" alt="" class="hidden" style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border2)" />
+            <button class="gm-fita-upload-btn" onclick="App.gmAddMaldicao()" style="margin-left:auto">ADICIONAR</button>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="gm-sec-title">&#9658; MISS&#xC3;O ATUAL</div>
-    <div class="gm-missao-wrap">
-      <textarea id="gm-missao-input" class="gm-text-input gm-missao-textarea" rows="4" placeholder="texto da miss&#xE3;o atual para os agentes..."></textarea>
-      <button class="gm-fita-upload-btn gm-missao-btn" onclick="App.gmSaveMissaoText()">&#9654; TRANSMITIR</button>
+
+    <!-- ── Missão atual ────────────────────────────────── -->
+    <div class="gm-section gm-section-collapsed" id="gmsec-missao">
+      <div class="gm-sec-title gm-sec-toggle" onclick="App.gmToggleSection('missao')">
+        <span>&#9658; MISS&#xC3;O ATUAL</span>
+        <span class="gm-sec-chevron">&#9660;</span>
+      </div>
+      <div class="gm-section-body">
+        <div class="gm-missao-wrap">
+          <textarea id="gm-missao-input" class="gm-text-input gm-missao-textarea" rows="4" placeholder="texto da miss&#xE3;o atual para os agentes..."></textarea>
+          <button class="gm-fita-upload-btn gm-missao-btn" onclick="App.gmSaveMissaoText()">&#9654; TRANSMITIR</button>
+        </div>
+      </div>
     </div>
-    <div class="gm-sec-title">&#9658; DOCUMENTOS</div>
-    <div id="gm-docs-list" class="gm-docs-list"><div class="gm-fitas-empty">Carregando documentos...</div></div>
-    <div class="gm-sec-title">&#9658; OPERADORES REGISTRADOS</div>
-    <div id="gm-agent-list" class="gm-list">
-      <div class="gm-empty">Nenhum operador registrado.</div>
+    <!-- ── Loot de Missão ────────────────────────────────── -->
+    <div class="gm-section gm-section-collapsed" id="gmsec-loot">
+      <div class="gm-sec-title gm-sec-toggle" onclick="App.gmToggleSection('loot')">
+        <span>&#9658; LOOT DE MISS&#xC3;O</span>
+        <span class="gm-sec-chevron">&#9660;</span>
+      </div>
+      <div class="gm-section-body">
+        <div id="gm-loot-items" class="gm-loot-list"><div class="gm-fitas-empty">Nenhum item no loot.</div></div>
+        <div class="gm-loot-form">
+          <div class="gm-bolsa-form-row">
+            <select id="gm-loot-tipo" class="gm-select">
+              <optgroup label="Armamento">
+                <option value="pistola">PISTOLA</option>
+                <option value="revolver">REVOLVER</option>
+                <option value="espingarda">ESPINGARDA</option>
+                <option value="sniper">SNIPER</option>
+                <option value="outro">OUTRO</option>
+              </optgroup>
+              <optgroup label="Consumíveis">
+                <option value="kit_medico">KIT MÉDICO</option>
+                <option value="municao">MUNIÇÃO</option>
+                <option value="granada">GRANADA</option>
+              </optgroup>
+            </select>
+            <input id="gm-loot-nome" class="gm-text-input" placeholder="nome..." type="text" />
+          </div>
+          <div class="gm-bolsa-form-row">
+            <input id="gm-loot-dano" class="gm-text-input" placeholder="dano..." type="text" />
+            <input id="gm-loot-alcance" class="gm-text-input" placeholder="alcance..." type="text" />
+          </div>
+          <div class="gm-bolsa-form-row">
+            <select id="gm-loot-tdano" class="gm-select">
+              <option value="mortal">MORTAL</option>
+              <option value="neutralizador">NEUTRALIZADOR</option>
+            </select>
+            <input id="gm-loot-desc" class="gm-text-input" placeholder="descrição..." type="text" />
+          </div>
+          <div class="gm-bolsa-form-row">
+            <input id="gm-loot-usos" class="gm-text-input" placeholder="usos (consumíveis)" type="number" min="1" max="99" />
+          </div>
+          <div style="display:flex;gap:4px">
+            <button class="gm-bolsa-send" style="flex:1" onclick="App.gmLootAddItem()">&#43; ADICIONAR AO LOOT</button>
+            <button class="gm-bolsa-send" style="flex:1;background:#1a0a08;border-color:#6a2a00;color:#ff8833" onclick="App.gmLootDistribuir()">&#9654; DISTRIBUIR TUDO</button>
+          </div>
+        </div>
+      </div>
     </div>
+    <!-- ── Documentos ──────────────────────────────────── -->
+    <div class="gm-section gm-section-collapsed" id="gmsec-docs">
+      <div class="gm-sec-title gm-sec-toggle" onclick="App.gmToggleSection('docs')">
+        <span>&#9658; DOCUMENTOS</span>
+        <span class="gm-sec-chevron">&#9660;</span>
+      </div>
+      <div class="gm-section-body">
+        <div id="gm-docs-list" class="gm-docs-list"><div class="gm-fitas-empty">Carregando documentos...</div></div>
+      </div>
+    </div>
+
+    <!-- ── Operadores (aberto por padrão) ─────────────── -->
+    <div class="gm-section" id="gmsec-agents">
+      <div class="gm-sec-title gm-sec-toggle" onclick="App.gmToggleSection('agents')">
+        <span>&#9658; OPERADORES REGISTRADOS</span>
+        <span class="gm-sec-chevron">&#9660;</span>
+      </div>
+      <div class="gm-section-body">
+        <div id="gm-agent-list" class="gm-list">
+          <div class="gm-empty">Nenhum operador registrado.</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 

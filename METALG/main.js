@@ -12,10 +12,12 @@
 // ═══════════════════════════════════════════════════════════
 
 import { initializeApp }        from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   getFirestore,
   doc,
   getDoc,
+  getDocs,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -41,8 +43,12 @@ const firebaseConfig = {
 
 // ──────────────────────────────────────────────────────────
 //  ⚙️  SENHA DO MESTRE — altere como quiser
+//  Para gerar um novo hash via PowerShell:
+//    [System.BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create()
+//      .ComputeHash([System.Text.Encoding]::UTF8.GetBytes("NOVA_SENHA")))
+//      .Replace('-','').ToLower()
 // ──────────────────────────────────────────────────────────
-const GM_PASSWORD = "FOXHOUND";
+const GM_PASSWORD_HASH = "f6615ac3944228857e9c800def9a606874baaf3d1cf9425707c1c1d640f24d5e";
 
 // ──────────────────────────────────────────────────────────
 //  CONSTANTES DO SISTEMA
@@ -91,12 +97,18 @@ const DEFAULT_CHAR = () => ({
   integrity:  5,
   patente:    1,
   armas:      [null, null],
+  bolsa:      { items: [], staged: [] },
   attrs: {
     fisico:      "D",
     intelecto:   "D",
     reflexos:    "D",
     resiliencia: "D",
     presenca:    "D"
+  },
+  aparencia: {
+    cor:        'vermelho',
+    fotoFiltro: 'padrao',
+    carimbo:    'nenhum'
   },
   updatedAt: null
 });
@@ -128,7 +140,33 @@ const ARMA_TIPOS = {
   sniper:     { label: 'SNIPER',     img: '' },
   revolver:   { label: 'REVOLVER',   img: '' },
   outro:      { label: 'OUTRO',      img: '' },
+  // Consumíveis
+  kit_medico: { label: 'KIT MÉDICO', img: '', consumivel: true },
+  municao:    { label: 'MUNIÇÃO',    img: '', consumivel: true },
+  granada:    { label: 'GRANADA',    img: '', consumivel: true },
 };
+
+// Inventory sizes (cols × rows) for each weapon / consumable type
+const ARMA_SIZES = {
+  pistola:    { w: 1, h: 2 },
+  revolver:   { w: 1, h: 2 },
+  espingarda: { w: 2, h: 3 },
+  sniper:     { w: 2, h: 4 },
+  outro:      { w: 1, h: 2 },
+  // Consumíveis — 1×1
+  kit_medico: { w: 1, h: 1 },
+  municao:    { w: 1, h: 1 },
+  granada:    { w: 1, h: 1 },
+};
+
+// Default uses per consumable type
+const CONSUMIVEL_USOS = { kit_medico: 3, municao: 6, granada: 1 };
+
+const BOLSA_COLS  = 7;
+const BOLSA_ROWS  = 5;
+const BOLSA_STEP  = 47; // cell px (46) + gap (1)
+// Available bolsa rows per patente level (Etapa 2 — capacity limit)
+const BOLSA_ROWS_BY_PATENTE = { 1: 3, 2: 4, 3: 5 };
 
 const PATENTES = {
   1: { nome: 'VENOM', desc: 'Recruta de campo. Preparado para missões de alta periculosidade.' },
@@ -136,14 +174,22 @@ const PATENTES = {
   3: { nome: 'VYPER', desc: 'Um Vyper de verdade. Identidade apagada. Existe apenas a missão. Seu nome causa medo' },
 };
 
-let db = null;
+let db         = null;
+let auth       = null;
 let firebaseOk = false;
+let authOk     = false;  // true depois que signInAnonymously resolver com sucesso
 let docsReleasedState = [];   // IDs de documentos liberados pelo GM
 let docsUnsub = null;         // listener firestore de docs
 let docsReadSet   = new Set(); // IDs de docs já abertos pelo jogador
 let _newDocAlertId = null;     // docId pendente no alerta de novo arquivo
 let missaoText  = '';          // texto de missão atual (GM)
 let missaoUnsub = null;        // listener firestore de missão
+let _lootPool    = [];         // itens montados pelo GM para distribuição
+let _gmCharsList = [];         // cache de chars para ferramentas do GM
+let _gmDeleteArmed = null;     // codename aguardando confirmação de deleção
+let bolsaSelected    = null;   // index into bolsa.items currently selected
+let bolsaDiscardArmed = false; // true after first discard click (confirm step)
+let _bolsaKeyHandler  = null;  // ref to the keydown listener
 
 // ──────────────────────────────────────────────────────────
 //  AUDIO
@@ -165,11 +211,28 @@ function sfx(name) {
 }
 
 try {
-  const app = initializeApp(firebaseConfig);
-  db      = getFirestore(app);
+  const app  = initializeApp(firebaseConfig);
+  db         = getFirestore(app);
+  auth       = getAuth(app);
+  signInAnonymously(auth)
+    .then(() => { authOk = true; })
+    .catch(e  => console.warn('Auth anônimo falhou (ative em Firebase Console > Authentication > Sign-in methods > Anônimo):', e));
   firebaseOk = true;
 } catch (e) {
   console.warn("Firebase não configurado. Usando modo local (localStorage).", e);
+}
+
+// Aguarda o Firebase Auth ter um usuário pronto (resolve em até 5s)
+function waitForAuth() {
+  if (!auth) return Promise.resolve(null);
+  if (auth.currentUser) return Promise.resolve(auth.currentUser);
+  return new Promise(resolve => {
+    const unsub = auth.onAuthStateChanged(user => {
+      unsub();
+      resolve(user);
+    });
+    setTimeout(() => { unsub(); resolve(null); }, 5000);
+  });
 }
 
 // ──────────────────────────────────────────────────────────
@@ -194,6 +257,9 @@ const LocalDB = {
       }
     }
     return chars;
+  },
+  removeChar(codename) {
+    localStorage.removeItem(LS_PREFIX + codename.toUpperCase());
   }
 };
 
@@ -320,6 +386,21 @@ async function loginPlayer() {
   let charData;
 
   if (firebaseOk) {
+    const currentUser = await waitForAuth();
+
+    // Se a autenticação anônima não está habilitada no Firebase Console,
+    // currentUser será null — cai em modo local para não bloquear o jogador.
+    if (!currentUser) {
+      const charLocal = LocalDB.getChar(codename);
+      charData = charLocal || DEFAULT_CHAR();
+      if (!charLocal) { charData.codename = codename; LocalDB.setChar(codename, charData); }
+      showToast('⚠ Auth Firebase indisponível — modo local ativo. Ative "Anônimo" no Firebase Console.', 'error', 7000);
+      state.role = 'player'; state.codename = codename; state.character = charData;
+      renderSheet(charData); showScreen('screen-sheet');
+      await loadDocsState();
+      return;
+    }
+
     try {
       const ref = doc(db, 'characters', codename);
       const snap = await getDoc(ref);
@@ -366,13 +447,18 @@ async function loginPlayer() {
       if (!snap.exists()) return;
       const data = snap.data();
       const old  = state.character;
+      // Merge: keep local bolsa if Firestore doc doesn't have it yet
       state.character = data;
+      if (!state.character.bolsa) {
+        state.character.bolsa = old?.bolsa || { items: [], staged: [] };
+      }
 
       // Update only GM-controlled fields to avoid disrupting player edits
       updateSecurityDisplay(data.security);
       updateIntegrityDisplay(data.integrity);
       updateStatusAtivoDisplay(data.statusAtivo);
       updateArmaDisplay(data.armas);
+      applyAparencia(data);
 
       // Notify player if status changed
       if (old && old.security !== data.security) {
@@ -384,10 +470,25 @@ async function loginPlayer() {
       const newDicaTs = data.radio?.dicaAtual?.ts;
       if (newDicaTs && newDicaTs !== oldDicaTs) showDicaPopup(data.radio.dicaAtual.id);
 
+      // Detect new item sent to bolsa by GM
+      const oldBolsaCount = (old?.bolsa?.items?.length || 0) + (old?.bolsa?.staged?.length || 0);
+      const newBolsaCount = (data.bolsa?.items?.length || 0) + (data.bolsa?.staged?.length || 0);
+      if (newBolsaCount > oldBolsaCount) {
+        const inGrid = data.bolsa?.items?.length || 0;
+        const inQueue = data.bolsa?.staged?.length || 0;
+        if (inQueue > (old?.bolsa?.staged?.length || 0)) {
+          showToast('\u25c8 Item recebido — bolsa cheia, aguardando espaço.', 'error', 3500);
+        } else {
+          showToast('\u25c8 Novo item recebido na bolsa!', 'success', 2500);
+        }
+      }
+
       // Refresh fitas tab if open
       if (state.currentTab === 'fitas') renderFitasTab();
       // Refresh radio tab if open
       if (state.currentTab === 'radio') renderRadioTab();
+      // Refresh bolsa tab if open
+      if (state.currentTab === 'bolsa') renderBolsa();
     });
 
     // Realtime listener — docs released state
@@ -414,13 +515,31 @@ async function loginPlayer() {
 // ──────────────────────────────────────────────────────────
 //  GM LOGIN
 // ──────────────────────────────────────────────────────────
+async function hashStr(s) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
 async function loginGM() {
   const pass = $('input-gm-pass').value.trim();
-  if (pass !== GM_PASSWORD) {
+  const inputHash = await hashStr(pass);
+  if (inputHash !== GM_PASSWORD_HASH) {
     showError('login-error-gm', 'Código de acesso inválido.');
     $('input-gm-pass').value = '';
     $('input-gm-pass').focus();
     return;
+  }
+
+  // Registra UID desta sessão como GM no Firestore (usado pelas Security Rules)
+  if (firebaseOk) {
+    const currentUser = await waitForAuth();
+    if (currentUser) {
+      try {
+        await setDoc(doc(db, 'meta', 'config'), { gmUid: currentUser.uid });
+      } catch (e) {
+        console.warn('Não foi possível registrar gmUid:', e);
+      }
+    }
   }
 
   state.role = 'gm';
@@ -458,6 +577,51 @@ function logout() {
 // ──────────────────────────────────────────────────────────
 //  CHARACTER SHEET RENDER
 // ──────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────
+//  APARÊNCIA DO OPERADOR (aplicada pelo GM)
+// ──────────────────────────────────────────────────────────
+function applyAparencia(data) {
+  const apar  = data.aparencia || {};
+  const sheet = $('screen-sheet');
+  if (!sheet) return;
+
+  // Cor de destaque
+  const CORES = ['azul','verde','roxo','dourado','ciano'];
+  CORES.forEach(c => sheet.classList.remove('theme-' + c));
+  if (apar.cor && apar.cor !== 'vermelho') sheet.classList.add('theme-' + apar.cor);
+
+  // Estilo de foto
+  const frame = $('photo-frame');
+  if (frame) {
+    ['fantasma','corrupto','operativo'].forEach(s => frame.classList.remove('photo-style-' + s));
+    if (apar.fotoFiltro && apar.fotoFiltro !== 'padrao')
+      frame.classList.add('photo-style-' + apar.fotoFiltro);
+  }
+
+  // Carimbo
+  const photoInner = document.querySelector('#photo-frame .photo-inner');
+  if (photoInner) {
+    let stamp = photoInner.querySelector('.photo-stamp');
+    if (!stamp) {
+      stamp = document.createElement('div');
+      photoInner.appendChild(stamp);
+    }
+    const STAMP_LABELS = {
+      confidencial: 'CONFIDENCIAL', operativo: 'OPERATIVO', desaparecido: 'DESAPARECIDO',
+      eliminado:    'ELIMINADO',    foragido:    'FORAGIDO',    renegado:     'RENEGADO',
+      elite:        'ELITE',        corrompido:  'CORROMPIDO',  prioritario:  'PRIORITÁRIO',
+      neutralizado: 'NEUTRALIZADO'
+    };
+    if (apar.carimbo && apar.carimbo !== 'nenhum' && STAMP_LABELS[apar.carimbo]) {
+      stamp.className  = 'photo-stamp photo-stamp-' + apar.carimbo;
+      stamp.textContent = STAMP_LABELS[apar.carimbo];
+    } else {
+      stamp.className  = '';
+      stamp.textContent = '';
+    }
+  }
+}
+
 function renderSheet(data) {
   // Photo
   const photoEl = $('agent-photo');
@@ -489,6 +653,12 @@ function renderSheet(data) {
 
   // Security
   updateSecurityDisplay(data.security || 'seguro');
+
+  // Aparência
+  applyAparencia(data);
+
+  // Ensure bolsa field exists on character
+  if (!state.character.bolsa) state.character.bolsa = { items: [], staged: [] };
 
   // Reset to main tab
   switchTab('main');
@@ -626,10 +796,10 @@ function updateArmaDisplay(armas) {
       // Lethality badge
       if (letal) {
         if (arma.tipoDano === 'mortal') {
-          letal.textContent = 'MRT';
+          letal.textContent = 'DMG';
           letal.className = 'arma-letal-badge arma-letal-mortal';
         } else if (arma.tipoDano === 'neutralizador') {
-          letal.textContent = 'NEU';
+          letal.textContent = 'ZZZ';
           letal.className = 'arma-letal-badge arma-letal-neu';
         } else {
           letal.textContent = '';
@@ -642,12 +812,14 @@ function updateArmaDisplay(armas) {
       ico.classList.add('hidden');
       empt.style.display = '';
       empt.textContent = '\u2014';
-      nome.textContent = i === 0 ? 'SLOT I' : 'SLOT II';
+      nome.textContent = i === 0 ? 'ESPAÇO I' : 'ESPAÇO II';
       stats.textContent = '';
       if (letal) { letal.textContent = ''; letal.className = 'arma-letal-badge hidden'; }
       inspB.classList.add('hidden');
       slot.classList.remove('arma-equipada');
     }
+    const bolsaBtn = $('arma-bolsa-btn-' + i);
+    if (bolsaBtn) bolsaBtn.classList.toggle('hidden', !(arma && arma.tipo));
   }
 }
 
@@ -808,6 +980,805 @@ async function toggleIntegrity(index) {
 }
 
 // ──────────────────────────────────────────────────────────
+//  BOLSA — helpers
+// ──────────────────────────────────────────────────────────
+function isConsumivel(tipo) {
+  return !!(ARMA_TIPOS[tipo]?.consumivel);
+}
+
+function bolsaGetMaxRows() {
+  const p = state.character?.patente ?? 1;
+  return BOLSA_ROWS_BY_PATENTE[p] ?? BOLSA_ROWS;
+}
+
+// ──────────────────────────────────────────────────────────
+//  BOLSA — Resident Evil-style 7×5 inventory grid
+// ──────────────────────────────────────────────────────────
+function bolsaGetSize(item) {
+  const base = ARMA_SIZES[item.tipo] || { w: 1, h: 2 };
+  return item.rotated ? { w: base.h, h: base.w } : { w: base.w, h: base.h };
+}
+
+function bolsaCanPlace(items, col, row, w, h, excludeIdx = -1, rowLimit = BOLSA_ROWS) {
+  if (col < 0 || row < 0 || col + w > BOLSA_COLS || row + h > rowLimit) return false;
+  for (let i = 0; i < items.length; i++) {
+    if (i === excludeIdx) continue;
+    const s = bolsaGetSize(items[i]);
+    if (col < items[i].col + s.w && col + w > items[i].col &&
+        row < items[i].row + s.h && row + h > items[i].row) return false;
+  }
+  return true;
+}
+
+function bolsaAutoPlace(items, w, h, rowLimit = BOLSA_ROWS) {
+  for (let r = 0; r <= rowLimit - h; r++)
+    for (let c = 0; c <= BOLSA_COLS - w; c++)
+      if (bolsaCanPlace(items, c, r, w, h, -1, rowLimit)) return { col: c, row: r };
+  return null;
+}
+
+function renderBolsa() {
+  const bolsa  = state.character?.bolsa || { items: [], staged: [] };
+  const items  = bolsa.items  || [];
+  const staged = bolsa.staged || [];
+  const container = document.getElementById('bolsa-grid-container');
+  const grid      = document.getElementById('bolsa-grid');
+  if (!grid) return;
+
+  // move-mode: items become click-through so the container captures clicks
+  container?.classList.toggle('bolsa-move-mode', bolsaSelected !== null);
+
+  // rebuild grid: background cells first, items on top (absolute)
+  const maxRows = bolsaGetMaxRows();
+  grid.innerHTML = '';
+  for (let r = 0; r < BOLSA_ROWS; r++)
+    for (let c = 0; c < BOLSA_COLS; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'bolsa-gcell' + (r >= maxRows ? ' bolsa-gcell-locked' : '');
+      grid.appendChild(cell);
+    }
+
+  // Ghost preview element (hidden by default)
+  const ghost = document.createElement('div');
+  ghost.id = 'bolsa-ghost';
+  ghost.className = 'bolsa-ghost bolsa-ghost-hidden';
+  grid.appendChild(ghost);
+
+  items.forEach((item, idx) => {
+    const s  = bolsaGetSize(item);
+    const el = document.createElement('div');
+    const isSel = idx === bolsaSelected;
+    el.className   = 'bolsa-item' + (isSel ? ' bolsa-selected' : '') +
+                     (item.tipoDano === 'neutralizador' ? ' bolsa-item-neutr' : '') +
+                     (item.rotated ? ' bolsa-item-rotated' : '');
+    el.dataset.idx = idx;
+    el.style.left   = (item.col * BOLSA_STEP) + 'px';
+    el.style.top    = (item.row * BOLSA_STEP) + 'px';
+    el.style.width  = (s.w * BOLSA_STEP - 1) + 'px';
+    el.style.height = (s.h * BOLSA_STEP - 1) + 'px';
+    const tipo    = ARMA_TIPOS[item.tipo] || ARMA_TIPOS.outro;
+    const imgHtml = tipo.img
+      ? `<img src="${tipo.img}" class="bolsa-item-img" alt="" />`
+      : `<span class="bolsa-item-icon">◈</span>`;
+    const rotBadge  = item.rotated ? '<div class="bolsa-rot-badge">↻</div>' : '';
+    const usosBadge = item.usos !== undefined
+      ? `<div class="bolsa-uso-badge${item.usos === 0 ? ' bolsa-uso-zero' : ''}">${item.usos}</div>`
+      : '';
+    el.innerHTML = `<div class="bolsa-item-inner">${imgHtml}<div class="bolsa-item-label">${escHtml(item.nome || tipo.label)}</div>${rotBadge}${usosBadge}</div>`;
+    if (bolsaSelected === null) {
+      el.addEventListener('click',    e => { e.stopPropagation(); bolsaItemClick(idx); });
+      el.addEventListener('dblclick', e => {
+        e.stopPropagation(); bolsaSelected = idx;
+        if (isConsumivel(item.tipo)) bolsaUsarItem(idx); else bolsaEquipar(0);
+      });
+      el.addEventListener('mouseenter', () => bolsaShowTooltip(item, el.getBoundingClientRect()));
+      el.addEventListener('mouseleave', bolsaHideTooltip);
+    }
+    grid.appendChild(el);
+  });
+
+  // space counter
+  const spaceEl = document.getElementById('bolsa-space-info');
+  if (spaceEl) {
+    const used     = items.reduce((acc, it) => { const s = bolsaGetSize(it); return acc + s.w * s.h; }, 0);
+    const maxCells = BOLSA_COLS * maxRows;
+    const patNome  = PATENTES[state.character?.patente ?? 1]?.nome || 'NIV.1';
+    spaceEl.textContent = (maxCells - used) + '/' + maxCells + ' LIVRES · ' + patNome;
+  }
+
+  renderBolsaActions();
+
+  const stagedEl = document.getElementById('bolsa-staged-list');
+  if (stagedEl) {
+    if (staged.length === 0) {
+      stagedEl.innerHTML = '<div class="bolsa-staged-empty">— VAZIO —</div>';
+    } else {
+      stagedEl.innerHTML = staged.map((item, idx) => {
+        const tipo = ARMA_TIPOS[item.tipo] || ARMA_TIPOS.outro;
+        const s    = ARMA_SIZES[item.tipo] || { w: 1, h: 2 };
+        return `<div class="bolsa-staged-item" onclick="App.bolsaTentarColocar(${idx})">
+          <span class="bolsa-staged-nome">${escHtml(item.nome || tipo.label)}</span>
+          <span class="bolsa-staged-tag">${s.w}&#215;${s.h}</span>
+          <span class="bolsa-staged-hint">&#9658; COLOCAR</span>
+        </div>`;
+      }).join('');
+    }
+  }
+}
+
+function renderBolsaActions() {
+  const panel = document.getElementById('bolsa-actions');
+  if (!panel) return;
+  if (bolsaSelected === null) {
+    bolsaDiscardArmed = false;
+    panel.innerHTML = '<div class="bolsa-hint">&#9658; Clique para selecionar &nbsp;·&nbsp; 2× clique para equipar no SLOT I &nbsp;·&nbsp; ESC cancela</div>';
+    return;
+  }
+  const bolsa = state.character?.bolsa || { items: [], staged: [] };
+  const item  = bolsa.items[bolsaSelected];
+  if (!item) { bolsaSelected = null; bolsaDiscardArmed = false; panel.innerHTML = ''; return; }
+  const tipo   = ARMA_TIPOS[item.tipo] || ARMA_TIPOS.outro;
+  const s      = bolsaGetSize(item);
+  const slotA  = state.character?.armas?.[0];
+  const slotB  = state.character?.armas?.[1];
+  const slotALabel = slotA ? escHtml(slotA.nome || (ARMA_TIPOS[slotA.tipo]?.label) || 'EQUIPADO') : 'VAZIO';
+  const slotBLabel = slotB ? escHtml(slotB.nome || (ARMA_TIPOS[slotB.tipo]?.label) || 'EQUIPADO') : 'VAZIO';
+  const tdBadge = item.tipoDano === 'neutralizador'
+    ? '<span class="bolsa-badge bolsa-badge-neutr">NEUTR.</span>'
+    : '<span class="bolsa-badge bolsa-badge-mortal">MORTAL</span>';
+  const rotLabel = item.rotated ? '&#8635; NORMAL' : '&#8635; GIRAR';
+  const dropLabel = bolsaDiscardArmed ? '&#10003; CONFIRMAR' : '&#10005; DESCARTAR';
+  const dropClass = bolsaDiscardArmed ? 'bolsa-btn-drop-confirm' : 'bolsa-btn-drop';
+  panel.innerHTML = `
+    <div class="bolsa-sel-header">
+      <div class="bolsa-sel-name">${escHtml(item.nome || tipo.label)}</div>
+      <div class="bolsa-sel-badges">${tdBadge}<span class="bolsa-badge bolsa-badge-size">${s.w}×${s.h}</span></div>
+    </div>
+    <div class="bolsa-sel-stats">
+      ${item.dano    ? `<span><span class="bolsa-stat-k">DANO</span> ${escHtml(item.dano)}</span>` : ''}
+      ${item.alcance ? `<span><span class="bolsa-stat-k">ALC.</span> ${escHtml(item.alcance)}</span>` : ''}
+      ${item.descricao ? `<span class="bolsa-sel-desc">${escHtml(item.descricao)}</span>` : ''}
+    </div>
+    <div class="bolsa-sel-btns">
+      <button class="bolsa-btn bolsa-btn-equip" onclick="App.bolsaEquipar(0)" title="Substituir slot I">
+        <span class="bolsa-btn-slot-label">I</span> ${slotALabel === 'VAZIO' ? 'EQUIPAR' : slotALabel}
+      </button>
+      <button class="bolsa-btn bolsa-btn-equip" onclick="App.bolsaEquipar(1)" title="Substituir slot II">
+        <span class="bolsa-btn-slot-label">II</span> ${slotBLabel === 'VAZIO' ? 'EQUIPAR' : slotBLabel}
+      </button>
+      <button class="bolsa-btn bolsa-btn-rotate" onclick="App.bolsaGirar()">${rotLabel} <span class="bolsa-kbd">R</span></button>
+      <button class="bolsa-btn bolsa-btn-transfer" onclick="App.bolsaAbrirTransferencia()">&#8644; TRANSFERIR</button>
+      <button class="bolsa-btn ${dropClass}" onclick="App.bolsaJogarFora()">${dropLabel}</button>
+      <button class="bolsa-btn bolsa-btn-cancel" onclick="App.bolsaDeselecionar()">CANCELAR <span class="bolsa-kbd">ESC</span></button>
+    </div>
+    <div class="bolsa-move-hint">&#9660; Clique no grid para mover item</div>
+  `;
+}
+
+function bolsaItemClick(idx) {
+  bolsaSelected = (bolsaSelected === idx) ? null : idx;
+  renderBolsa();
+}
+
+function bolsaDeselecionar() {
+  bolsaSelected     = null;
+  bolsaDiscardArmed = false;
+  bolsaHideGhost();
+  bolsaHideTooltip();
+  renderBolsa();
+}
+
+function bolsaHideGhost() {
+  const ghost = document.getElementById('bolsa-ghost');
+  if (ghost) ghost.className = 'bolsa-ghost bolsa-ghost-hidden';
+  const grid = document.getElementById('bolsa-grid');
+  if (grid) grid.querySelectorAll('.bolsa-gcell').forEach(c => {
+    c.classList.remove('bolsa-gcell-hi-ok', 'bolsa-gcell-hi-bad');
+  });
+}
+
+function bolsaUpdateGhost(col, row) {
+  const grid  = document.getElementById('bolsa-grid');
+  const ghost = document.getElementById('bolsa-ghost');
+  if (!grid || !ghost || bolsaSelected === null) return;
+  const bolsa = state.character?.bolsa;
+  if (!bolsa) return;
+  const item = bolsa.items[bolsaSelected];
+  if (!item) return;
+  const s   = bolsaGetSize(item);
+  const maxRows = bolsaGetMaxRows();
+  const gc  = Math.max(0, Math.min(BOLSA_COLS - s.w, col));
+  const gr  = Math.max(0, Math.min(maxRows - s.h, row));
+  const ok  = bolsaCanPlace(bolsa.items, gc, gr, s.w, s.h, bolsaSelected, maxRows);
+  ghost.style.left   = (gc * BOLSA_STEP) + 'px';
+  ghost.style.top    = (gr * BOLSA_STEP) + 'px';
+  ghost.style.width  = (s.w * BOLSA_STEP - 1) + 'px';
+  ghost.style.height = (s.h * BOLSA_STEP - 1) + 'px';
+  ghost.className    = 'bolsa-ghost ' + (ok ? 'bolsa-ghost-ok' : 'bolsa-ghost-bad');
+  grid.querySelectorAll('.bolsa-gcell').forEach((cell, i) => {
+    const r = Math.floor(i / BOLSA_COLS), c = i % BOLSA_COLS;
+    const hit = c >= gc && c < gc + s.w && r >= gr && r < gr + s.h;
+    cell.classList.toggle('bolsa-gcell-hi-ok',  hit && ok);
+    cell.classList.toggle('bolsa-gcell-hi-bad', hit && !ok);
+  });
+}
+
+function bolsaShowTooltip(item, rect) {
+  let tt = document.getElementById('bolsa-tooltip');
+  if (!tt) {
+    tt = document.createElement('div');
+    tt.id = 'bolsa-tooltip';
+    tt.className = 'bolsa-tooltip';
+    document.getElementById('tab-panel-bolsa')?.appendChild(tt);
+  }
+  const tipo = ARMA_TIPOS[item.tipo] || ARMA_TIPOS.outro;
+  const s    = bolsaGetSize(item);
+  const td   = item.tipoDano || 'mortal';
+  const metaSuffix = isConsumivel(item.tipo) ? '' : ` &middot; <span class="btt-td-${td}">${td.toUpperCase()}</span>`;
+  tt.innerHTML = `
+    <div class="btt-name">${escHtml(item.nome || tipo.label)}</div>
+    <div class="btt-meta">${tipo.label} &middot; ${s.w}&times;${s.h}${metaSuffix}</div>
+    ${item.usos !== undefined ? `<div class="btt-row"><span class="btt-k">USOS</span><span class="btt-v">${item.usos}${item.usoMax ? '/' + item.usoMax : ''}</span></div>` : ''}
+    ${item.dano    ? `<div class="btt-row"><span class="btt-k">DANO</span><span class="btt-v">${escHtml(item.dano)}</span></div>` : ''}
+    ${item.alcance ? `<div class="btt-row"><span class="btt-k">ALC.</span><span class="btt-v">${escHtml(item.alcance)}</span></div>` : ''}
+    ${item.descricao ? `<div class="btt-desc">${escHtml(item.descricao)}</div>` : ''}
+  `;
+  tt.classList.remove('bolsa-tooltip-hidden');
+  const wrap = document.getElementById('tab-panel-bolsa');
+  if (wrap) {
+    const wRect = wrap.getBoundingClientRect();
+    const ttH   = tt.offsetHeight || 80;
+    let left = rect.left - wRect.left;
+    let top  = rect.top  - wRect.top - ttH - 6;
+    if (top < 4) top = rect.bottom - wRect.top + 6;
+    tt.style.left = Math.max(2, Math.min(wRect.width - 160, left)) + 'px';
+    tt.style.top  = top + 'px';
+  }
+}
+
+function bolsaHideTooltip() {
+  const tt = document.getElementById('bolsa-tooltip');
+  if (tt) tt.classList.add('bolsa-tooltip-hidden');
+}
+
+function bolsaCellClick(col, row) {
+  if (bolsaSelected === null) return;
+  const bolsa = state.character?.bolsa;
+  if (!bolsa) return;
+  const items = [...bolsa.items];
+  const item  = items[bolsaSelected];
+  const s     = bolsaGetSize(item);
+  if (bolsaCanPlace(items, col, row, s.w, s.h, bolsaSelected, bolsaGetMaxRows())) {
+    items[bolsaSelected] = { ...item, col, row };
+    state.character.bolsa.items = items;
+    persistChar({ bolsa: state.character.bolsa });
+    bolsaSelected     = null;
+    bolsaDiscardArmed = false;
+    sfx('select');
+    bolsaHideGhost();
+    renderBolsa();
+    // try to place staged items that may now fit
+    bolsaAutoPlaceStaged();
+  } else {
+    showToast('Sem espaço aqui.', 'error', 900);
+    renderBolsa();
+  }
+}
+
+function setupBolsaGrid() {
+  const container = document.getElementById('bolsa-grid-container');
+  if (!container || container._bolsaReady) return;
+  container._bolsaReady = true;
+
+  // Click: place item in move mode
+  container.addEventListener('click', e => {
+    if (bolsaSelected === null) return;
+    const grid = document.getElementById('bolsa-grid');
+    if (!grid) return;
+    const rect = grid.getBoundingClientRect();
+    const col  = Math.floor((e.clientX - rect.left) / BOLSA_STEP);
+    const row  = Math.floor((e.clientY - rect.top)  / BOLSA_STEP);
+    if (col >= 0 && col < BOLSA_COLS && row >= 0 && row < BOLSA_ROWS)
+      bolsaCellClick(col, row);
+  });
+
+  // Mousemove: ghost preview
+  container.addEventListener('mousemove', e => {
+    if (bolsaSelected === null) return;
+    const grid = document.getElementById('bolsa-grid');
+    if (!grid) return;
+    const rect = grid.getBoundingClientRect();
+    bolsaUpdateGhost(
+      Math.floor((e.clientX - rect.left) / BOLSA_STEP),
+      Math.floor((e.clientY - rect.top)  / BOLSA_STEP)
+    );
+  });
+
+  // Mouseleave: hide ghost
+  container.addEventListener('mouseleave', bolsaHideGhost);
+
+  // Keyboard shortcuts scoped to bolsa tab
+  if (_bolsaKeyHandler) document.removeEventListener('keydown', _bolsaKeyHandler);
+  _bolsaKeyHandler = e => {
+    if (state.currentTab !== 'bolsa') return;
+    if (e.key === 'Escape') { e.preventDefault(); bolsaDeselecionar(); }
+    if ((e.key === 'r' || e.key === 'R') && bolsaSelected !== null) { e.preventDefault(); bolsaGirar(); }
+  };
+  document.addEventListener('keydown', _bolsaKeyHandler);
+}
+
+async function bolsaEquipar(slot) {
+  if (bolsaSelected === null || !state.character?.bolsa) return;
+  const bolsa = state.character.bolsa;
+  const items = [...bolsa.items];
+  const item  = items[bolsaSelected];
+  if (!item) return;
+  if (isConsumivel(item.tipo)) {
+    showToast('Consumíveis não podem ser equipados.', 'error', 1500);
+    bolsaSelected = null; renderBolsa(); return;
+  }
+  const armas = [...(state.character.armas || [null, null])];
+  while (armas.length < 2) armas.push(null);
+
+  // Weapon currently in the target slot — will be swapped back to bolsa
+  const oldArma = (armas[slot] && armas[slot].tipo) ? armas[slot] : null;
+
+  // Strip grid metadata, keep weapon props
+  const { col: _c, row: _r, rotated: _rot, id: _id, ...weaponData } = item;
+  armas[slot] = weaponData;
+
+  // Remove selected item from bolsa (freeing its grid space)
+  items.splice(bolsaSelected, 1);
+  bolsaSelected = null;
+
+  // If there was a weapon in the slot, put it back in the bolsa
+  if (oldArma) {
+    const base = ARMA_SIZES[oldArma.tipo] || { w: 1, h: 2 };
+    const pos  = bolsaAutoPlace(items, base.w, base.h, bolsaGetMaxRows());
+    if (pos) {
+      items.push({ ...oldArma, col: pos.col, row: pos.row, rotated: false });
+      showToast(`${oldArma.nome || 'Item'} devolvido à bolsa.`, 'info', 1800);
+    } else {
+      const staged = [...(bolsa.staged || [])]; staged.push(oldArma);
+      state.character.bolsa.staged = staged;
+      showToast(`Sem espaço! ${oldArma.nome || 'Item'} em espera.`, 'error', 2200);
+    }
+  }
+
+  state.character.armas       = armas;
+  state.character.bolsa.items = items;
+  await persistChar({ bolsa: state.character.bolsa });
+  if (firebaseOk && auth?.currentUser && state.codename) {
+    try {
+      await updateDoc(doc(db, 'characters', state.codename), { armas, updatedAt: serverTimestamp() });
+    } catch (_) {}
+  }
+  updateArmaDisplay(armas);
+  renderBolsa();
+  sfx('select');
+  showToast('Equipado no SLOT ' + (slot + 1) + '.', 'success', 1500);
+}
+
+async function bolsaGirar() {
+  if (bolsaSelected === null || !state.character?.bolsa) return;
+  const items  = [...state.character.bolsa.items];
+  const item   = items[bolsaSelected];
+  const newRot = !item.rotated;
+  const base   = ARMA_SIZES[item.tipo] || { w: 1, h: 2 };
+  const nw     = newRot ? base.h : base.w;
+  const nh     = newRot ? base.w : base.h;
+  if (bolsaCanPlace(items, item.col, item.row, nw, nh, bolsaSelected, bolsaGetMaxRows())) {
+    items[bolsaSelected] = { ...item, rotated: newRot };
+    state.character.bolsa.items = items;
+    await persistChar({ bolsa: state.character.bolsa });
+    sfx('select');
+  } else {
+    showToast('Sem espaço para girar.', 'error', 1500);
+  }
+  renderBolsa();
+}
+
+async function bolsaJogarFora() {
+  if (bolsaSelected === null || !state.character?.bolsa) return;
+  // Two-step confirm: first click arms, second fires
+  if (!bolsaDiscardArmed) {
+    bolsaDiscardArmed = true;
+    renderBolsaActions();
+    setTimeout(() => { bolsaDiscardArmed = false; renderBolsaActions(); }, 2500);
+    return;
+  }
+  const items = [...state.character.bolsa.items];
+  items.splice(bolsaSelected, 1);
+  bolsaSelected     = null;
+  bolsaDiscardArmed = false;
+  state.character.bolsa.items = items;
+  await persistChar({ bolsa: state.character.bolsa });
+  renderBolsa();
+  sfx('close');
+  showToast('Item descartado.', 'success', 1500);
+  bolsaAutoPlaceStaged();
+}
+
+async function bolsaUsarItem(idx) {
+  if (!state.character?.bolsa) return;
+  const items = [...state.character.bolsa.items];
+  const item  = items[idx];
+  if (!item || item.usos === undefined) return;
+  if (item.usos <= 0) { showToast('Sem usos restantes.', 'error', 1500); return; }
+  const newUsos = item.usos - 1;
+  sfx('select');
+  if (newUsos <= 0) {
+    items.splice(idx, 1);
+    bolsaSelected = null;
+    showToast(`${item.nome || 'Item'} esgotado!`, 'success', 1800);
+  } else {
+    items[idx] = { ...item, usos: newUsos };
+    showToast(`${item.nome || 'Item'} usado — ${newUsos} restante(s).`, 'success', 1800);
+  }
+  state.character.bolsa.items = items;
+  await persistChar({ bolsa: state.character.bolsa });
+  renderBolsa();
+  bolsaAutoPlaceStaged();
+}
+
+async function bolsaAutoPlaceStaged() {
+  if (!state.character?.bolsa) return;
+  const staged = [...(state.character.bolsa.staged || [])];
+  if (staged.length === 0) return;
+  const items = [...(state.character.bolsa.items || [])];
+  let changed = false;
+  let i = 0;
+  while (i < staged.length) {
+    const item = staged[i];
+    const base = ARMA_SIZES[item.tipo] || { w: 1, h: 2 };
+    const pos  = bolsaAutoPlace(items, base.w, base.h, bolsaGetMaxRows());
+    if (pos) {
+      items.push({ ...item, col: pos.col, row: pos.row, rotated: false });
+      staged.splice(i, 1);
+      changed = true;
+      showToast(`◈ ${item.nome || 'Item'} entrou na bolsa!`, 'success', 2000);
+    } else {
+      i++;
+    }
+  }
+  if (changed) {
+    state.character.bolsa.items  = items;
+    state.character.bolsa.staged = staged;
+    await persistChar({ bolsa: state.character.bolsa });
+    renderBolsa();
+  }
+}
+
+async function bolsaTentarColocar(stagedIdx) {
+  if (!state.character?.bolsa) return;
+  const bolsa  = state.character.bolsa;
+  const staged = [...(bolsa.staged || [])];
+  const item   = staged[stagedIdx];
+  if (!item) return;
+  const base = ARMA_SIZES[item.tipo] || { w: 1, h: 2 };
+  const pos  = bolsaAutoPlace(bolsa.items || [], base.w, base.h, bolsaGetMaxRows());
+  if (!pos) { showToast('Sem espaço na bolsa.', 'error', 2000); return; }
+  const items = [...(bolsa.items || [])];
+  items.push({ ...item, col: pos.col, row: pos.row, rotated: false });
+  staged.splice(stagedIdx, 1);
+  state.character.bolsa.items  = items;
+  state.character.bolsa.staged = staged;
+  await persistChar({ bolsa: state.character.bolsa });
+  renderBolsa();
+  sfx('select');
+}
+
+// Player: send equipped weapon from arma slot back to bolsa
+async function armaParaBolsa(slot) {
+  const arma = state.character?.armas?.[slot];
+  if (!arma || !arma.tipo) return;
+  const bolsa  = state.character.bolsa || { items: [], staged: [] };
+  const items  = [...(bolsa.items  || [])];
+  const staged = [...(bolsa.staged || [])];
+  const base   = ARMA_SIZES[arma.tipo] || { w: 1, h: 2 };
+  const pos    = bolsaAutoPlace(items, base.w, base.h, bolsaGetMaxRows());
+  const armas  = [...(state.character.armas || [null, null])];
+  while (armas.length < 2) armas.push(null);
+  armas[slot]  = null;
+  if (pos) {
+    items.push({ ...arma, col: pos.col, row: pos.row, rotated: false });
+    showToast(`${arma.nome || 'Item'} → bolsa.`, 'success', 1500);
+  } else {
+    staged.push(arma);
+    showToast(`Sem espaço! ${arma.nome || 'Item'} em espera.`, 'error', 2000);
+  }
+  state.character.bolsa = { ...bolsa, items, staged };
+  state.character.armas = armas;
+  await persistChar({ bolsa: state.character.bolsa });
+  if (firebaseOk && auth?.currentUser && state.codename) {
+    try {
+      await updateDoc(doc(db, 'characters', state.codename), { armas, updatedAt: serverTimestamp() });
+    } catch (_) {}
+  }
+  updateArmaDisplay(armas);
+  if (state.currentTab === 'bolsa') renderBolsa();
+  sfx('select');
+}
+
+// GM: send weapon to a player's bolsa
+async function gmEnviarParaBolsa(codename) {
+  const g = id => document.getElementById(id);
+  const tipo     = g(`gm-bolsa-tipo-${codename}`)?.value;
+  const nome     = g(`gm-bolsa-nome-${codename}`)?.value.trim();
+  const dano     = g(`gm-bolsa-dano-${codename}`)?.value.trim();
+  const alcance  = g(`gm-bolsa-alcance-${codename}`)?.value.trim();
+  const tipoDano = g(`gm-bolsa-tdano-${codename}`)?.value || 'mortal';
+  const desc     = g(`gm-bolsa-desc-${codename}`)?.value.trim();
+  const usosRaw  = g(`gm-bolsa-usos-${codename}`)?.value;
+  const usos     = (usosRaw && isConsumivel(tipo)) ? Math.max(1, parseInt(usosRaw, 10) || 1) : undefined;
+  if (!tipo) return;
+
+  let currentBolsa = { items: [], staged: [] };
+  if (firebaseOk) {
+    try {
+      const snap = await getDoc(doc(db, 'characters', codename));
+      if (snap.exists()) currentBolsa = snap.data().bolsa || { items: [], staged: [] };
+    } catch (_) {}
+  } else {
+    const ch = LocalDB.getChar(codename);
+    if (ch) currentBolsa = ch.bolsa || { items: [], staged: [] };
+  }
+  const items  = [...(currentBolsa.items  || [])];
+  const staged = [...(currentBolsa.staged || [])];
+  const newItem = {
+    id: Date.now().toString(36), tipo, nome, dano, alcance, tipoDano, descricao: desc,
+    modificadores: [], rotated: false,
+    ...(usos !== undefined ? { usos, usoMax: usos } : {})
+  };
+  const base = ARMA_SIZES[tipo] || { w: 1, h: 2 };
+  const pos  = bolsaAutoPlace(items, base.w, base.h, BOLSA_ROWS); // GM bypasses patente limit
+  if (pos) {
+    items.push({ ...newItem, col: pos.col, row: pos.row });
+    showToast(codename + ': item colocado na bolsa.', 'success', 1500);
+  } else {
+    staged.push(newItem);
+    showToast(codename + ': bolsa cheia — item em fila.', 'error', 2500);
+  }
+  await gmUpdateChar(codename, { bolsa: { items, staged } });
+  // clear form
+  ['nome','dano','alcance','desc'].forEach(k => { const el = g(`gm-bolsa-${k}-${codename}`); if (el) el.value = ''; });
+}
+
+async function gmRemoverDaBolsa(codename, source, idx) {
+  let currentBolsa = { items: [], staged: [] };
+  if (firebaseOk) {
+    try {
+      const snap = await getDoc(doc(db, 'characters', codename));
+      if (snap.exists()) currentBolsa = snap.data().bolsa || { items: [], staged: [] };
+    } catch (_) {}
+  } else {
+    const ch = LocalDB.getChar(codename);
+    if (ch) currentBolsa = ch.bolsa || { items: [], staged: [] };
+  }
+  const items  = [...(currentBolsa.items  || [])];
+  const staged = [...(currentBolsa.staged || [])];
+  if (source === 'grid') items.splice(idx, 1);
+  else staged.splice(idx, 1);
+  await gmUpdateChar(codename, { bolsa: { items, staged } });
+  sfx('select');
+}
+
+function buildGMBolsaHtml(char) {
+  const bolsa  = char.bolsa  || { items: [], staged: [] };
+  const items  = bolsa.items  || [];
+  const staged = bolsa.staged || [];
+  const armaOpts = Object.entries(ARMA_TIPOS).filter(([,v]) => !v.consumivel).map(([k,v]) => `<option value="${k}">${v.label}</option>`).join('');
+  const consOpts = Object.entries(ARMA_TIPOS).filter(([,v]) =>  v.consumivel).map(([k,v]) => `<option value="${k}">${v.label}</option>`).join('');
+  const tipoOpts = `<optgroup label="Armamento">${armaOpts}</optgroup><optgroup label="Consumíveis">${consOpts}</optgroup>`;
+  const allRows = [
+    ...items.map((it, i)  => ({ ...it, _src: 'grid',   _idx: i })),
+    ...staged.map((it, i) => ({ ...it, _src: 'staged', _idx: i }))
+  ];
+  const listHtml = allRows.length === 0
+    ? '<div class="bolsa-staged-empty" style="padding:4px">Bolsa vazia.</div>'
+    : allRows.map(it => {
+        const tipo = ARMA_TIPOS[it.tipo] || ARMA_TIPOS.outro;
+        return `<div class="gm-bolsa-row">
+          <span class="gm-bolsa-nome">${escHtml(it.nome || tipo.label)}</span>
+          <span class="gm-bolsa-loc">[${it._src === 'grid' ? 'GRID' : 'FILA'}]</span>
+          <button class="gm-bolsa-rm" onclick="App.gmRemoverDaBolsa('${char.codename}','${it._src}',${it._idx})">&#10005;</button>
+        </div>`;
+      }).join('');
+  return `
+    <div class="gm-bolsa-list">${listHtml}</div>
+    <div class="gm-bolsa-form">
+      <div class="gm-bolsa-form-row">
+        <select id="gm-bolsa-tipo-${char.codename}" class="gm-select">${tipoOpts}</select>
+        <input  id="gm-bolsa-nome-${char.codename}" class="gm-text-input" placeholder="nome..." type="text" />
+      </div>
+      <div class="gm-bolsa-form-row">
+        <input id="gm-bolsa-dano-${char.codename}"    class="gm-text-input" placeholder="dano..."    type="text" />
+        <input id="gm-bolsa-alcance-${char.codename}" class="gm-text-input" placeholder="alcance..." type="text" />
+      </div>
+      <div class="gm-bolsa-form-row">
+        <select id="gm-bolsa-tdano-${char.codename}" class="gm-select">
+          <option value="mortal">MORTAL</option><option value="neutralizador">NEUTRALIZADOR</option>
+        </select>
+        <input id="gm-bolsa-desc-${char.codename}" class="gm-text-input" placeholder="descrição..." type="text" />
+      </div>
+      <div class="gm-bolsa-form-row">
+        <input id="gm-bolsa-usos-${char.codename}" class="gm-text-input" placeholder="usos (consumíveis)" type="number" min="1" max="99" />
+      </div>
+      <button class="gm-bolsa-send" onclick="App.gmEnviarParaBolsa('${char.codename}')">&#43; ENVIAR PARA BOLSA</button>
+    </div>`;
+}
+
+// ──────────────────────────────────────────────────────────
+//  LOOT DE MISSÃO — ferramenta do GM
+// ──────────────────────────────────────────────────────────
+function renderGMLootList() {
+  const el = document.getElementById('gm-loot-items');
+  if (!el) return;
+  if (_lootPool.length === 0) {
+    el.innerHTML = '<div class="gm-fitas-empty">Nenhum item no loot.</div>';
+    return;
+  }
+  const operOpts = _gmCharsList.length
+    ? _gmCharsList.map(c => `<option value="${escHtml(c.codename)}">${escHtml(c.codename)}</option>`).join('')
+    : '';
+  el.innerHTML = _lootPool.map((it, idx) => {
+    const tipo = ARMA_TIPOS[it.tipo] || ARMA_TIPOS.outro;
+    const usosInfo = it.usos !== undefined ? ` (${it.usos})` : '';
+    return `<div class="gm-loot-row">
+      <span class="gm-loot-nome">${escHtml(it.nome || tipo.label)}${usosInfo}</span>
+      <select class="gm-select gm-loot-target" id="gm-loot-target-${idx}" style="max-width:92px">
+        <option value="">TODOS</option>${operOpts}
+      </select>
+      <button class="gm-bolsa-rm" onclick="App.gmLootRemoveItem(${idx})">&#10005;</button>
+    </div>`;
+  }).join('');
+}
+
+function gmLootAddItem() {
+  const g = id => document.getElementById(id);
+  const tipo     = g('gm-loot-tipo')?.value;
+  const nome     = g('gm-loot-nome')?.value.trim();
+  const dano     = g('gm-loot-dano')?.value.trim();
+  const alcance  = g('gm-loot-alcance')?.value.trim();
+  const tipoDano = g('gm-loot-tdano')?.value || 'mortal';
+  const desc     = g('gm-loot-desc')?.value.trim();
+  const usosRaw  = g('gm-loot-usos')?.value;
+  const usos     = (usosRaw && isConsumivel(tipo)) ? Math.max(1, parseInt(usosRaw, 10) || 1) : undefined;
+  if (!tipo) return;
+  _lootPool.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+    tipo, nome, dano, alcance, tipoDano, descricao: desc,
+    modificadores: [], rotated: false,
+    ...(usos !== undefined ? { usos, usoMax: usos } : {})
+  });
+  renderGMLootList();
+  ['nome','dano','alcance','desc'].forEach(k => { const el = g('gm-loot-' + k); if (el) el.value = ''; });
+  if (g('gm-loot-usos')) g('gm-loot-usos').value = '';
+}
+
+function gmLootRemoveItem(idx) {
+  _lootPool.splice(idx, 1);
+  renderGMLootList();
+}
+
+async function gmLootDistribuir() {
+  if (_lootPool.length === 0) { showToast('Loot vazio.', 'error'); return; }
+  // Collect targets from DOM before clearing
+  const assignments = _lootPool.map((item, idx) => {
+    const targetEl = document.getElementById('gm-loot-target-' + idx);
+    return { item, target: targetEl ? targetEl.value.trim() : '' };
+  });
+  let sent = 0;
+  for (const { item, target } of assignments) {
+    const targets = target
+      ? [target]
+      : _gmCharsList.map(c => c.codename);
+    if (targets.length === 0) { showToast('Sem operadores para distribuir.', 'error'); return; }
+    for (const codename of targets) {
+      let currentBolsa = { items: [], staged: [] };
+      if (firebaseOk) {
+        try {
+          const snap = await getDoc(doc(db, 'characters', codename));
+          if (snap.exists()) currentBolsa = snap.data().bolsa || { items: [], staged: [] };
+        } catch (_) {}
+      }
+      const items  = [...(currentBolsa.items  || [])];
+      const staged = [...(currentBolsa.staged || [])];
+      const base   = ARMA_SIZES[item.tipo] || { w: 1, h: 2 };
+      const pos    = bolsaAutoPlace(items, base.w, base.h, BOLSA_ROWS); // GM bypasses patente limit
+      const newItem = { ...item, id: item.id + '_' + codename.slice(0,3) };
+      if (pos) { items.push({ ...newItem, col: pos.col, row: pos.row }); }
+      else      { staged.push(newItem); }
+      await gmUpdateChar(codename, { bolsa: { items, staged } });
+      sent++;
+    }
+  }
+  _lootPool = [];
+  renderGMLootList();
+  sfx('select');
+  showToast(`Loot distribuído — ${sent} envio(s).`, 'success', 2500);
+}
+
+// ──────────────────────────────────────────────────────────
+//  TRANSFERÊNCIA P2P ENTRE BOLSAS
+// ──────────────────────────────────────────────────────────
+async function bolsaAbrirTransferencia() {
+  if (bolsaSelected === null) return;
+  const panel = document.getElementById('bolsa-actions');
+  if (!panel) return;
+  panel.innerHTML = '<div class="bolsa-hint">Carregando operadores...</div>';
+  let chars = [];
+  if (firebaseOk) {
+    try {
+      const snap = await getDocs(collection(db, 'characters'));
+      snap.forEach(d => { const data = d.data(); if (data.codename && data.codename !== state.codename) chars.push(data); });
+    } catch (e) {
+      showToast('Erro ao carregar operadores.', 'error'); renderBolsaActions(); return;
+    }
+  }
+  if (chars.length === 0) {
+    panel.innerHTML = `<div class="bolsa-hint">Nenhum outro operador dispon\u00edvel.</div>
+      <button class="bolsa-btn bolsa-btn-cancel" onclick="App.renderBolsaActionsPublic()">CANCELAR</button>`;
+    return;
+  }
+  const listaHtml = chars.map(c =>
+    `<div class="bolsa-transfer-row" onclick="App.bolsaTransferir('${escHtml(c.codename)}')">
+      <span class="bolsa-transfer-nome">${escHtml(c.codename)}</span>
+      <span class="bolsa-transfer-hint">&#9658; ENVIAR</span>
+    </div>`
+  ).join('');
+  panel.innerHTML = `
+    <div class="bolsa-sel-name" style="margin-bottom:6px">&#8644; ENVIAR PARA OPERADOR</div>
+    <div class="bolsa-transfer-list">${listaHtml}</div>
+    <button class="bolsa-btn bolsa-btn-cancel" onclick="App.renderBolsaActionsPublic()">CANCELAR <span class="bolsa-kbd">ESC</span></button>
+  `;
+}
+
+// Public wrapper so HTML onclick can call it
+function renderBolsaActionsPublic() { renderBolsaActions(); }
+
+async function bolsaTransferir(targetCodename) {
+  if (bolsaSelected === null || !state.character?.bolsa) return;
+  if (!targetCodename) return;
+  const items = [...state.character.bolsa.items];
+  const item  = items[bolsaSelected];
+  if (!item) return;
+
+  // Fetch target's bolsa
+  let targetBolsa = { items: [], staged: [] };
+  if (firebaseOk) {
+    try {
+      const snap = await getDoc(doc(db, 'characters', targetCodename));
+      if (snap.exists()) targetBolsa = snap.data().bolsa || { items: [], staged: [] };
+    } catch (e) { showToast('Erro ao acessar bolsa do alvo.', 'error'); return; }
+  }
+
+  // Strip grid metadata, keep item data
+  const { col: _c, row: _r, ...itemData } = item;
+  const targetStaged = [...(targetBolsa.staged || [])];
+  targetStaged.push({ ...itemData, rotated: false });
+
+  // Remove from sender
+  items.splice(bolsaSelected, 1);
+  bolsaSelected = null;
+  state.character.bolsa.items = items;
+  await persistChar({ bolsa: state.character.bolsa });
+
+  // Write to target
+  if (firebaseOk) {
+    try {
+      await updateDoc(doc(db, 'characters', targetCodename), {
+        bolsa: { ...targetBolsa, staged: targetStaged },
+        updatedAt: serverTimestamp()
+      });
+    } catch (e) { showToast('Erro ao enviar item ao operador.', 'error'); return; }
+  }
+  renderBolsa();
+  sfx('select');
+  showToast(`Item transferido para ${targetCodename}.`, 'success', 2000);
+}
+
+// ──────────────────────────────────────────────────────────
 //  PHOTO UPLOAD
 // ──────────────────────────────────────────────────────────
 function editPhoto() {
@@ -877,6 +1848,22 @@ function switchTab(tab) {
     if (tab === 'mald')  { loadMaldicoes().then(renderMaldicoesTab); }
     if (tab === 'docs')  renderDocsTab();
     if (tab === 'equip') enterMissaoTab();
+    if (tab === 'bolsa') {
+      setupBolsaGrid();
+      renderBolsa(); // render immediately with current state
+      // Also fetch fresh data from Firestore (reads are open, no auth needed)
+      if (firebaseOk && state.codename) {
+        getDoc(doc(db, 'characters', state.codename)).then(snap => {
+          if (snap.exists()) {
+            const fresh = snap.data();
+            if (fresh.bolsa) {
+              state.character.bolsa = fresh.bolsa;
+              renderBolsa(); // re-render with newest data
+            }
+          }
+        }).catch(() => {});
+      }
+    }
     // Close mission detail when leaving
     if (tab !== 'equip') {
       const panel = $('missao-detail-panel');
@@ -1447,17 +2434,27 @@ async function persistChar(updates) {
   if (!codename) return;
 
   if (firebaseOk) {
+    // Ensure auth is ready — if not, fall back to local mode silently
+    const user = auth?.currentUser;
+    if (!user) {
+      if (state.character) LocalDB.setChar(codename, state.character);
+      return;
+    }
+    const ref = doc(db, 'characters', codename);
     try {
-      const ref = doc(db, 'characters', codename);
       await updateDoc(ref, { ...updates, updatedAt: serverTimestamp() });
     } catch (e) {
-      // If doc doesn't exist yet, setDoc
-      try {
-        const ref = doc(db, 'characters', codename);
-        const full = { ...state.character, ...flatToNested(updates), updatedAt: serverTimestamp() };
-        await setDoc(ref, full);
-      } catch (e2) {
-        console.error('persistChar error:', e2);
+      if (e.code === 'not-found') {
+        // Document doesn't exist yet — create it with full character data
+        try {
+          const full = { ...state.character, ...flatToNested(updates), updatedAt: serverTimestamp() };
+          await setDoc(ref, full);
+        } catch (e2) {
+          console.error('persistChar error:', e2);
+          showToast('Erro ao salvar. Verifique a conexão.', 'error');
+        }
+      } else {
+        console.error('persistChar error:', e);
         showToast('Erro ao salvar. Verifique a conexão.', 'error');
       }
     }
@@ -1498,6 +2495,7 @@ function loadGMDashboard() {
   renderGMMaldicoes();
   loadDocsState().then(() => renderGMDocs());
   loadMissaoTextGM();
+  restoreGMSectionStates();
 
   if (firebaseOk) {
     if (state.gmCharsUnsub) state.gmCharsUnsub();
@@ -1516,6 +2514,7 @@ function loadGMDashboard() {
 }
 
 function renderGMList(chars) {
+  _gmCharsList = chars || [];
   const listEl = $('gm-agent-list');
   if (!chars || chars.length === 0) {
     listEl.innerHTML = '<div class="gm-empty">Nenhum operador registrado.</div>';
@@ -1569,6 +2568,58 @@ function buildGMCard(char) {
      </button>`
   ).join('');
 
+  // Aparência
+  const apar = char.aparencia || {};
+  const corAtual     = apar.cor        || 'vermelho';
+  const fotoAtual    = apar.fotoFiltro || 'padrao';
+  const carimboAtual = apar.carimbo    || 'nenhum';
+  const CORES_APAR = [
+    { id: 'vermelho', css: '#cc0000', label: 'Vermelho' },
+    { id: 'azul',     css: '#1177dd', label: 'Azul'     },
+    { id: 'verde',    css: '#00bb44', label: 'Verde'    },
+    { id: 'roxo',     css: '#9944cc', label: 'Roxo'     },
+    { id: 'dourado',  css: '#cc9900', label: 'Dourado'  },
+    { id: 'ciano',    css: '#00aacc', label: 'Ciano'    },
+  ];
+  const FOTO_ESTILOS = [
+    { id: 'padrao',    label: 'PADRÃO'    },
+    { id: 'fantasma',  label: 'FANTASMA'  },
+    { id: 'corrupto',  label: 'CORRUPTO'  },
+    { id: 'operativo', label: 'OPERATIVO' },
+  ];
+  const CARIMBOS = [
+    { id: 'nenhum',       label: 'NENHUM'       },
+    { id: 'confidencial', label: 'CONFIDENCIAL' },
+    { id: 'operativo',    label: 'OPERATIVO'    },
+    { id: 'desaparecido', label: 'DESAPARECIDO' },
+    { id: 'eliminado',    label: 'ELIMINADO'    },
+    { id: 'foragido',     label: 'FORAGIDO'     },
+    { id: 'renegado',     label: 'RENEGADO'     },
+    { id: 'elite',        label: 'ELITE'        },
+    { id: 'corrompido',   label: 'CORROMPIDO'   },
+    { id: 'prioritario',  label: 'PRIORITÁRIO'  },
+    { id: 'neutralizado', label: 'NEUTRALIZADO' },
+  ];
+  const coresHtml = CORES_APAR.map(c =>
+    `<button class="gm-cor-btn ${corAtual === c.id ? 'active' : ''}" style="background:${c.css}" title="${c.label}"
+             onclick="App.gmSetAparencia('${char.codename}','cor','${c.id}')"></button>`
+  ).join('');
+  const fotosHtml = FOTO_ESTILOS.map(f =>
+    `<button class="gm-apar-btn ${fotoAtual === f.id ? 'active' : ''}"
+             onclick="App.gmSetAparencia('${char.codename}','fotoFiltro','${f.id}')">${f.label}</button>`
+  ).join('');
+  const carimbosHtml = CARIMBOS.map(s =>
+    `<button class="gm-apar-btn ${carimboAtual === s.id ? 'active' : ''}"
+             onclick="App.gmSetAparencia('${char.codename}','carimbo','${s.id}')">${s.label}</button>`
+  ).join('');
+
+  const patenteBtns = [1,2,3].map(lvl =>
+    `<button class="gm-toggle-btn ${patente === lvl ? 'active-ativo' : ''}"
+             onclick="App.gmSetPatente('${char.codename}',${lvl})">
+       ${PATENTES[lvl].nome}
+     </button>`
+  ).join('');
+
   card.innerHTML = `
     <div class="gm-card-header" onclick="App.gmToggleCard('${char.codename}')">
       ${photoHtml}
@@ -1594,6 +2645,10 @@ function buildGMCard(char) {
           <div class="gm-integrity-bars">${intBarsHtml}</div>
           <div class="gm-integrity-val">${integ}</div>
         </div>
+      </div>
+      <div class="gm-ctrl-group">
+        <div class="gm-ctrl-label">⬡ PATENTE</div>
+        <div class="gm-active-toggle">${patenteBtns}</div>
       </div>
       <div class="gm-ctrl-group">
         <div class="gm-ctrl-label">⬡ STATUS DE SEGURANÇA</div>
@@ -1625,6 +2680,31 @@ function buildGMCard(char) {
             <input type="file" accept=".mp3,audio/*" class="hidden" onchange="App.gmUploadFita('${char.codename}', this)" />
           </label>
         </div>
+      </div>
+      <div class="gm-ctrl-group">
+        <div class="gm-ctrl-label">⬡ APARÊNCIA DO OPERADOR</div>
+        <div class="gm-apar-row">
+          <div class="gm-apar-sublabel">COR DE DESTAQUE</div>
+          <div class="gm-cor-grid">${coresHtml}</div>
+        </div>
+        <div class="gm-apar-row">
+          <div class="gm-apar-sublabel">ESTILO DE FOTO</div>
+          <div class="gm-apar-btns">${fotosHtml}</div>
+        </div>
+        <div class="gm-apar-row">
+          <div class="gm-apar-sublabel">CARIMBO</div>
+          <div class="gm-apar-btns">${carimbosHtml}</div>
+        </div>
+      </div>
+      <div class="gm-ctrl-group">
+        <div class="gm-ctrl-label">⬡ BOLSA DO OPERADOR</div>
+        ${buildGMBolsaHtml(char)}
+      </div>
+      <div class="gm-ctrl-group gm-danger-zone">
+        <div class="gm-ctrl-label">⬡ ZONA DE PERIGO</div>
+        <button id="gm-delete-btn-${char.codename}" class="gm-delete-btn"
+                onclick="App.gmDeleteOperador('${char.codename}')">✕ DELETAR PERFIL</button>
+        <div class="gm-delete-hint">Clique uma vez para armar · Clique novamente para confirmar</div>
       </div>
     </div>
   `;
@@ -1659,15 +2739,119 @@ async function gmSetStatus(codename, statusAtivo) {
   await gmUpdateChar(codename, { statusAtivo });
 }
 
-async function gmUpdateChar(codename, updates) {
+async function gmSetPatente(codename, level) {
+  const p = Math.max(1, Math.min(3, level));
+  await gmUpdateChar(codename, { patente: p });
+}
+
+async function gmDeleteOperador(codename) {
+  if (_gmDeleteArmed !== codename) {
+    // Primeira clique — armar confirmação
+    _gmDeleteArmed = codename;
+    const btn = document.getElementById('gm-delete-btn-' + codename);
+    if (btn) {
+      btn.textContent = '⚠ CONFIRMAR DELEÇÃO';
+      btn.classList.add('armed');
+    }
+    // Auto-desarmar após 4 segundos
+    setTimeout(() => {
+      if (_gmDeleteArmed === codename) {
+        _gmDeleteArmed = null;
+        const b = document.getElementById('gm-delete-btn-' + codename);
+        if (b) { b.textContent = '✕ DELETAR PERFIL'; b.classList.remove('armed'); }
+      }
+    }, 4000);
+    return;
+  }
+  // Segunda clique — confirmar e deletar
+  _gmDeleteArmed = null;
   if (firebaseOk) {
     try {
-      const ref = doc(db, 'characters', codename);
+      await deleteDoc(doc(db, 'characters', codename));
+      showToast(`${codename}: perfil deletado.`, 'success');
+    } catch (e) {
+      console.error('gmDeleteOperador error:', e);
+      showToast('Erro ao deletar operador: ' + (e.code || e.message), 'error');
+      return;
+    }
+  } else {
+    LocalDB.removeChar(codename);
+    showToast(`${codename}: perfil deletado (local).`, 'success');
+  }
+  // Remove card do DOM
+  const card = document.getElementById('gm-card-' + codename);
+  if (card) card.remove();
+  // Atualiza cache
+  _gmCharsList = _gmCharsList.filter(c => c.codename !== codename);
+}
+
+// ──────────────────────────────────────────────────────────
+//  GM — APARÊNCIA POR OPERADOR
+// ──────────────────────────────────────────────────────────
+async function gmSetAparencia(codename, key, val) {
+  if (firebaseOk) {
+    await gmUpdateChar(codename, { [`aparencia.${key}`]: val });
+  } else {
+    const char = LocalDB.getChar(codename);
+    if (char) {
+      if (!char.aparencia) char.aparencia = {};
+      char.aparencia[key] = val;
+      LocalDB.setChar(codename, char);
+      const chars = LocalDB.getAllChars();
+      renderGMList(chars);
+    }
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+//  GM — SEÇÕES RETRÁTEIS
+// ──────────────────────────────────────────────────────────
+function gmToggleSection(sectionId) {
+  const sec = document.getElementById('gmsec-' + sectionId);
+  if (!sec) return;
+  sec.classList.toggle('gm-section-collapsed');
+  const states = JSON.parse(localStorage.getItem('vyper_gm_sections') || '{}');
+  states[sectionId] = sec.classList.contains('gm-section-collapsed');
+  localStorage.setItem('vyper_gm_sections', JSON.stringify(states));
+}
+
+function restoreGMSectionStates() {
+  const states   = JSON.parse(localStorage.getItem('vyper_gm_sections') || '{}');
+  const defaults = { npc: true, mald: true, missao: true, loot: true, docs: true, agents: false };
+  ['npc','mald','missao','loot','docs','agents'].forEach(id => {
+    const sec = document.getElementById('gmsec-' + id);
+    if (!sec) return;
+    const collapsed = id in states ? states[id] : defaults[id];
+    sec.classList.toggle('gm-section-collapsed', collapsed);
+  });
+}
+
+async function gmUpdateChar(codename, updates) {
+  if (firebaseOk) {
+    const user = auth?.currentUser;
+    if (!user) {
+      showToast('Sem autenticação. Recarregue a página.', 'error');
+      return;
+    }
+    const ref = doc(db, 'characters', codename);
+    try {
       await updateDoc(ref, { ...updates, updatedAt: serverTimestamp() });
       showToast(`${codename}: atualizado.`, 'success', 1500);
     } catch (e) {
-      console.error(e);
-      showToast('Erro ao atualizar operador.', 'error');
+      if (e.code === 'not-found') {
+        // Document doesn't exist yet — create minimal document and retry
+        try {
+          const base = { ...DEFAULT_CHAR(), codename, ...updates, updatedAt: serverTimestamp() };
+          await setDoc(ref, base);
+          showToast(`${codename}: criado e atualizado.`, 'success', 1500);
+        } catch (e2) {
+          console.error('gmUpdateChar setDoc error:', e2);
+          showToast('Erro ao atualizar operador.', 'error');
+        }
+      } else {
+        console.error('gmUpdateChar error:', e);
+        showToast('Erro ao atualizar operador: ' + (e.code || e.message), 'error');
+      }
     }
   } else {
     // Local mode
@@ -2610,6 +3794,7 @@ window.App = {
   gmSetSecurity,
   gmSetIntegrity,
   gmSetStatus,
+  gmSetPatente,
   playFita,
   fitaTogglePlay,
   fitaToggleLoop,
@@ -2649,7 +3834,27 @@ window.App = {
   gmSalvarArma,
   gmLimparArma,
   gmEnviarDica,
-  closeDicaPopup
+  closeDicaPopup,
+  gmSetAparencia,
+  gmToggleSection,
+  bolsaItemClick,
+  bolsaDeselecionar,
+  bolsaEquipar,
+  bolsaGirar,
+  bolsaJogarFora,
+  bolsaTentarColocar,
+  bolsaUsarItem,
+  bolsaAbrirTransferencia,
+  bolsaTransferir,
+  renderBolsaActionsPublic,
+  bolsaAutoPlaceStaged,
+  armaParaBolsa,
+  gmEnviarParaBolsa,
+  gmRemoverDaBolsa,
+  gmLootAddItem,
+  gmLootRemoveItem,
+  gmLootDistribuir,
+  gmDeleteOperador,
 };
 
 // ──────────────────────────────────────────────────────────

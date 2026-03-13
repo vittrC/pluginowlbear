@@ -1,0 +1,86 @@
+// ═══════════════════════════════════════════════════════════
+//  VYPER PESSOAL — FIRESTORE SECURITY RULES
+//  Deploy: firebase deploy --only firestore:rules
+//
+//  Modelo de acesso:
+//    Leitura   → aberta
+//    GM writes → requer UID registrado em meta/config.gmUid
+//    Player writes → qualquer autenticado pode salvar campos
+//                    não-GM (o auth anônimo muda por sessão,
+//                    então ownerUid não é barreira viável)
+//
+//  Campos exclusivos do GM: security, statusAtivo, aparencia, armas
+// ═══════════════════════════════════════════════════════════
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ─────────────────────────────────────────────
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isGM() {
+      return isAuthenticated()
+          && exists(/databases/$(database)/documents/meta/config)
+          && get(/databases/$(database)/documents/meta/config).data.gmUid
+             == request.auth.uid;
+    }
+
+    // Campos que só o GM pode alterar (armas removido: player pode equipar via bolsa)
+    function touchesGMFields() {
+      return request.resource.data.diff(resource.data)
+        .affectedKeys()
+        .hasAny(['security', 'statusAtivo', 'aparencia']);
+    }
+
+    // ── characters/{codename} ────────────────────────────────
+    match /characters/{codename} {
+      allow read: if true;
+
+      // GM tem acesso total de escrita
+      allow write: if isGM();
+
+      // Player cria personagem (primeira entrada)
+      allow create: if isAuthenticated();
+
+      // Player atualiza qualquer campo EXCETO os exclusivos do GM
+      // Auth anônimo muda a cada sessão — não usamos ownerUid como barreira
+      allow update: if isAuthenticated() && !touchesGMFields();
+    }
+
+    // ── gameState/{document} (docs, mission) ─────────────────
+    match /gameState/{document} {
+      allow read:  if true;
+      allow write: if isGM();
+    }
+
+    // ── meta/config — qualquer autenticado grava (bootstrap do GM) ─
+    match /meta/config {
+      allow read:  if true;
+      allow write: if isAuthenticated();
+    }
+
+    // ── meta/{outros} (npcs, maldicoes) ──────────────────────
+    match /meta/{document} {
+      allow read:  if true;
+      allow write: if isGM();
+    }
+
+    // ── tapes/{tapeId} ───────────────────────────────────────
+    match /tapes/{tapeId} {
+      allow read:  if true;
+      allow write: if isGM();
+    }
+
+    // ── Bloqueio padrão ──────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+
+
