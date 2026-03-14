@@ -111,6 +111,11 @@ const DEFAULT_CHAR = () => ({
     fotoFiltro: 'padrao',
     carimbo:    'nenhum'
   },
+  psych: {
+    insanidade: 0,      // 0-100
+    medicado:   false,
+    gatilhos:   []      // ids de efeitos ativos
+  },
   updatedAt: null
 });
 
@@ -680,6 +685,9 @@ async function loginPlayer() {
       if (state.currentTab === 'radio') renderRadioTab();
       // Refresh bolsa tab if open
       if (state.currentTab === 'bolsa') renderBolsa();
+
+      // Apply psychological effects
+      applyPsychEffects(data.psych);
     });
 
     // Realtime listener — docs released state
@@ -3171,6 +3179,10 @@ function buildGMCard(char) {
         <div class="gm-ctrl-label">⬡ BOLSA DO OPERADOR</div>
         ${buildGMBolsaHtml(char)}
       </div>
+      <div class="gm-ctrl-group">
+        <div class="gm-ctrl-label">⬡ ARQUIVO PSICOLÓGICO</div>
+        ${buildGMPsychHtml(char)}
+      </div>
       <div class="gm-ctrl-group gm-danger-zone">
         <div class="gm-ctrl-label">⬡ ZONA DE PERIGO</div>
         <button id="gm-delete-btn-${char.codename}" class="gm-delete-btn"
@@ -3213,6 +3225,408 @@ async function gmSetStatus(codename, statusAtivo) {
 async function gmSetPatente(codename, level) {
   const p = Math.max(1, Math.min(3, level));
   await gmUpdateChar(codename, { patente: p });
+}
+
+
+// ══════════════════════════════════════════════════════════════
+//  ARQUIVO PSICOLÓGICO — constants & render
+// ══════════════════════════════════════════════════════════════
+const PSYCH_GATILHOS = [
+  { id: 'paranoia',       label: 'PARANOIA',         desc: 'Sente que está sendo observado.',       ico: '👁' },
+  { id: 'alucinacao',     label: 'ALUCINAÇÃO',        desc: 'Percebe coisas que não existem.',       ico: '◈' },
+  { id: 'dissociacao',    label: 'DISSOCIAÇÃO',       desc: 'Desconexão da realidade circundante.',  ico: '◌' },
+  { id: 'flashback',      label: 'FLASHBACK',         desc: 'Memórias intrusivas de trauma.',        ico: '▶' },
+  { id: 'fobia_escuridao',label: 'FOBIA: ESCURIDÃO', desc: 'Terror irracional em ambientes escuros.',ico: '▪' },
+  { id: 'fobia_abandono', label: 'FOBIA: ABANDONO',  desc: 'Medo patológico de ser deixado sozinho.',ico: '◯' },
+  { id: 'mania_controle', label: 'MANIA DE CONTROLE',desc: 'Necessidade compulsiva de controla tudo.',ico: '⊞' },
+  // ── Elementos de Ordem Paranormal ──────────────────────────────
+  { id: 'elem_sangue',       label: 'SANGUE',        desc: 'O elemento do sangue corrompe a mente.', ico: '🩸' },
+  { id: 'elem_morte',        label: 'MORTE',         desc: 'A morte sussurra de perto.',             ico: '💀' },
+  { id: 'elem_energia',      label: 'ENERGIA',       desc: 'A energia do Outro Lado invade a psique.',ico: '⚡' },
+  { id: 'elem_conhecimento', label: 'CONHECIMENTO',  desc: 'Saber demais tem um custo.',             ico: '📖' },
+];
+
+const PSYCH_LEVELS = [
+  { min: 0,  max: 20,  id: 'estavel',    label: 'ESTÁVEL',       color: '#44aa55' },
+  { min: 21, max: 40,  id: 'perturbado', label: 'PERTURBADO',    color: '#aaaa33' },
+  { min: 41, max: 60,  id: 'instavel',   label: 'INSTÁVEL',      color: '#cc8822' },
+  { min: 61, max: 80,  id: 'fragmentado',label: 'FRAGMENTADO',   color: '#cc4422' },
+  { min: 81, max: 100, id: 'colapso',    label: 'COLAPSO TOTAL', color: '#cc0000' },
+];
+
+function getPsychLevel(insanidade) {
+  return PSYCH_LEVELS.find(l => insanidade >= l.min && insanidade <= l.max) || PSYCH_LEVELS[0];
+}
+
+function buildGMPsychHtml(char) {
+  const psych      = char.psych || { insanidade: 0, medicado: false, gatilhos: [] };
+  const insanidade = psych.insanidade ?? 0;
+  const medicado   = psych.medicado ?? false;
+  const gatilhos   = psych.gatilhos || [];
+  const lvl        = getPsychLevel(insanidade);
+
+  const gatilhosHtml = PSYCH_GATILHOS.map(g => {
+    const on = gatilhos.includes(g.id);
+    return `<label class="gm-gatilho-item${on ? ' active' : ''}${medicado ? ' med-off' : ''}" title="${g.desc}">
+      <input type="checkbox" ${on ? 'checked' : ''} ${medicado ? 'disabled' : ''}
+             onchange="App.gmToggleGatilho('${char.codename}','${g.id}',this.checked)" />
+      <span class="gatilho-ico">${g.ico}</span>
+      <span class="gatilho-lbl">${g.label}</span>
+    </label>`;
+  }).join('');
+
+  return `
+    <div class="gm-psych-panel">
+      <div class="gm-psych-top">
+        <div class="gm-psych-lv-badge" style="color:${lvl.color};border-color:${lvl.color}44">${lvl.label}</div>
+        <label class="gm-med-toggle${medicado ? ' active' : ''}">
+          <input type="checkbox" ${medicado ? 'checked' : ''}
+                 onchange="App.gmSetMedicado('${char.codename}',this.checked)" />
+          <span>💊 MEDICADO</span>
+        </label>
+      </div>
+      <div class="gm-psych-slider-wrap">
+        <div class="gm-psych-slider-labels">
+          <span>0</span><span>INSANIDADE</span><span>100</span>
+        </div>
+        <input type="range" min="0" max="100" value="${insanidade}"
+               class="gm-psych-slider" id="gm-psych-slider-${char.codename}"
+               style="--psych-color:${lvl.color}"
+               oninput="App.gmPsychSliderInput('${char.codename}',this.value)"
+               onchange="App.gmSavePsych('${char.codename}')" />
+        <div class="gm-psych-bar-preview">
+          <div class="gm-psych-bar-fill" id="gm-psych-bar-${char.codename}"
+               style="width:${insanidade}%;background:${lvl.color}"></div>
+          <span class="gm-psych-val" id="gm-psych-val-${char.codename}">${insanidade}</span>
+        </div>
+      </div>
+      <div class="gm-ctrl-label" style="margin-top:8px;margin-bottom:4px">GATILHOS ATIVOS</div>
+      <div class="gm-gatilhos-grid">${gatilhosHtml}</div>
+    </div>`;
+}
+
+// ── GM actions ──────────────────────────────────────────────────
+function gmPsychSliderInput(codename, val) {
+  const intVal = parseInt(val);
+  const lvl    = getPsychLevel(intVal);
+  const bar    = document.getElementById('gm-psych-bar-' + codename);
+  const valEl  = document.getElementById('gm-psych-val-' + codename);
+  const slider = document.getElementById('gm-psych-slider-' + codename);
+  const badge  = slider?.closest('.gm-psych-panel')?.querySelector('.gm-psych-lv-badge');
+  if (bar)   { bar.style.width = intVal + '%'; bar.style.background = lvl.color; }
+  if (valEl) valEl.textContent = intVal;
+  if (badge) { badge.textContent = lvl.label; badge.style.color = lvl.color; badge.style.borderColor = lvl.color + '44'; }
+  if (slider) slider.style.setProperty('--psych-color', lvl.color);
+}
+
+async function gmSavePsych(codename) {
+  const slider = document.getElementById('gm-psych-slider-' + codename);
+  if (!slider) return;
+  const insanidade = parseInt(slider.value);
+  let cur = {};
+  if (firebaseOk) {
+    try { const s = await getDoc(doc(db,'characters',codename)); if (s.exists()) cur = s.data().psych || {}; } catch(_) {}
+  } else {
+    const ch = LocalDB.getChar(codename); if (ch) cur = ch.psych || {};
+  }
+  await gmUpdateChar(codename, { psych: { ...cur, insanidade } });
+  sfx('select');
+}
+
+async function gmToggleGatilho(codename, gatilhoId, on) {
+  let cur = { insanidade: 0, medicado: false, gatilhos: [] };
+  if (firebaseOk) {
+    try { const s = await getDoc(doc(db,'characters',codename)); if (s.exists()) cur = s.data().psych || cur; } catch(_) {}
+  } else {
+    const ch = LocalDB.getChar(codename); if (ch) cur = ch.psych || cur;
+  }
+  const gatilhos = [...(cur.gatilhos || [])];
+  if (on && !gatilhos.includes(gatilhoId)) gatilhos.push(gatilhoId);
+  if (!on) { const i = gatilhos.indexOf(gatilhoId); if (i !== -1) gatilhos.splice(i, 1); }
+  await gmUpdateChar(codename, { psych: { ...cur, gatilhos } });
+}
+
+async function gmSetMedicado(codename, medicado) {
+  let cur = { insanidade: 0, medicado: false, gatilhos: [] };
+  if (firebaseOk) {
+    try { const s = await getDoc(doc(db,'characters',codename)); if (s.exists()) cur = s.data().psych || cur; } catch(_) {}
+  } else {
+    const ch = LocalDB.getChar(codename); if (ch) cur = ch.psych || cur;
+  }
+  await gmUpdateChar(codename, { psych: { ...cur, medicado } });
+  sfx('select');
+  showToast(medicado ? '💊 Medicação ativada — efeitos suprimidos.' : '⚠ Medicação removida.', medicado ? 'success' : 'error', 2500);
+}
+
+// ── Player: apply effects ────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  ELEMENTOS PARANORMAIS — text spawner (Sigilos do Outro Lado)
+// ══════════════════════════════════════════════════════════════
+const _ELEM_MSGS = {
+  // SANGUE: curto, brutal, sem floreio
+  elem_sangue: [
+    'SANGUE', 'SANGUE', 'SANGUE',   // peso maior
+    'CORTE', 'RASGUE', 'DERRAME', 'MATE',
+    'SEU SANGUE NOS PERTENCE',
+    'A CARNE CLAMA',
+    'O PACTO EXIGE SANGUE',
+    'A DIVIDA E DE SANGUE',
+    'SANGUE SANGUE SANGUE',
+    'OFERECA',
+  ],
+  // MORTE: sussurros lentos, inevitaveis
+  elem_morte: [
+    'INEVITAVEL',
+    'ELE ESPERA',
+    'VENHA',
+    'TUDO ACABA',
+    'A ESPIRAL TE AGUARDA',
+    'HA PAZ NA MORTE',
+    'VOCE JA ESTA MORTO',
+    'NAO HA ESCAPATORIA',
+    'SEU FIM SE APROXIMA',
+    'OS MORTOS TE CHAMAM',
+    'NAO EXISTE RETORNO',
+  ],
+  // ENERGIA: caos puro, incoerencia proposital
+  elem_energia: [
+    'XZQRTM!!!',
+    '%%%ERRO%%%',
+    'NAO EXISTE', 'EXISTE', 'NAO EXISTE',
+    'VOCE NAO E REAL',
+    'TUDO E FALSO',
+    'HA HA HA HA HA',
+    'O VEU SE ROMPE',
+    'CAOS CAOS CAOS',
+    'FREQUENCIA INSTAVEL',
+    '#@!#@!#@!',
+    'SIM NAO SIM NAO',
+    'O OUTRO LADO PULSA',
+    'CONDUTOR DE CAOS',
+    '.......',
+  ],
+  // CONHECIMENTO: soberbo, dourado, definitivo
+  elem_conhecimento: [
+    'SABER TUDO E PERDER TUDO',
+    'SABER TUDO E PERDER TUDO',     // aumenta frequencia
+    'SABER TUDO E PERDER TUDO',     // aumenta frequencia
+    'SOBERANO',
+    'O PRECO DO SABER',
+    'VOCE CARREGA DEMAIS',
+    'VOCE VIU DEMAIS',
+    'O CONHECIMENTO TE DESTROI',
+    'HA VERDADES PROIBIDAS',
+    'NAO SE PODE DESAPRENDER',
+    'ELES SABEM QUE VOCE SABE',
+    'O SEGREDO TE CONSOME',
+  ],
+};
+
+const _ELEM_CFG = {
+  // SANGUE: brutal — curto, rápido, sem aviso
+  elem_sangue: {
+    cls: 'psych-ptext-sangue', anim: 'psych-ptext-sangue', timingFn: 'linear',
+    minDelay: 250, maxDelay: 2800, minDur: 0.6, maxDur: 1.5,
+    minSize: 30, maxSize: 64,
+  },
+  // MORTE: perturbadoramente lento
+  elem_morte: {
+    cls: 'psych-ptext-morte', anim: 'psych-ptext-morte', timingFn: 'ease-in-out',
+    minDelay: 5000, maxDelay: 11000, minDur: 11.0, maxDur: 18.0,
+    minSize: 22, maxSize: 40,
+  },
+  // ENERGIA: intervalo caótico, anything goes
+  elem_energia: {
+    cls: 'psych-ptext-energia', anim: 'psych-ptext-energia', timingFn: 'linear',
+    minDelay: 80, maxDelay: 1500, minDur: 0.35, maxDur: 3.0,
+    minSize: 12, maxSize: 76, burst: true,
+  },
+  // CONHECIMENTO: solene, deliberado
+  elem_conhecimento: {
+    cls: 'psych-ptext-conhecimento', anim: 'psych-ptext-conhecimento', timingFn: 'ease-in-out',
+    minDelay: 3500, maxDelay: 8000, minDur: 5.5, maxDur: 10.0,
+    minSize: 32, maxSize: 54,
+  },
+};
+
+let _elemTextTimeouts = {};
+
+// Morte: persistent spiral
+let _morteSpiral = null;
+let _morteAudio   = null;
+
+function _playElemSfx(gatilhoId) {
+  const _sfxMap = {
+    elem_sangue:       'elementos/sangue.m4a',
+    elem_energia:      'elementos/energia.mp3',
+    elem_conhecimento: 'elementos/conhecimento.mp3',
+  };
+  const src = _sfxMap[gatilhoId];
+  if (!src) return;
+  try { const a = new Audio(src); a.volume = 0.7; a.play().catch(() => {}); } catch(_) {}
+}
+
+function startMorteAudio() {
+  stopMorteAudio();
+  try {
+    _morteAudio = new Audio('elementos/morte.mp3');
+    _morteAudio.loop = true;
+    _morteAudio.volume = 0.5;
+    _morteAudio.play().catch(() => {});
+  } catch(_) {}
+}
+
+function stopMorteAudio() {
+  if (_morteAudio) {
+    try { _morteAudio.pause(); _morteAudio.currentTime = 0; } catch(_) {}
+    _morteAudio = null;
+  }
+}
+
+function startMorteSpiral() {
+  stopMorteSpiral();
+  const ov = document.getElementById('psych-overlay');
+  if (!ov) return;
+  const el = document.createElement('span');
+  el.className = 'psych-morte-spiral';
+  el.textContent = '꩜';
+  ov.appendChild(el);
+  _morteSpiral = el;
+  startMorteAudio();
+}
+
+function stopMorteSpiral() {
+  if (_morteSpiral) { try { _morteSpiral.remove(); } catch(_) {} _morteSpiral = null; }
+  document.querySelectorAll('.psych-morte-spiral').forEach(e => e.remove());
+  stopMorteAudio();
+}
+
+function _spawnElemToken(ov, gatilhoId) {
+  const msgs = _ELEM_MSGS[gatilhoId];
+  const cfg  = _ELEM_CFG[gatilhoId];
+  if (!msgs || !cfg || !ov) return;
+  const el = document.createElement('span');
+  el.className = 'psych-paranormal-text ' + cfg.cls;
+  el.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+  el.style.left = (6 + Math.random() * 82) + '%';
+  el.style.top  = (6 + Math.random() * 82) + '%';
+  const dur  = cfg.minDur  + Math.random() * (cfg.maxDur  - cfg.minDur);
+  const size = cfg.minSize + Math.floor(Math.random() * (cfg.maxSize - cfg.minSize));
+  el.style.animationDuration       = dur + 's';
+  el.style.animationName           = cfg.anim      || 'psych-ptext-appear';
+  el.style.animationTimingFunction = cfg.timingFn  || 'ease-in-out';
+  el.style.animationFillMode       = 'forwards';
+  el.style.fontSize = size + 'px';
+  // Energia: random rotation & skew chaos
+  if (gatilhoId === 'elem_energia') {
+    const rot  = (Math.random() - 0.5) * 40;
+    el.style.transform = `translate(-50%,-50%) rotate(${rot}deg)`;
+  }
+  ov.appendChild(el);
+  _playElemSfx(gatilhoId);
+  el.addEventListener('animationend', () => el.remove());
+}
+
+function startElemText(gatilhoId) {
+  stopElemText(gatilhoId);
+  if (gatilhoId === 'elem_morte') startMorteSpiral();
+  const cfg = _ELEM_CFG[gatilhoId];
+  if (!cfg) return;
+  function spawn() {
+    const ov = document.getElementById('psych-overlay');
+    if (!ov || !ov.classList.contains('psych-g-' + gatilhoId)) { stopElemText(gatilhoId); return; }
+    _spawnElemToken(ov, gatilhoId);
+    // Energia burst: sometimes spawn 1-2 extras simultaneously
+    if (cfg.burst && Math.random() < 0.45) {
+      const extras = 1 + Math.floor(Math.random() * 2);
+      for (let i = 0; i < extras; i++) {
+        setTimeout(() => {
+          const ov2 = document.getElementById('psych-overlay');
+          if (ov2 && ov2.classList.contains('psych-g-' + gatilhoId)) _spawnElemToken(ov2, gatilhoId);
+        }, 40 + Math.random() * 220);
+      }
+    }
+    const delay = cfg.minDelay + Math.random() * (cfg.maxDelay - cfg.minDelay);
+    _elemTextTimeouts[gatilhoId] = setTimeout(spawn, delay);
+  }
+  spawn();
+}
+
+function stopElemText(gatilhoId) {
+  if (_elemTextTimeouts[gatilhoId]) { clearTimeout(_elemTextTimeouts[gatilhoId]); delete _elemTextTimeouts[gatilhoId]; }
+  if (gatilhoId === 'elem_morte') stopMorteSpiral();
+  const suffix = gatilhoId.replace('elem_', '');
+  document.querySelectorAll('.psych-ptext-' + suffix).forEach(e => e.remove());
+}
+
+// ── Paranoia eye spawner ─────────────────────────────────────
+let _paranoiaEyeTimeout = null;
+
+const _EYE_GLYPHS = ['\u{1F441}','👁','👁','👁','👁'];
+
+function startParanoiaEyes(overlay) {
+  stopParanoiaEyes();
+  function spawnEye() {
+    const ov = document.getElementById('psych-overlay');
+    if (!ov || !ov.classList.contains('psych-g-paranoia')) { stopParanoiaEyes(); return; }
+    const eye = document.createElement('span');
+    eye.className = 'psych-eye';
+    eye.textContent = _EYE_GLYPHS[Math.floor(Math.random() * _EYE_GLYPHS.length)];
+    eye.style.left = (4 + Math.random() * 90) + '%';
+    eye.style.top  = (4 + Math.random() * 90) + '%';
+    const dur = 1.8 + Math.random() * 2.4;
+    eye.style.animationDuration = dur + 's';
+    ov.appendChild(eye);
+    eye.addEventListener('animationend', () => eye.remove());
+    _paranoiaEyeTimeout = setTimeout(spawnEye, 600 + Math.random() * 2800);
+  }
+  spawnEye();
+}
+
+function stopParanoiaEyes() {
+  if (_paranoiaEyeTimeout) { clearTimeout(_paranoiaEyeTimeout); _paranoiaEyeTimeout = null; }
+  document.querySelectorAll('.psych-eye').forEach(e => e.remove());
+}
+
+function applyPsychEffects(psych) {
+  const body     = document.body;
+  const overlay  = document.getElementById('psych-overlay');
+  const insanidade = psych?.insanidade ?? 0;
+  const medicado   = psych?.medicado   ?? false;
+  const gatilhos   = psych?.gatilhos   ?? [];
+
+  // Remove all psych classes
+  ['psych-lv1','psych-lv2','psych-lv3','psych-lv4','psych-medicado'].forEach(c => body.classList.remove(c));
+  if (overlay) overlay.className = 'psych-overlay';
+
+  if (medicado) {
+    body.classList.add('psych-medicado');
+    return;
+  }
+
+  const lvl = getPsychLevel(insanidade);
+  if      (lvl.id === 'perturbado')  { body.classList.add('psych-lv1'); if (overlay) overlay.classList.add('psych-overlay-lv1'); }
+  else if (lvl.id === 'instavel')    { body.classList.add('psych-lv2'); if (overlay) overlay.classList.add('psych-overlay-lv2'); }
+  else if (lvl.id === 'fragmentado') { body.classList.add('psych-lv3'); if (overlay) overlay.classList.add('psych-overlay-lv3'); }
+  else if (lvl.id === 'colapso')     { body.classList.add('psych-lv4'); if (overlay) overlay.classList.add('psych-overlay-lv4'); }
+
+  // Gatilhos: add special body classes
+  if (overlay) {
+    gatilhos.forEach(g => overlay.classList.add('psych-g-' + g));
+  }
+
+  // Paranoia: spawn/stop roaming eyes
+  if (!medicado && gatilhos.includes('paranoia') && overlay) {
+    startParanoiaEyes(overlay);
+  } else {
+    stopParanoiaEyes();
+  }
+
+  // Paranormal elements: spawn/stop text
+  ['elem_sangue','elem_morte','elem_energia','elem_conhecimento'].forEach(id => {
+    if (!medicado && gatilhos.includes(id) && overlay) startElemText(id);
+    else stopElemText(id);
+  });
 }
 
 async function gmDeleteOperador(codename) {
@@ -4385,6 +4799,7 @@ window.App = {
   gmLootRemoveItem,
   gmLootDistribuir,
   gmDeleteOperador,
+  gmSavePsych, gmToggleGatilho, gmSetMedicado, gmPsychSliderInput,
   bolsaCamoToggle,
   bolsaCamoSelect,
   equiparCamuflagem,

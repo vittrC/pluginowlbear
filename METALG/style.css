@@ -2987,3 +2987,657 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
   border: 1px solid #4a2a2a; color: #aa5555;
 }
 .gm-camo-btn-lock:hover { background: #1e0a0a; color: #ee8888; }
+
+/* ══════════════════════════════════════════════════════════════
+   ARQUIVO PSICOLÓGICO — insanity system
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Psych overlay (full-screen effect layer) ───────────────── */
+.psych-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  transition: opacity 1.2s;
+}
+
+/* ── Level 1: PERTURBADO (21-40) — dark vignette ──────────────*/
+.psych-lv1 .psych-overlay {
+  box-shadow: inset 0 0 120px rgba(0,0,0,0.55);
+}
+.psych-lv1 #screen-sheet {
+  animation: psych-subtle-flicker 14s infinite;
+}
+
+/* ── Level 2: INSTÁVEL (41-60) — vignette + desaturation ──────*/
+.psych-lv2 .psych-overlay {
+  box-shadow: inset 0 0 180px rgba(0,0,0,0.75);
+  background: radial-gradient(ellipse at center,
+    transparent 30%,
+    rgba(10,0,0,0.35) 80%,
+    rgba(0,0,0,0.65) 100%
+  );
+}
+.psych-lv2 #screen-sheet {
+  filter: saturate(0.4) brightness(0.88);
+  animation: psych-subtle-flicker 7s infinite, psych-drift 18s ease-in-out infinite;
+}
+
+/* ── Level 3: FRAGMENTADO (61-80) — red tint + scanlines ──────*/
+.psych-lv3 .psych-overlay {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(180,0,0,0.06) 3px,
+      rgba(180,0,0,0.06) 4px
+    ),
+    radial-gradient(ellipse at center,
+      transparent 20%,
+      rgba(80,0,0,0.4) 75%,
+      rgba(20,0,0,0.8) 100%
+    );
+  box-shadow: inset 0 0 200px rgba(100,0,0,0.5);
+  animation: psych-scanlines 0.08s steps(1) infinite;
+}
+.psych-lv3 #screen-sheet {
+  filter: saturate(0.2) sepia(0.3) brightness(0.78) hue-rotate(-12deg);
+  animation:
+    psych-subtle-flicker 4s infinite,
+    psych-drift 10s ease-in-out infinite,
+    psych-glitch-shift 9s infinite;
+}
+.psych-lv3 .panel-label,
+.psych-lv3 .attr-label,
+.psych-lv3 .stat-label,
+.psych-lv3 .tab-label,
+.psych-lv3 .gm-ctrl-label {
+  animation: psych-text-corrupt 6s infinite;
+}
+
+/* ── Level 4: COLAPSO TOTAL (81-100) — full chaos ─────────────*/
+.psych-lv4 .psych-overlay {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(200,20,20,0.12) 2px,
+      rgba(200,20,20,0.12) 3px
+    ),
+    radial-gradient(ellipse at center,
+      rgba(30,0,0,0.3) 0%,
+      rgba(80,0,0,0.6) 60%,
+      rgba(10,0,0,0.95) 100%
+    );
+  animation: psych-heavy-scanlines 0.06s steps(1) infinite, psych-rgbsplit 0.15s infinite;
+  box-shadow:
+    inset 0 0 250px rgba(150,0,0,0.7),
+    inset 0 0 80px rgba(0,200,0,0.08);
+}
+.psych-lv4 #screen-sheet {
+  filter: saturate(0) sepia(0.6) brightness(0.65) hue-rotate(-20deg);
+  animation:
+    psych-subtle-flicker 1.8s infinite,
+    psych-shake 0.12s infinite,
+    psych-drift 6s ease-in-out infinite,
+    psych-glitch-shift 3s infinite;
+}
+.psych-lv4 .panel-label,
+.psych-lv4 .attr-label,
+.psych-lv4 .tab-label,
+.psych-lv4 .gm-ctrl-label {
+  animation: psych-text-corrupt 2.5s infinite;
+}
+.psych-lv4 .char-bar-fill,
+.psych-lv4 .integrity-fill {
+  animation: psych-bar-flicker 0.4s infinite;
+}
+
+/* ── Medicado: soft green aura on body ─────────────────────── */
+.psych-medicado #screen-sheet {
+  filter: none;
+  animation: none;
+}
+.psych-medicado .psych-overlay {
+  box-shadow: inset 0 0 60px rgba(0,50,20,0.25);
+}
+
+/* Gatilho: paranoia — pulsing edges + roaming eyes (spawned by JS) */
+.psych-overlay.psych-g-paranoia {
+  animation: psych-paranoia-pulse 3.5s ease-in-out infinite;
+}
+
+/* Eye tokens spawned by startParanoiaEyes() */
+.psych-eye {
+  position: absolute;
+  pointer-events: none;
+  font-size: 72px;
+  line-height: 1;
+  color: rgba(200, 30, 30, 0.9);
+  text-shadow:
+    0 0 8px  rgba(255, 60, 60, 1),
+    0 0 20px rgba(200, 0, 0, 0.7),
+    0 0 40px rgba(150, 0, 0, 0.4);
+  transform: translate(-50%, -50%);
+  animation: psych-eye-appear 3s ease-in-out forwards;
+  z-index: 10001;
+  will-change: opacity, transform, filter;
+}
+
+@keyframes psych-eye-appear {
+  0%   { opacity: 0;   transform: translate(-50%,-50%) scale(0.2); filter: blur(6px); }
+  12%  { opacity: 1;   transform: translate(-50%,-50%) scale(1.15); filter: blur(0); }
+  30%  { opacity: 0.85; transform: translate(-50%,-50%) scale(1); }
+  55%  { opacity: 0.7;  transform: translate(-50%,-50%) scale(1.05); }
+  80%  { opacity: 0.4;  transform: translate(-50%,-50%) scale(0.9); filter: blur(1px); }
+  100% { opacity: 0;   transform: translate(-50%,-50%) scale(0.3); filter: blur(5px); }
+}
+/* Gatilho: alucinação — color ghost flicker */
+.psych-overlay.psych-g-alucinacao {
+  animation: psych-alucinacao 4s steps(1) infinite;
+}
+/* Gatilho: dissociação — dreamy defocus blur breathes over screen */
+.psych-overlay.psych-g-dissociacao {
+  -webkit-backdrop-filter: blur(0px) saturate(1);
+  backdrop-filter: blur(0px) saturate(1);
+  animation: psych-dissociacao-ov 9s ease-in-out infinite;
+}
+/* Gatilho: flashback — blinding white intrusion burst */
+.psych-overlay.psych-g-flashback {
+  animation: psych-flashback-ov 6.5s steps(1) infinite;
+}
+/* Gatilho: fobia de escuridão — crushing dark vignette */
+.psych-overlay.psych-g-fobia_escuridao {
+  animation: psych-fobia-esc-ov 4.5s ease-in-out infinite;
+}
+/* Gatilho: fobia de abandono — cold blue isolation pulse */
+.psych-overlay.psych-g-fobia_abandono {
+  animation: psych-fobia-ab-ov 5s ease-in-out infinite;
+}
+/* Gatilho: mania de controle — grid overlay with paranoid micro-glitch */
+.psych-overlay.psych-g-mania_controle {
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(180,220,255,0.035) 19px, rgba(180,220,255,0.035) 20px),
+    repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(180,220,255,0.035) 19px, rgba(180,220,255,0.035) 20px);
+  animation: psych-mania-ctrl-ov 2.8s steps(1) infinite;
+}
+
+/* ── Keyframes ────────────────────────────────────────────────── */
+@keyframes psych-subtle-flicker {
+  0%,96%        { opacity: 1; }
+  97%           { opacity: 0.85; }
+  98%           { opacity: 1; }
+  99%           { opacity: 0.9; }
+  100%          { opacity: 1; }
+}
+
+@keyframes psych-drift {
+  0%,100% { transform: translateX(-50%) translate(0,0) rotate(0deg); }
+  25%     { transform: translateX(-50%) translate(0.5px,-0.5px) rotate(0.03deg); }
+  50%     { transform: translateX(-50%) translate(-0.5px,1px) rotate(-0.04deg); }
+  75%     { transform: translateX(-50%) translate(1px,0.5px) rotate(0.02deg); }
+}
+
+@keyframes psych-glitch-shift {
+  0%,90%,100% { transform: translateX(-50%); }
+  91%         { transform: translateX(calc(-50% - 3px)) skewX(-0.5deg); filter: hue-rotate(30deg); }
+  92%         { transform: translateX(calc(-50% + 4px)) skewX(0.5deg); }
+  93%         { transform: translateX(-50%); filter: none; }
+  96%         { transform: translateX(calc(-50% - 2px)); clip-path: inset(20% 0 60% 0); }
+  97%         { transform: translateX(calc(-50% + 3px)); clip-path: inset(0 0 0 0); }
+}
+
+@keyframes psych-shake {
+  0%,100% { transform: translateX(-50%) translate(0,0); }
+  10%     { transform: translateX(-50%) translate(-1px, 1px); }
+  20%     { transform: translateX(-50%) translate(1px, -1px); }
+  30%     { transform: translateX(-50%) translate(-2px, 0); }
+  40%     { transform: translateX(-50%) translate(2px, 1px); }
+  50%     { transform: translateX(-50%) translate(0, -1px); }
+  60%     { transform: translateX(-50%) translate(-1px, 2px); }
+  70%     { transform: translateX(-50%) translate(1px, 0); }
+  80%     { transform: translateX(-50%) translate(-2px, -1px); }
+  90%     { transform: translateX(-50%) translate(0, 2px); }
+}
+
+@keyframes psych-text-corrupt {
+  0%,85%,100% { letter-spacing: inherit; opacity: 1; }
+  86%         { letter-spacing: 0.25em; opacity: 0.7; }
+  87%         { letter-spacing: inherit; opacity: 1; }
+  92%         { opacity: 0.5; filter: blur(1px); }
+  93%         { opacity: 1; filter: none; }
+}
+
+@keyframes psych-bar-flicker {
+  0%,40%,100% { opacity: 1; }
+  41%         { opacity: 0.4; }
+  42%         { opacity: 1; }
+}
+
+@keyframes psych-scanlines {
+  0%  { background-position: 0 0; }
+  100%{ background-position: 0 4px; }
+}
+@keyframes psych-heavy-scanlines {
+  0%  { background-position: 0 0; }
+  100%{ background-position: 0 3px; }
+}
+
+@keyframes psych-rgbsplit {
+  0%,90%,100% { box-shadow: inset 0 0 250px rgba(150,0,0,0.7), inset 0 0 80px rgba(0,200,0,0.08); }
+  92%         { box-shadow: inset 0 0 250px rgba(150,0,0,0.7), inset 0 0 80px rgba(0,200,0,0.08), inset 2px 0 rgba(0,255,0,0.2), inset -3px 0 rgba(220,0,0,0.3); }
+}
+
+@keyframes psych-paranoia-pulse {
+  0%,100% { box-shadow: inset 0 0 120px rgba(100,0,100,0.3); }
+  50%     { box-shadow: inset 0 0 220px rgba(120,0,120,0.55); }
+}
+
+@keyframes psych-alucinacao {
+  0%,92%,100% { background: transparent; }
+  93%         { background: rgba(0,80,30,0.15); }
+  94%         { background: transparent; }
+  97%         { background: rgba(60,0,80,0.12); }
+  98%         { background: transparent; }
+}
+
+@keyframes psych-dissociacao-ov {
+  0%,100% {
+    background: transparent;
+    -webkit-backdrop-filter: blur(0px) saturate(1);
+    backdrop-filter: blur(0px) saturate(1);
+  }
+  40%, 60% {
+    background: rgba(5,5,20,0.3);
+    -webkit-backdrop-filter: blur(5px) saturate(0.4) brightness(0.85);
+    backdrop-filter: blur(5px) saturate(0.4) brightness(0.85);
+  }
+}
+
+@keyframes psych-flashback-ov {
+  0%,70%,100% { background: transparent; }
+  71%  { background: rgba(255,255,255,0.9); }
+  72%  { background: rgba(255,255,255,0.2); }
+  73%  { background: transparent; }
+  74%  { background: rgba(255,255,255,0.55); }
+  75%  { background: transparent; }
+  80%  { background: rgba(255,220,180,0.08); }
+  82%  { background: transparent; }
+}
+
+@keyframes psych-fobia-esc-ov {
+  0%,100% { background: rgba(0,0,0,0.0); }
+  30%     { background: rgba(0,0,0,0.55); }
+  50%,60% { background: rgba(0,0,0,0.91); }
+}
+
+@keyframes psych-fobia-ab-ov {
+  0%,100% { background: rgba(0,0,0,0.0); }
+  50%     { background: rgba(0,5,40,0.72); }
+}
+
+@keyframes psych-mania-ctrl-ov {
+  0%,80%,100% { transform: none; opacity: 1; }
+  81%  { transform: translateX(2px); opacity: 0.7; }
+  82%  { transform: none; opacity: 1; }
+  88%  { transform: translateY(-2px) scaleX(1.002); opacity: 0.8; }
+  89%  { transform: none; opacity: 1; }
+}
+
+/* ══ GM: Arquivo Psicológico panel ═══════════════════════════ */
+.gm-psych-panel {
+  background: rgba(10,5,15,0.7);
+  border: 1px solid #2a1a4a;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.gm-psych-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.gm-psych-lv-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  padding: 2px 8px;
+  border: 1px solid;
+  border-radius: 2px;
+  background: rgba(0,0,0,0.4);
+}
+
+.gm-med-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: #667;
+  cursor: pointer;
+  padding: 3px 7px;
+  border: 1px solid #2a2a3a;
+  border-radius: 3px;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  user-select: none;
+}
+.gm-med-toggle input { display: none; }
+.gm-med-toggle.active {
+  color: #55ee99;
+  border-color: #1a5a35;
+  background: rgba(0,40,20,0.4);
+}
+.gm-med-toggle:hover { border-color: #3a4a5a; color: #aab; }
+
+.gm-psych-slider-wrap { margin-bottom: 6px; }
+
+.gm-psych-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 7px;
+  letter-spacing: 0.1em;
+  color: #445;
+  margin-bottom: 3px;
+}
+
+.gm-psych-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--psych-color, #44aa55) 0%, var(--psych-color, #44aa55) var(--val, 0%), #1a1a2a calc(var(--val, 0%) + 0.1%), #1a1a2a 100%);
+  outline: none;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+.gm-psych-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--psych-color, #44aa55);
+  border: 2px solid #0a0a14;
+  cursor: pointer;
+  box-shadow: 0 0 6px var(--psych-color, #44aa55);
+}
+
+.gm-psych-bar-preview {
+  position: relative;
+  height: 6px;
+  background: #0a0a14;
+  border-radius: 3px;
+  overflow: visible;
+}
+.gm-psych-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.2s, background 0.2s;
+  min-width: 0;
+}
+.gm-psych-val {
+  position: absolute;
+  right: 0;
+  top: -14px;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: #888;
+}
+
+.gm-gatilhos-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.gm-gatilho-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8px;
+  letter-spacing: 0.09em;
+  color: #556;
+  cursor: pointer;
+  padding: 3px 6px;
+  border: 1px solid #1e1e2e;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.3);
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+.gm-gatilho-item input { display: none; }
+.gm-gatilho-item .gatilho-ico { font-size: 10px; }
+.gm-gatilho-item .gatilho-lbl { }
+
+.gm-gatilho-item.active {
+  color: #cc6622;
+  border-color: #5a2a0a;
+  background: rgba(30,10,0,0.5);
+}
+.gm-gatilho-item.med-off {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.gm-gatilho-item:not(.med-off):hover {
+  border-color: #3a3a5a;
+  color: #99a;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ELEMENTOS PARANORMAIS — font, overlay effects, text tokens
+   ══════════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: 'SigilosOP';
+  src: url('fontes/SigilosDoOutroLado-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+/* ── Paranormal text base (spawned by startElemText) ─────────── */
+.psych-paranormal-text {
+  position: absolute;
+  pointer-events: none;
+  font-family: 'SigilosOP', monospace;
+  font-weight: normal;
+  line-height: 1.3;
+  text-align: center;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  animation: psych-ptext-appear 4s ease-in-out forwards;
+  z-index: 10000;
+  will-change: opacity, filter;
+  letter-spacing: 0.06em;
+}
+
+/* ── Per-element color + animation override ──────────────────── */
+
+/* SANGUE — vermelho intenso, brutal: slam on / cut off */
+.psych-ptext-sangue {
+  color: rgba(255, 30, 30, 1);
+  filter: saturate(2) brightness(1.3);
+  text-shadow: none;
+  animation-timing-function: linear !important;
+}
+
+/* MORTE — cinza, fantasmagórico, quase invisível */
+.psych-ptext-morte {
+  color: rgba(160, 155, 165, 0.7);
+  text-shadow:
+    0 0 12px rgba(180, 175, 190, 0.5),
+    0 0 30px rgba( 60,  55,  75, 0.3),
+    0 0 60px rgba( 10,   8,  20, 0.2);
+  filter: grayscale(0.9);
+  animation-timing-function: ease-in-out !important;
+}
+
+/* ENERGIA — ciano elétrico, mas cores mudam no keyframe */
+.psych-ptext-energia {
+  color: rgba(200, 80, 255, 1);
+  text-shadow:
+    0 0  5px rgba(230, 140, 255, 1),
+    0 0 18px rgba(170,  50, 255, 0.9),
+    0 0 40px rgba(120,   0, 220, 0.6),
+    0 0 80px rgba( 70,   0, 160, 0.4);
+  animation-timing-function: linear !important;
+}
+
+/* CONHECIMENTO — dourado soberano */
+.psych-ptext-conhecimento {
+  color: rgba(220, 185, 50, 1);
+  text-shadow:
+    0 0  6px rgba(255, 220,  80, 1),
+    0 0 18px rgba(210, 165,  30, 0.9),
+    0 0 40px rgba(150, 100,   0, 0.65),
+    0 0 80px rgba( 90,  55,   0, 0.35);
+  animation-timing-function: ease-in-out !important;
+}
+
+/* ── Fallback keyframe (used by elements without explicit anim) ── */
+@keyframes psych-ptext-appear {
+  0%   { opacity: 0;    filter: blur(10px) brightness(2); }
+  10%  { opacity: 1;    filter: blur(0)    brightness(1); }
+  70%  { opacity: 0.9;  filter: blur(0)    brightness(1); }
+  90%  { opacity: 0.25; filter: blur(4px)  brightness(0.6); }
+  100% { opacity: 0;    filter: blur(10px) brightness(0); }
+}
+
+/* ── SANGUE keyframe — abrupt slam, no easing, no mercy ─────── */
+@keyframes psych-ptext-sangue {
+  0%     { opacity: 0; }
+  2%     { opacity: 1;   filter: saturate(3) brightness(5) blur(0); transform: translate(-50%,-50%) scale(1.22); }
+  6%     { opacity: 1;   filter: saturate(2.5) brightness(2) blur(0); transform: translate(-50%,-50%) scale(1); }
+  80%    { opacity: 1;   filter: saturate(2) brightness(1.5) blur(0); transform: translate(-50%,-50%) scale(1); }
+  83%    { opacity: 0; }
+  100%   { opacity: 0; }
+}
+
+/* ── MORTE keyframe — perturbadoramente lento, mal visível ───── */
+@keyframes psych-ptext-morte {
+  0%   { opacity: 0;    filter: blur(18px) brightness(0.15) grayscale(1); transform: translate(-50%,-50%) scale(0.9); }
+  20%  { opacity: 0.12; filter: blur(10px) brightness(0.3)  grayscale(1); transform: translate(-50%,-50%) scale(0.94); }
+  45%  { opacity: 0.38; filter: blur(3px)  brightness(0.5)  grayscale(1); transform: translate(-50%,-50%) scale(1); }
+  60%  { opacity: 0.42; filter: blur(2px)  brightness(0.55) grayscale(1); transform: translate(-50%,-50%) scale(1); }
+  80%  { opacity: 0.25; filter: blur(7px)  brightness(0.35) grayscale(1); transform: translate(-50%,-50%) scale(0.96); }
+  95%  { opacity: 0.08; filter: blur(14px) brightness(0.15) grayscale(1); transform: translate(-50%,-50%) scale(0.91); }
+  100% { opacity: 0;    filter: blur(20px) brightness(0)    grayscale(1); transform: translate(-50%,-50%) scale(0.87); }
+}
+
+/* ── ENERGIA keyframe — loucura pura, flicker roxo violeta ───── */
+@keyframes psych-ptext-energia {
+  0%   { opacity: 0;    filter: blur(4px) brightness(2)   saturate(2);   color: rgba(200, 80, 255, 1);  transform: translate(-50%,-50%) scale(0.8) skewX(0); }
+  5%   { opacity: 1;    filter: blur(0)   brightness(2.5) saturate(3);   color: rgba(230,120, 255, 1);  transform: translate(-50%,-50%) scale(1.2) skewX(8deg); }
+  12%  { opacity: 0.15; filter: blur(6px) brightness(0.4) saturate(1.5); color: rgba(140, 30, 200, 1); }
+  18%  { opacity: 1;    filter: blur(0)   brightness(2)   saturate(2.5); color: rgba(180, 60, 255, 1);  transform: translate(-50%,-50%) scale(0.85) skewX(-6deg); }
+  30%  { opacity: 0.6;  filter: blur(3px) brightness(1.2) saturate(2);   color: rgba(210, 90, 255, 1); }
+  42%  { opacity: 1;    filter: blur(0)   brightness(2.8) saturate(3);   color: rgba(240,130, 255, 1);  transform: translate(-50%,-50%) scale(1.12) skewX(4deg); }
+  55%  { opacity: 0.2;  filter: blur(7px) brightness(0.3) saturate(1);   color: rgba(120, 20, 190, 1); }
+  65%  { opacity: 1;    filter: blur(0)   brightness(2.2) saturate(2.5); color: rgba(195, 70, 255, 1);  transform: translate(-50%,-50%) scale(0.9) skewX(-3deg); }
+  80%  { opacity: 0.1;  filter: blur(5px) brightness(0.5) saturate(1.5); color: rgba(150, 40, 220, 1); }
+  90%  { opacity: 0.8;  filter: blur(0)   brightness(1.5) saturate(2);   color: rgba(220,100, 255, 1); }
+  100% { opacity: 0;    filter: blur(12px) brightness(0)  saturate(1);   color: rgba(100, 10, 180, 1);  transform: translate(-50%,-50%) scale(0.5); }
+}
+
+/* ── CONHECIMENTO keyframe — soberbo, dourado, lento e majestoso */
+@keyframes psych-ptext-conhecimento {
+  0%   { opacity: 0;    filter: blur(14px) brightness(5) sepia(0.7);  transform: translate(-50%,-50%) scale(0.88); }
+  10%  { opacity: 0.5;  filter: blur(5px)  brightness(2.5) sepia(0.4); transform: translate(-50%,-50%) scale(0.98); }
+  22%  { opacity: 1;    filter: blur(0)    brightness(1.8) sepia(0.1); transform: translate(-50%,-50%) scale(1.02); }
+  50%  { opacity: 1;    filter: blur(0)    brightness(2.0) sepia(0.05); }
+  65%  { opacity: 1;    filter: blur(0)    brightness(1.6) sepia(0.1);  transform: translate(-50%,-50%) scale(1); }
+  85%  { opacity: 0.55; filter: blur(3px)  brightness(1)   sepia(0.3); transform: translate(-50%,-50%) scale(0.97); }
+  95%  { opacity: 0.15; filter: blur(9px)  brightness(0.5) sepia(0.6); transform: translate(-50%,-50%) scale(0.93); }
+  100% { opacity: 0;    filter: blur(16px) brightness(0.1) sepia(0.8); transform: translate(-50%,-50%) scale(0.88); }
+}
+
+/* ── Morte: espiral da morte ─────────────────────────────────── */
+.psych-morte-spiral {
+  position: absolute;
+  font-size: 220px;
+  line-height: 1;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  filter: grayscale(1) brightness(0.28) contrast(0.7);
+  transform-origin: center;
+  animation: psych-morte-spiral-spin 55s linear infinite,
+             psych-morte-spiral-pulse 14s ease-in-out infinite;
+}
+
+@keyframes psych-morte-spiral-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes psych-morte-spiral-pulse {
+  0%,100% { opacity: 0.18; }
+  50%     { opacity: 0.38; }
+}
+
+/* ── Overlay tints per element ───────────────────────────────── */
+.psych-overlay.psych-g-elem_sangue {
+  animation: psych-sangue-ov 5s ease-in-out infinite;
+}
+.psych-overlay.psych-g-elem_morte {
+  animation: psych-morte-ov 7s ease-in-out infinite;
+}
+.psych-overlay.psych-g-elem_energia {
+  animation: psych-energia-ov 0.9s steps(1) infinite;
+}
+.psych-overlay.psych-g-elem_conhecimento {
+  animation: psych-conhecimento-ov 8s ease-in-out infinite;
+}
+
+@keyframes psych-sangue-ov {
+  0%,100% {
+    background: rgba(0,0,0,0);
+    box-shadow: none;
+  }
+  40%,60% {
+    background: rgba(100, 0, 0, 0.25);
+    box-shadow:
+      inset 0   0  80px rgba(255,   0,   0, 0.70),
+      inset 0   0 160px rgba(200,   0,   0, 0.50),
+      inset 0   0 300px rgba(120,   0,   0, 0.30);
+  }
+}
+
+@keyframes psych-morte-ov {
+  0%,100% {
+    background: rgba(0,0,0,0);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  40%,60% {
+    background: rgba(5, 5, 15, 0.5);
+    -webkit-backdrop-filter: saturate(0.05) brightness(0.65) grayscale(1);
+    backdrop-filter: saturate(0.05) brightness(0.65) grayscale(1);
+  }
+}
+
+@keyframes psych-energia-ov {
+  0%,80%,100% { box-shadow: none;  background: transparent; }
+  81%  { box-shadow: inset 0 0 50px rgba(180, 60,255,0.55); background: rgba(40,10,70,0.14); }
+  82%  { box-shadow: none;  background: transparent; }
+  88%  { box-shadow: inset 0 0 90px rgba(140, 30,220,0.45); background: rgba(35, 5,65,0.16); }
+  89%  { box-shadow: none;  background: transparent; }
+  94%  { box-shadow: inset 0 0 35px rgba(210,100,255,0.38); background: rgba(50,10,80,0.10); }
+  95%  { box-shadow: none;  background: transparent; }
+}
+
+@keyframes psych-conhecimento-ov {
+  0%,100% {
+    background: rgba(0,0,0,0);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  40%,60% {
+    background: rgba(30, 20, 0, 0.28);
+    -webkit-backdrop-filter: sepia(0.5) brightness(0.85);
+    backdrop-filter: sepia(0.5) brightness(0.85);
+  }
+}
