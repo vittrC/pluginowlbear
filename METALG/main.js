@@ -81,9 +81,9 @@ const DOCUMENTS = [
   },
   {
     id:      'doc_02',             
-    title:   'PROJETO [CENSURADO] — RELATÓRIO DE TESTES',
-    image:   'documentos/documento02.jpg',
-    uvImage: 'documentos/documento02_uv.jpg'  // ou null se não tiver versão UV
+    title:   'Estátua de Bailarina',
+    image:   'documentos/estatua1.png',
+    uvImage: 'documentos/estatua2.png'  // ou null se não tiver versão UV
   }
 ];
 
@@ -116,6 +116,9 @@ const DEFAULT_CHAR = () => ({
     medicado:   false,
     gatilhos:   []      // ids de efeitos ativos
   },
+  statusNeg: [],        // ids de status negativos ativos
+  mensagemCifrada: { texto: '', ts: 0 },
+  paranormal: { nivel: 0 },   // 0-4: proximidade de entidade
   updatedAt: null
 });
 
@@ -143,16 +146,45 @@ const DICAS_PRESETS = [
 const ARMA_TIPOS = {
   pistola:    { label: 'PISTOLA',    img: 'icones/pistola.png' },
   espingarda: { label: 'ESPINGARDA', img: 'icones/espingarda.png' },
-  sniper:     { label: 'SNIPER',     img: '' },
-  revolver:   { label: 'REVOLVER',   img: '' },
+  sniper:     { label: 'SNIPER',     img: 'icones/sniper.png' },
+  revolver:   { label: 'REVOLVER',   img: 'icones/revolver.png' },
   outro:      { label: 'OUTRO',      img: '' },
   // Consumíveis
-  kit_medico:  { label: 'KIT MÉDICO',     img: '', consumivel: true, ico: '✚' },
-  municao:     { label: 'MUNIÇÃO',         img: '', consumivel: true, ico: '◈' },
-  granada:     { label: 'GRANADA',         img: '', consumivel: true, ico: '⊛' },
-  racao:       { label: 'RAÇÃO DE CAMPO',  img: '', consumivel: true, ico: '▣' },
-  curativo:    { label: 'CURATIVO',        img: '', consumivel: true, ico: '✦' },
-  estimulante: { label: 'ESTIMULANTE',     img: '', consumivel: true, ico: '◉' },
+  kit_medico:  { label: 'KIT MÉDICO',     img: 'icones/itens/kit.png',            consumivel: true, ico: '✚' },
+  municao:     { label: 'MUNIÇÃO',         img: 'icones/itens/munição.png',        consumivel: true, ico: '◈' },
+  granada:     { label: 'GRANADA',         img: 'icones/itens/granada.png',        consumivel: true, ico: '⊛' },
+  racao:       { label: 'RAÇÃO DE CAMPO',  img: 'icones/itens/ração.png',          consumivel: true, ico: '▣' },
+  curativo:       { label: 'CURATIVO',        img: '',                              consumivel: true, ico: '✦' },
+  estimulante:    { label: 'ESTIMULANTE',     img: 'icones/itens/estimulante.png',  consumivel: true, ico: '◉' },
+  // Craft system — ingredientes e fabricados
+  erva:           { label: 'ERVA MEDICINAL', img: 'icones/itens/erva.png',          consumivel: true, ingrediente: true, ico: '⊕' },
+  comp_quimico:   { label: 'COMP. QUIMICO',  img: 'icones/itens/compquimico.png',   consumivel: true, ingrediente: true, ico: '⊗' },
+  atadura:        { label: 'ATADURA',         img: 'icones/itens/atadura.png',       consumivel: true, ico: '✛' },
+  medicamento_ps: { label: 'MEDICAMENTO',     img: 'icones/itens/psimedicamento.png',consumivel: true, ico: '◎' },
+  estabilizador:  { label: 'ESTABILIZADOR',   img: 'icones/itens/estabilizador.png', consumivel: true, ico: '◑' },
+  // Armamento craft — ingredientes
+  polvora:        { label: 'POLVORA',          img: 'icones/itens/polvora.png',        consumivel: true, ingrediente: true, ico: '✤' },
+  comp_explosivo: { label: 'COMP. EXPLOSIVO',  img: 'icones/itens/compexplosivo.png',  consumivel: true, ingrediente: true, ico: '⊠' },
+  cristal_anomalo:{ label: 'CRISTAL ANOMALO',  img: 'icones/itens/cristal.png',        consumivel: true, ingrediente: true, ico: '◆' },
+  sedativo:       { label: 'SEDATIVO',         img: 'icones/itens/sedativo.png',       consumivel: true, ingrediente: true, ico: '◐' },
+  // Armamento craft — fabricados
+  granada_quimica:  { label: 'GRANADA QUIM.',    img: 'icones/itens/granadaquimica.png', consumivel: true, ico: '⊙' },
+  granada_potente:  { label: 'GRANADA POTENTE',  img: 'icones/itens/granadapotente.png', consumivel: true, ico: '⊘' },
+  granada_danca:    { label: 'GRANADA DE DANCA', img: 'icones/itens/granadadanca.png',   consumivel: true, ico: '⊚' },
+  sonifero:         { label: 'SONIFERO POTENTE', img: 'icones/itens/sonifero.png',       consumivel: true, ico: '◍' },
+  bomba_incendiaria:{ label: 'BOMBA INCEND.',    img: '', consumivel: true, ico: '⊞' },
+  // Medicamento craft — fabricados avancados
+  adrenalina:       { label: 'ADRENALINA',       img: '', consumivel: true, ico: '↑' },
+  antidoto:         { label: 'ANTIDOTO',         img: '', consumivel: true, ico: '⊹' },
+  // Armadilhas craft — ingredientes
+  fio_detonador:    { label: 'FIO DETONADOR',    img: '', consumivel: true, ingrediente: true, ico: '⌇' },
+  pano:             { label: 'PANO',             img: '', consumivel: true, ingrediente: true, ico: '▭' },
+  // Armadilhas craft — fabricados (MGS-inspired)
+  mina_claymore:    { label: 'CLAYMORE',         img: '', consumivel: true, ico: '◫' },
+  cilada_sono:      { label: 'CILADA DE SONO',   img: '', consumivel: true, ico: '◌' },
+  alarme_campo:     { label: 'ALARME DE CAMPO',  img: '', consumivel: true, ico: '◯' },
+  mina_atordoante:  { label: 'MINA ATORDOANTE',  img: '', consumivel: true, ico: '◻' },
+  distracao:        { label: 'DISTRACAO',          img: '', consumivel: true, ico: '♀' },
 };
 
 // Inventory sizes (cols × rows) for each weapon / consumable type
@@ -163,16 +195,45 @@ const ARMA_SIZES = {
   sniper:     { w: 2, h: 4 },
   outro:      { w: 1, h: 2 },
   // Consumíveis — 1×1
-  kit_medico:  { w: 1, h: 1 },
+  kit_medico:  { w: 1, h: 2 },
   municao:     { w: 1, h: 1 },
   granada:     { w: 1, h: 1 },
   racao:       { w: 1, h: 1 },
-  curativo:    { w: 1, h: 1 },
-  estimulante: { w: 1, h: 1 },
+  curativo:       { w: 1, h: 1 },
+  estimulante:    { w: 1, h: 2 },
+  erva:           { w: 1, h: 1 },
+  comp_quimico:   { w: 1, h: 1 },
+  atadura:        { w: 1, h: 1 },
+  medicamento_ps: { w: 1, h: 1 },
+  estabilizador:  { w: 1, h: 1 },
+  polvora:        { w: 1, h: 1 },
+  comp_explosivo: { w: 1, h: 1 },
+  cristal_anomalo:{ w: 1, h: 1 },
+  sedativo:       { w: 1, h: 1 },
+  granada_quimica:  { w: 1, h: 1 },
+  granada_potente:  { w: 1, h: 1 },
+  granada_danca:    { w: 1, h: 1 },
+  sonifero:         { w: 1, h: 2 },
+  bomba_incendiaria:{ w: 1, h: 1 },
+  adrenalina:       { w: 1, h: 1 },
+  antidoto:         { w: 1, h: 1 },
+  fio_detonador:    { w: 1, h: 1 },
+  pano:             { w: 1, h: 1 },
+  mina_claymore:    { w: 1, h: 1 },
+  cilada_sono:      { w: 1, h: 1 },
+  alarme_campo:     { w: 1, h: 1 },
+  mina_atordoante:  { w: 1, h: 1 },
+  distracao:        { w: 1, h: 2 },
 };
 
 // Default uses per consumable type
-const CONSUMIVEL_USOS = { kit_medico: 3, municao: 6, granada: 1, racao: 4, curativo: 3, estimulante: 2 };
+const CONSUMIVEL_USOS = { kit_medico: 3, municao: 6, granada: 1, racao: 4, curativo: 3, estimulante: 2,
+  erva: 1, comp_quimico: 1, atadura: 2, medicamento_ps: 2, estabilizador: 2,
+  polvora: 1, comp_explosivo: 1, cristal_anomalo: 1, sedativo: 1,
+  granada_quimica: 1, granada_potente: 1, granada_danca: 1, sonifero: 2,
+  bomba_incendiaria: 1, adrenalina: 1, antidoto: 1,
+  fio_detonador: 1, pano: 1,
+  mina_claymore: 1, cilada_sono: 1, alarme_campo: 2, mina_atordoante: 1, distracao: 2 };
 
 // Weapon attachment slot definitions
 const ARMA_MODS = {
@@ -183,12 +244,35 @@ const ARMA_MODS = {
 
 // Accent color per consumable type
 const CONSUMIVEL_COR = {
-  kit_medico:  '#dd4444',
-  municao:     '#4488cc',
-  granada:     '#cc6622',
-  racao:       '#aa8833',
-  curativo:    '#44bb66',
-  estimulante: '#9944cc',
+  kit_medico:     '#dd4444',
+  municao:        '#4488cc',
+  granada:        '#cc6622',
+  racao:          '#aa8833',
+  curativo:       '#44bb66',
+  estimulante:    '#9944cc',
+  erva:           '#33aa44',
+  comp_quimico:   '#3388cc',
+  atadura:        '#55cc77',
+  medicamento_ps: '#bb44ee',
+  estabilizador:  '#44aacc',
+  polvora:        '#999999',
+  comp_explosivo: '#cc7722',
+  cristal_anomalo:'#aa55ff',
+  sedativo:       '#5599aa',
+  granada_quimica:'#44cc66',
+  granada_potente:'#ff4422',
+  granada_danca:  '#ff44cc',
+  sonifero:          '#7755cc',
+  bomba_incendiaria: '#ff5500',
+  adrenalina:        '#ff8800',
+  antidoto:          '#44ddaa',
+  fio_detonador:     '#cc9933',
+  pano:              '#886644',
+  mina_claymore:     '#cc4400',
+  cilada_sono:       '#7744bb',
+  alarme_campo:      '#ccaa22',
+  mina_atordoante:   '#5588cc',
+  distracao:          '#ff6699',
 };
 
 const BOLSA_COLS  = 7;
@@ -196,6 +280,142 @@ const BOLSA_ROWS  = 5;
 const BOLSA_STEP  = 47; // cell px (46) + gap (1)
 // Available bolsa rows per patente level (Etapa 2 — capacity limit)
 const BOLSA_ROWS_BY_PATENTE = { 1: 3, 2: 4, 3: 5 };
+
+// ──────────────────────────────────────────────────────────
+//  CRAFT — Efeitos ao usar + receitas de combinacao
+// ──────────────────────────────────────────────────────────
+const CONSUMIVEL_EFEITO = {
+  curativo:       { integrity: 1 },
+  atadura:        { integrity: 2 },
+  estimulante:    { integrity: 3 },
+  kit_medico:     { integrity: 4 },
+  racao:          { integrity: 1 },
+  erva:           { integrity: 1 },
+  medicamento_ps: { insanidade: -15 },
+  estabilizador:  { integrity: 1, insanidade: -25 },
+  adrenalina:     { integrity: 5 },
+  antidoto:       { integrity: 2, insanidade: -10 },
+};
+
+const CRAFT_RECIPES = [
+  // ── MEDICAMENTOS ──
+  {
+    ingredientes: ['erva', 'erva'],
+    resultado: { tipo: 'atadura', nome: 'ATADURA', usos: 2, usoMax: 2 },
+    desc: 'Atadura de campo. Restaura 2 barras de integridade por uso.',
+    categoria: 'medicamentos',
+  },
+  {
+    ingredientes: ['erva', 'comp_quimico'],
+    resultado: { tipo: 'estimulante', nome: 'ESTIMULANTE', usos: 2, usoMax: 2 },
+    desc: 'Estimulante tatico. Restaura 3 barras de integridade por uso.',
+    categoria: 'medicamentos',
+  },
+  {
+    ingredientes: ['erva', 'erva', 'comp_quimico'],
+    resultado: { tipo: 'kit_medico', nome: 'KIT MEDICO', usos: 3, usoMax: 3 },
+    desc: 'Kit medico completo. Restaura 4 barras de integridade por uso.',
+    categoria: 'medicamentos',
+  },
+  {
+    ingredientes: ['comp_quimico', 'comp_quimico'],
+    resultado: { tipo: 'medicamento_ps', nome: 'MEDICAMENTO', usos: 2, usoMax: 2 },
+    desc: 'Medicamento psiquiatrico. Reduz insanidade em 15 por uso.',
+    categoria: 'medicamentos',
+  },
+  {
+    ingredientes: ['erva', 'comp_quimico', 'comp_quimico'],
+    resultado: { tipo: 'estabilizador', nome: 'ESTABILIZADOR', usos: 2, usoMax: 2 },
+    desc: 'Estabilizador psiquico. Restaura 1 barra de integridade e reduz insanidade em 25 por uso.',
+    categoria: 'medicamentos',
+  },
+  {
+    ingredientes: ['estimulante', 'comp_quimico'],
+    resultado: { tipo: 'adrenalina', nome: 'ADRENALINA', usos: 1, usoMax: 1 },
+    desc: 'Injecao de adrenalina sintetica. Recupera 5 barras de integridade instantaneamente.',
+    categoria: 'medicamentos',
+  },
+  {
+    ingredientes: ['comp_quimico', 'erva', 'erva'],
+    resultado: { tipo: 'antidoto', nome: 'ANTIDOTO', usos: 1, usoMax: 1 },
+    desc: 'Antidoto de amplo espectro. Neutraliza venenos e toxinas. Restaura 2 de integridade.',
+    categoria: 'medicamentos',
+  },
+  // ── ARMAMENTOS ──
+  {
+    ingredientes: ['polvora', 'polvora'],
+    resultado: { tipo: 'municao', nome: 'MUNICAO', usos: 6, usoMax: 6 },
+    desc: 'Municao artesanal. 6 cargas por lote fabricado.',
+    categoria: 'armamentos',
+  },
+  {
+    ingredientes: ['comp_explosivo', 'polvora'],
+    resultado: { tipo: 'granada', nome: 'GRANADA', usos: 1, usoMax: 1 },
+    desc: 'Granada de fragmentacao. Explosao e dano em area.',
+    categoria: 'armamentos',
+  },
+  {
+    ingredientes: ['comp_quimico', 'comp_explosivo'],
+    resultado: { tipo: 'granada_quimica', nome: 'GRANADA QUIM.', usos: 1, usoMax: 1 },
+    desc: 'Libera gas corrosivo em area. Eficaz contra alvos sem protecao respiratoria.',
+    categoria: 'armamentos',
+  },
+  {
+    ingredientes: ['comp_explosivo', 'comp_explosivo', 'polvora'],
+    resultado: { tipo: 'granada_potente', nome: 'GRANADA POTENTE', usos: 1, usoMax: 1 },
+    desc: 'Detonacao de alta potencia. Raio de explosao e dano triplicados.',
+    categoria: 'armamentos',
+  },
+  {
+    ingredientes: ['cristal_anomalo', 'comp_explosivo'],
+    resultado: { tipo: 'granada_danca', nome: 'GRANADA DE DANCA', usos: 1, usoMax: 1 },
+    desc: 'Ao detonar, forca alvos proximos a dancar involuntariamente por tempo indeterminado.',
+    categoria: 'armamentos',
+  },
+  {
+    ingredientes: ['erva', 'erva', 'sedativo'],
+    resultado: { tipo: 'sonifero', nome: 'SONIFERO POTENTE', usos: 2, usoMax: 2 },
+    desc: 'Composto sedativo concentrado. Induz sono profundo imediato. Util para neutralizacoes silenciosas.',
+    categoria: 'armamentos',
+  },
+  {
+    ingredientes: ['comp_explosivo', 'comp_quimico', 'polvora'],
+    resultado: { tipo: 'bomba_incendiaria', nome: 'BOMBA INCEND.', usos: 1, usoMax: 1 },
+    desc: 'Dispositivo incendiario. Arremessada, cria area em chamas persistente onde detona.',
+    categoria: 'armamentos',
+  },
+  // ── ARMADILHAS ──
+  {
+    ingredientes: ['comp_explosivo', 'fio_detonador', 'polvora'],
+    resultado: { tipo: 'mina_claymore', nome: 'CLAYMORE', usos: 1, usoMax: 1 },
+    desc: 'Mina direcional artesanal. Enterrada ou fixada e detonada por fio-gatilho. Dano em cone frontal.',
+    categoria: 'armadilhas',
+  },
+  {
+    ingredientes: ['sedativo', 'sedativo', 'fio_detonador'],
+    resultado: { tipo: 'cilada_sono', nome: 'CILADA DE SONO', usos: 1, usoMax: 1 },
+    desc: 'Armadilha de gas sedativo pressurizado. Qualquer alvo que entrar no raio e imediatamente incapacitado.',
+    categoria: 'armadilhas',
+  },
+  {
+    ingredientes: ['fio_detonador', 'pano'],
+    resultado: { tipo: 'alarme_campo', nome: 'ALARME DE CAMPO', usos: 2, usoMax: 2 },
+    desc: 'Linha de alarme esticada na passagem. Ao ser cortada ou rompida, emite sinal audivel ou luminoso.',
+    categoria: 'armadilhas',
+  },
+  {
+    ingredientes: ['comp_explosivo', 'sedativo', 'fio_detonador'],
+    resultado: { tipo: 'mina_atordoante', nome: 'MINA ATORDOANTE', usos: 1, usoMax: 1 },
+    desc: 'Mina nao-letal. Libera onda de choque e gas atordoante ao ser acionada. Nao causa morte.',
+    categoria: 'armadilhas',
+  },
+  {
+    ingredientes: ['pano', 'pano'],
+    resultado: { tipo: 'distracao', nome: 'DISTRACAO', usos: 2, usoMax: 2 },
+    desc: 'Um papelao dobrado com foto de mulher de biquini colada. Colocado no caminho inimigo, chama atencao e desvia patrulha por tempo indeterminado. Classico.',
+    categoria: 'armadilhas',
+  },
+];
 
 const PATENTES = {
   1: { nome: 'VENOM', desc: 'Recruta de campo. Preparado para missões de alta periculosidade.' },
@@ -370,6 +590,20 @@ let firebaseOk = false;
 let authOk     = false;  // true depois que signInAnonymously resolver com sucesso
 let docsReleasedState = [];   // IDs de documentos liberados pelo GM
 let docsUnsub = null;         // listener firestore de docs
+let docInteractUnsub = null;  // listener de zonas de interação
+let docInteractionsState = {}; // {[docId]: [{id,x,y,w,h,label,result}]}
+let _docInteractMode = false;
+let _docMouseDownPos = null;  // para distinguir clique de arrasto
+let _gmZoneDocId = null;
+let _gmZoneSel   = { active: false, startX:0, startY:0, endX:0, endY:0 };
+let docCiphersState = {};    // { docId: { text, key } } — cifras definidas pelo GM
+let docCiphersUnsub = null;  // listener firestore de cifras
+let _gmCipherDocId  = null;  // docId sendo editado no modal de cifra
+let videoTransState  = { videos: [] };   // transmissões de vídeo
+let videoTransUnsub  = null;             // listener Firestore
+let _videoAlertId    = null;             // vId pendente no alerta
+let _videoSeenSet    = new Set();        // IDs já vistos por este jogador
+let _videoFirstLoad  = true;             // silencia alerta no carregamento inicial
 let camoReleasedState = [];   // IDs de camuflagens liberadas pelo GM
 let camoUnsub = null;         // listener firestore de camos
 let docsReadSet   = new Set(); // IDs de docs já abertos pelo jogador
@@ -383,6 +617,9 @@ let bolsaSelected    = null;   // index into bolsa.items currently selected
 let bolsaDiscardArmed = false; // true after first discard click (confirm step)
 let _bolsaKeyHandler  = null;  // ref to the keydown listener
 let _camoSelected     = null;  // id da camo expandida no painel
+let craftSlots = [null, null, null]; // ingredientes selecionados para fabricar
+let craftMode  = false;              // se o painel de craft esta ativo
+let _craftTutTab = 'medicamentos';   // aba ativa do tutorial
 
 // ──────────────────────────────────────────────────────────
 //  AUDIO
@@ -688,6 +925,31 @@ async function loginPlayer() {
 
       // Apply psychological effects
       applyPsychEffects(data.psych);
+
+      // Apply negative status effects
+      applyStatusNeg(data.statusNeg);
+
+      // Detect new mensagem cifrada
+      const oldCifradaTs = old?.mensagemCifrada?.ts;
+      const newCifradaTs = data.mensagemCifrada?.ts;
+      if (newCifradaTs && newCifradaTs !== oldCifradaTs && data.mensagemCifrada?.texto) {
+        showMensagemCifrada(data.mensagemCifrada.texto);
+      }
+
+      // Paranormal radar
+      const oldNivel = old?.paranormal?.nivel ?? 0;
+      const newNivel = data.paranormal?.nivel ?? 0;
+      if (newNivel !== oldNivel) {
+        applyParanormalRadar(newNivel);
+        sfxBeepPnl(newNivel);
+        showPnlAlertFlash(newNivel);
+        const pnlCfg = PARANORMAL_NIVEIS[newNivel];
+        if (newNivel > oldNivel && newNivel > 0) {
+          showToast('⧭ PARANORMAL: ' + pnlCfg.label, newNivel >= 3 ? 'error' : 'info', 3500);
+        } else if (newNivel < oldNivel) {
+          showToast('⧭ PARANORMAL: ' + pnlCfg.label, 'info', 2500);
+        }
+      }
     });
 
     // Realtime listener — docs released state
@@ -765,6 +1027,10 @@ function logout() {
   if (docsUnsub)            { docsUnsub(); docsUnsub = null; }
   if (camoUnsub)            { camoUnsub(); camoUnsub = null; }
   if (missaoUnsub)          { missaoUnsub(); missaoUnsub = null; }
+  if (docInteractUnsub)     { docInteractUnsub(); docInteractUnsub = null; }
+  if (docCiphersUnsub)      { docCiphersUnsub(); docCiphersUnsub = null; }
+  docInteractionsState = {}; _docInteractMode = false;
+  docCiphersState = {};
   docsReleasedState = [];
   camoReleasedState = [];
   docsReadSet = new Set();
@@ -867,6 +1133,12 @@ function renderSheet(data) {
 
   // Aparência
   applyAparencia(data);
+
+  // Status negativos (on initial load)
+  applyStatusNeg(data.statusNeg);
+
+  // Paranormal radar (on initial load)
+  applyParanormalRadar(data.paranormal?.nivel ?? 0);
 
   // Ensure bolsa field exists on character
   if (!state.character.bolsa) state.character.bolsa = { items: [], staged: [] };
@@ -1274,8 +1546,9 @@ function renderBolsa() {
   items.forEach((item, idx) => {
     const s  = bolsaGetSize(item);
     const el = document.createElement('div');
-    const isSel = idx === bolsaSelected;
-    el.className   = 'bolsa-item' + (isSel ? ' bolsa-selected' : '') +
+    const isSel      = idx === bolsaSelected;
+    const isCraftSel = craftMode && craftSlots.includes(idx);
+    el.className   = 'bolsa-item' + (isSel ? ' bolsa-selected' : '') + (isCraftSel ? ' bolsa-craft-sel' : '') +
                      (item.tipoDano === 'neutralizador' ? ' bolsa-item-neutr' : '') +
                      (item.rotated ? ' bolsa-item-rotated' : '') +
                      (isConsumivel(item.tipo) ? ` bic-${item.tipo}` : '');
@@ -1321,6 +1594,8 @@ function renderBolsa() {
   }
 
   renderBolsaActions();
+  renderCraftPanel();
+  renderCraftTutorial();
 
   const stagedEl = document.getElementById('bolsa-staged-list');
   if (stagedEl) {
@@ -1362,12 +1637,27 @@ function renderBolsaActions() {
   const tipo    = ARMA_TIPOS[item.tipo] || ARMA_TIPOS.outro;
   const s       = bolsaGetSize(item);
   const isCons  = isConsumivel(item.tipo);
+  const isIngr  = !!(ARMA_TIPOS[item.tipo]?.ingrediente);
   const consCor = CONSUMIVEL_COR[item.tipo] || '#44aa55';
   const dropLabel = bolsaDiscardArmed ? '&#10003; CONFIRMAR' : '&#10005; DESCARTAR';
   const dropClass = bolsaDiscardArmed ? 'bolsa-btn-drop-confirm' : 'bolsa-btn-drop';
 
   let mainSection = '';
-  if (isCons) {
+  if (isCons && isIngr) {
+    // Ingrediente de craft — exibe info mas não permite usar
+    mainSection = `
+      <div class="bolsa-uso-panel">
+        <div class="bolsa-uso-panel-top">
+          <span class="bolsa-uso-ico" style="color:${consCor}">${tipo.ico || '&#9672;'}</span>
+          <div class="bolsa-uso-info">
+            <div class="bolsa-uso-nome" style="color:${consCor}">${escHtml(item.nome || tipo.label)}</div>
+            <div class="bolsa-uso-count" style="color:#556677">INGREDIENTE DE CRAFT</div>
+          </div>
+        </div>
+        ${item.descricao ? `<div class="bolsa-uso-desc">${escHtml(item.descricao)}</div>` : ''}
+        <div class="bolsa-ingrediente-hint">&#9874; Ative o modo COMBINAR para usar este ingrediente.</div>
+      </div>`;
+  } else if (isCons) {
     const hasUsos = item.usos !== undefined;
     const usoMax  = item.usoMax || item.usos || 1;
     const usoPct  = hasUsos ? Math.max(0, Math.round((item.usos / usoMax) * 100)) : 100;
@@ -1442,6 +1732,7 @@ function renderBolsaActions() {
   `;
 }
 function bolsaItemClick(idx) {
+  if (craftMode) { bolsaCraftToggleSlot(idx); return; }
   bolsaSelected = (bolsaSelected === idx) ? null : idx;
   renderBolsa();
 }
@@ -1689,17 +1980,56 @@ async function bolsaUsarItem(idx) {
   if (!state.character?.bolsa) return;
   const items = [...state.character.bolsa.items];
   const item  = items[idx];
-  if (!item || item.usos === undefined) return;
-  if (item.usos <= 0) { showToast('Sem usos restantes.', 'error', 1500); return; }
-  const newUsos = item.usos - 1;
+  if (!item) return;
+
+  // Ingredientes de craft não podem ser usados diretamente
+  if (ARMA_TIPOS[item.tipo]?.ingrediente) {
+    showToast('Este item é um ingrediente de craft — use o modo COMBINAR.', 'error', 2500);
+    return;
+  }
+  let curUsos = item.usos;
+  if (curUsos === undefined) {
+    if (!isConsumivel(item.tipo)) return; // arma sem usos é equipável, não usável
+    curUsos = CONSUMIVEL_USOS[item.tipo] ?? 1;
+  }
+  if (curUsos <= 0) { showToast('Sem usos restantes.', 'error', 1500); return; }
+  const newUsos = curUsos - 1;
   sfx('select');
+
+  // Apply item effects (healing / psych)
+  const efeito = CONSUMIVEL_EFEITO[item.tipo];
+  const efeitoMsgs = [];
+  if (efeito) {
+    if (efeito.integrity) {
+      const pat  = state.character?.patente ?? 1;
+      const max  = 4 + pat;
+      const cur  = typeof state.character?.integrity === 'number' ? state.character.integrity : max;
+      const novo = Math.min(max, cur + efeito.integrity);
+      state.character.integrity = novo;
+      await persistChar({ integrity: novo });
+      updateIntegrityDisplay(novo);
+      efeitoMsgs.push(`+${efeito.integrity} integridade`);
+    }
+    if (efeito.insanidade) {
+      const psych = state.character?.psych || { insanidade: 0, medicado: false, gatilhos: [] };
+      const novo  = Math.max(0, Math.min(100, (psych.insanidade || 0) + efeito.insanidade));
+      state.character.psych = { ...psych, insanidade: novo };
+      await persistChar({ psych: state.character.psych });
+      applyPsychEffects(state.character.psych);
+      const delta = efeito.insanidade < 0 ? efeito.insanidade : '+' + efeito.insanidade;
+      efeitoMsgs.push(`insanidade ${delta} (${novo})`);
+    }
+  }
+
+  const efeitoStr = efeitoMsgs.length ? ' · ' + efeitoMsgs.join(' · ') : '';
   if (newUsos <= 0) {
     items.splice(idx, 1);
     bolsaSelected = null;
-    showToast(`${item.nome || 'Item'} esgotado!`, 'success', 1800);
+    showToast(`${item.nome || 'Item'} esgotado!${efeitoStr}`, 'success', 2400);
   } else {
-    items[idx] = { ...item, usos: newUsos };
-    showToast(`${item.nome || 'Item'} usado — ${newUsos} restante(s).`, 'success', 1800);
+    const usoMaxVal = item.usoMax ?? CONSUMIVEL_USOS[item.tipo] ?? curUsos;
+    items[idx] = { ...item, usos: newUsos, usoMax: usoMaxVal };
+    showToast(`${item.nome || 'Item'} usado — ${newUsos} restante(s).${efeitoStr}`, 'success', 2400);
   }
   state.character.bolsa.items = items;
   await persistChar({ bolsa: state.character.bolsa });
@@ -1754,6 +2084,182 @@ async function bolsaTentarColocar(stagedIdx) {
   sfx('select');
 }
 
+// ──────────────────────────────────────────────────────────
+//  CRAFT — Fabricacao de medicinais / psicologicos
+// ──────────────────────────────────────────────────────────
+function bolsaToggleCraftMode() {
+  craftMode = !craftMode;
+  if (!craftMode) craftSlots = [null, null, null];
+  bolsaSelected = null;
+  renderBolsa();
+}
+
+function bolsaCraftToggleSlot(bolsaIdx) {
+  const existing = craftSlots.indexOf(bolsaIdx);
+  if (existing !== -1) {
+    craftSlots[existing] = null;
+    renderCraftPanel();
+    return;
+  }
+  const empty = craftSlots.indexOf(null);
+  if (empty !== -1) craftSlots[empty] = bolsaIdx;
+  renderCraftPanel();
+}
+
+function bolsaCraftFindRecipe() {
+  const items  = state.character?.bolsa?.items || [];
+  const filled = craftSlots.filter(s => s !== null);
+  if (filled.length < 2) return null;
+  const selectedTypes = filled.map(idx => items[idx]?.tipo).filter(Boolean).sort();
+  for (const r of CRAFT_RECIPES) {
+    const required = [...r.ingredientes].sort();
+    if (selectedTypes.length === required.length && selectedTypes.every((t, i) => t === required[i])) return r;
+  }
+  return null;
+}
+
+async function bolsaCombinar() {
+  const recipe = bolsaCraftFindRecipe();
+  if (!recipe) return;
+  const items   = [...(state.character.bolsa?.items || [])];
+  const filled  = craftSlots.filter(s => s !== null);
+  if (!filled.every(idx => items[idx])) return;
+
+  // Consume one use from each ingredient (remove if last use)
+  const toRemove = [];
+  for (const idx of filled) {
+    const item = items[idx];
+    if (item.usos !== undefined && item.usos > 1) {
+      items[idx] = { ...item, usos: item.usos - 1 };
+    } else {
+      toRemove.push(idx);
+    }
+  }
+  // Remove exhausted ingredients in descending index order to preserve indices
+  for (const idx of [...new Set(toRemove)].sort((a, b) => b - a)) items.splice(idx, 1);
+
+  // Auto-place crafted result
+  const res  = recipe.resultado;
+  const base = ARMA_SIZES[res.tipo] || { w: 1, h: 1 };
+  const pos  = bolsaAutoPlace(items, base.w, base.h, bolsaGetMaxRows());
+  if (pos) {
+    items.push({ ...res, col: pos.col, row: pos.row, rotated: false });
+    showToast('\u25c8 ' + res.nome + ' fabricado!', 'success', 2500);
+  } else {
+    const staged = [...(state.character.bolsa.staged || [])];
+    staged.push(res);
+    state.character.bolsa.staged = staged;
+    showToast(res.nome + ' fabricado \u2014 bolsa cheia, aguardando espaco.', 'info', 3000);
+  }
+
+  craftSlots = [null, null, null];
+  craftMode  = false;
+  state.character.bolsa.items = items;
+  await persistChar({ bolsa: state.character.bolsa });
+  renderBolsa();
+  sfx('select');
+}
+
+function craftTutSetTab(tab) {
+  _craftTutTab = tab;
+  const el = document.getElementById('bolsa-tut-list');
+  if (el) el.dataset.built = '';
+  renderCraftTutorial();
+}
+
+function _craftIco(tipoKey, cor, size) {
+  const tipo = ARMA_TIPOS[tipoKey] || {};
+  const sz   = size || 16;
+  if (tipo.img) return `<img src="${tipo.img}" class="craft-ico-img" style="width:${sz}px;height:${sz}px" alt="" />`;
+  return `<span style="color:${cor || '#aaa'}">${tipo.ico || '\u25c8'}</span>`;
+}
+
+function renderCraftTutorial() {
+  const el = document.getElementById('bolsa-tut-list');
+  if (!el) return;
+  if (el.dataset.built === _craftTutTab) return;
+  el.dataset.built = _craftTutTab;
+
+  const categorias = [
+    { id: 'medicamentos', label: 'MEDICAMENTOS' },
+    { id: 'armamentos',   label: 'ARMAMENTOS'   },
+    { id: 'armadilhas',   label: 'ARMADILHAS'   },
+  ];
+  const tabsHtml = categorias.map(c =>
+    `<button class="craft-tut-tab${_craftTutTab === c.id ? ' craft-tut-tab-active' : ''}" onclick="App.craftTutSetTab('${c.id}')">${c.label}</button>`
+  ).join('');
+
+  const recipes = CRAFT_RECIPES.filter(r => r.categoria === _craftTutTab);
+  const listHtml = recipes.map(r => {
+    const resCor  = CONSUMIVEL_COR[r.resultado.tipo] || '#aaa';
+    const ingHtml = r.ingredientes.map(t => {
+      const cor  = CONSUMIVEL_COR[t] || '#888';
+      const tipo = ARMA_TIPOS[t] || {};
+      return `<span class="craft-tut-ing" style="color:${cor}">${_craftIco(t, cor, 14)} ${tipo.label || t}</span>`;
+    }).join('<span class="craft-tut-plus">+</span>');
+    return `<div class="craft-tut-entry">
+      <div class="craft-tut-formula">${ingHtml}<span class="craft-tut-arrow">&#10145;</span><span class="craft-tut-res" style="color:${resCor}">${_craftIco(r.resultado.tipo, resCor, 14)} ${r.resultado.nome}</span></div>
+      <div class="craft-tut-desc">${r.desc}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="craft-tut-tabs">${tabsHtml}</div><div class="craft-tut-entries">${listHtml}</div>`;
+}
+
+function renderCraftPanel() {
+  const panel = document.getElementById('bolsa-craft-panel');
+  const badge = document.getElementById('craft-mode-badge');
+  if (!panel) return;
+  if (badge) {
+    badge.textContent = craftMode ? 'ATIVO' : 'INATIVO';
+    badge.className   = 'craft-mode-badge' + (craftMode ? ' craft-mode-on' : '');
+  }
+  if (!craftMode) {
+    panel.innerHTML = '<div class="craft-hint-idle">&#9658; Ative para combinar ingredientes da bolsa</div>';
+    return;
+  }
+  const items      = state.character?.bolsa?.items || [];
+  const recipe     = bolsaCraftFindRecipe();
+  const filledCnt  = craftSlots.filter(s => s !== null).length;
+
+  const slotsHtml = [0, 1, 2].map(i => {
+    const idx  = craftSlots[i];
+    const item = idx !== null ? items[idx] : null;
+    if (item) {
+      const tipo = ARMA_TIPOS[item.tipo] || ARMA_TIPOS.outro;
+      const cor  = CONSUMIVEL_COR[item.tipo] || '#888';
+      return `<div class="craft-slot craft-slot-filled" onclick="App.bolsaCraftToggleSlot(${idx})" style="border-color:${cor};color:${cor}">
+        <span class="craft-slot-ico">${_craftIco(item.tipo, cor, 22)}</span>
+        <span class="craft-slot-lbl">${escHtml(item.nome || tipo.label)}</span>
+        <span class="craft-slot-x">&#10005;</span>
+      </div>`;
+    }
+    return `<div class="craft-slot craft-slot-empty"><span class="craft-slot-ph">+ INGREDIENTE</span></div>`;
+  }).join('');
+
+  let matchHtml = '';
+  if (recipe) {
+    const resCor  = CONSUMIVEL_COR[recipe.resultado.tipo] || '#aaa';
+    const resType = ARMA_TIPOS[recipe.resultado.tipo] || {};
+    matchHtml = `<div class="craft-match">
+      <span class="craft-match-ico" style="color:${resCor}">${_craftIco(recipe.resultado.tipo, resCor, 28)}</span>
+      <div class="craft-match-info">
+        <div class="craft-match-name" style="color:${resCor}">${recipe.resultado.nome}</div>
+        <div class="craft-match-desc">${recipe.desc}</div>
+      </div>
+    </div>`;
+  } else if (filledCnt >= 2) {
+    matchHtml = '<div class="craft-no-match">&#8212; SEM RECEITA &#8212;</div>';
+  }
+
+  panel.innerHTML = `
+    <div class="craft-hint-active">&#9658; Clique nos itens da bolsa para selecionar ingredientes</div>
+    <div class="craft-slots-wrap">${slotsHtml}</div>
+    ${matchHtml}
+    ${recipe ? `<button class="craft-btn-combinar" onclick="App.bolsaCombinar()">&#9654; COMBINAR</button>` : ''}
+  `;
+}
+
 // Player: send equipped weapon from arma slot back to bolsa
 async function armaParaBolsa(slot) {
   const arma = state.character?.armas?.[slot];
@@ -1796,7 +2302,10 @@ async function gmEnviarParaBolsa(codename) {
   const tipoDano = g(`gm-bolsa-tdano-${codename}`)?.value || 'mortal';
   const desc     = g(`gm-bolsa-desc-${codename}`)?.value.trim();
   const usosRaw  = g(`gm-bolsa-usos-${codename}`)?.value;
-  const usos     = (usosRaw && isConsumivel(tipo)) ? Math.max(1, parseInt(usosRaw, 10) || 1) : undefined;
+  const usosDefault = isConsumivel(tipo) ? (CONSUMIVEL_USOS[tipo] ?? 1) : undefined;
+  const usos = isConsumivel(tipo)
+    ? Math.max(1, parseInt(usosRaw, 10) || usosDefault)
+    : undefined;
   if (!tipo) return;
 
   let currentBolsa = { items: [], staged: [] };
@@ -1929,7 +2438,10 @@ function gmLootAddItem() {
   const tipoDano = g('gm-loot-tdano')?.value || 'mortal';
   const desc     = g('gm-loot-desc')?.value.trim();
   const usosRaw  = g('gm-loot-usos')?.value;
-  const usos     = (usosRaw && isConsumivel(tipo)) ? Math.max(1, parseInt(usosRaw, 10) || 1) : undefined;
+  const usosDefault = isConsumivel(tipo) ? (CONSUMIVEL_USOS[tipo] ?? 1) : undefined;
+  const usos = isConsumivel(tipo)
+    ? Math.max(1, parseInt(usosRaw, 10) || usosDefault)
+    : undefined;
   if (!tipo) return;
   _lootPool.push({
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
@@ -2306,6 +2818,7 @@ function switchTab(tab) {
     });
     if (tab === 'fitas') renderFitasTab();
     if (tab === 'radio') renderRadioTab();
+    if (tab === 'radar') renderParanormalRadar(state.character?.paranormal?.nivel ?? 0);
     if (tab === 'mald')  { loadMaldicoes().then(renderMaldicoesTab); }
     if (tab === 'docs')  renderDocsTab();
     if (tab === 'equip') enterMissaoTab();
@@ -2337,6 +2850,18 @@ function switchTab(tab) {
 //  RÁDIO — PLAYER
 // ──────────────────────────────────────────────────────────
 const RADIO_FREQS = ['00.221', '00.425', '00.614', '00.733', '00.881', '00.963'];
+
+// ══════════════════════════════════════════════════════════════
+//  RADAR PARANORMAL — constantes
+// ══════════════════════════════════════════════════════════════
+const PARANORMAL_NIVEIS = [
+  { label: 'INATIVO',   cor: '#1e3020', desc: 'Sem leituras detectadas.' },
+  { label: 'TRAÇOS',    cor: '#22aa55', desc: 'Anomalia distante — possível presença.' },
+  { label: 'PRÓXIMO',   cor: '#aaaa22', desc: 'Sinal detectado — entidade se aproximando.' },
+  { label: 'IMINENTE',  cor: '#cc6622', desc: 'Contato iminente — ameaça confirmada.' },
+  { label: 'CONTATO',   cor: '#cc1111', desc: 'CONTATO DIRETO — perigo extremo.' },
+];
+const _PNL_BLIP_RINGS = [0.82, 0.60, 0.38, 0.18]; // raios para cada anel (lv1→lv4)
 
 function renderRadioTab() {
   const char = state.character;
@@ -2385,6 +2910,114 @@ function renderRadioTab() {
   } else if (status === 'conectado') {
     acts.innerHTML = '<button class="radio-btn radio-btn-cancel" onclick="App.radioCancelar()">ENCERRAR</button>';
   }
+
+}
+
+function renderParanormalRadar(nivel) {
+  const el = document.getElementById('paranormal-radar-section');
+  if (!el) return;
+  const n   = Math.max(0, Math.min(4, nivel || 0));
+  const cfg = PARANORMAL_NIVEIS[n];
+  const sweepMs = [0, 4000, 2800, 1600, 800][n];
+  let blipHtml = '';
+  for (let i = 0; i < n; i++) {
+    const r     = _PNL_BLIP_RINGS[i];
+    const angle = Math.random() * Math.PI * 2;
+    const x     = 50 + r * 50 * Math.cos(angle);
+    const y     = 50 + r * 50 * Math.sin(angle);
+    blipHtml += `<div class="pnl-blip pnl-blip-lv${n}" style="left:${x.toFixed(1)}%;top:${y.toFixed(1)}%"></div>`;
+  }
+  el.innerHTML = `
+    <div class="pnl-radar-wrap pnl-radar-lv${n}">
+      <div class="pnl-radar-header">
+        <span class="pnl-radar-title">⧭ RASTREADOR PARANORMAL</span>
+        <span class="pnl-radar-freq">FREQ P-00.333</span>
+      </div>
+      <div class="pnl-radar-body">
+        <div class="pnl-radar-disc" style="${n > 0 ? `box-shadow:0 0 14px ${cfg.cor}44` : ''}">
+          <div class="pnl-ring pnl-ring-1"></div>
+          <div class="pnl-ring pnl-ring-2"></div>
+          <div class="pnl-ring pnl-ring-3"></div>
+          <div class="pnl-ring pnl-ring-4"></div>
+          <div class="pnl-cross-h"></div>
+          <div class="pnl-cross-v"></div>
+          ${n > 0 ? `<div class="pnl-sweep" style="animation-duration:${sweepMs}ms;--sweep-col:${cfg.cor}88"></div>` : ''}
+          ${blipHtml}
+        </div>
+        <div class="pnl-radar-info">
+          <div class="pnl-radar-status-lbl" style="color:${cfg.cor}">${cfg.label}</div>
+          <div class="pnl-radar-desc">${cfg.desc}</div>
+          <div class="pnl-level-dots">
+            ${[1,2,3,4].map(i => `<div class="pnl-dot${i <= n ? ' pnl-dot-on' : ''}" style="${i <= n ? `background:${cfg.cor}` : ''}"></div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function applyParanormalRadar(nivel) {
+  const n = Math.max(0, Math.min(4, nivel || 0));
+  [1,2,3,4].forEach(i => document.body.classList.remove('pnl-body-lv' + i));
+  const ov = document.getElementById('paranormal-overlay');
+  if (ov) { [0,1,2,3,4].forEach(i => ov.classList.remove('pnl-ov-lv' + i)); ov.classList.add('pnl-ov-lv' + n); }
+  if (n > 0) document.body.classList.add('pnl-body-lv' + n);
+  renderParanormalRadar(n);
+}
+
+// Beep per paranormal level using Web Audio API
+function sfxBeepPnl(nivel) {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const freqs  = [0, 480, 660, 880, 1100];
+    const counts = [0,   1,   2,   3,    4];
+    const n = Math.max(0, Math.min(4, nivel || 0));
+    if (n === 0) return;
+    const freq = freqs[n];
+    const count = counts[n];
+    const dur = 0.13;
+    const gap = 0.08;
+    for (let i = 0; i < count; i++) {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = n >= 3 ? 'square' : 'sine';
+      osc.frequency.value = freq;
+      const t0 = ctx.currentTime + i * (dur + gap);
+      gain.gain.setValueAtTime(n >= 4 ? 0.4 : 0.25, t0);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.01);
+    }
+  } catch (_) {}
+}
+
+// Full-screen color flash on paranormal level change
+function showPnlAlertFlash(nivel) {
+  const COLORS = ['', '#22aa5533', '#aaaa2244', '#cc662266', '#cc111188'];
+  const n = Math.max(0, Math.min(4, nivel || 0));
+  if (n === 0) return;
+  const el = document.createElement('div');
+  el.style.cssText = `position:fixed;inset:0;pointer-events:none;z-index:9997;background:${COLORS[n]};animation:pnl-flash-in 0.9s ease-out forwards;`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 950);
+}
+
+async function gmSetParanormalNivel(codename, nivel) {
+  await gmUpdateChar(codename, { 'paranormal.nivel': nivel });
+  sfx('select');
+}
+
+function buildGMParanormalHtml(char) {
+  const nivel = char.paranormal?.nivel ?? 0;
+  return `<div class="gm-pnl-btns">${PARANORMAL_NIVEIS.map((cfg, n) =>
+    `<button class="gm-pnl-btn${nivel === n ? ' gm-pnl-btn-on' : ''}"
+             style="${nivel === n ? `border-color:${cfg.cor};color:${cfg.cor}` : ''}"
+             onclick="App.gmSetParanormalNivel('${char.codename}',${n})">${cfg.label}</button>`
+  ).join('')}</div>`;
 }
 
 function radioChangeFreq(dir) {
@@ -2999,9 +3632,15 @@ function renderGMList(chars) {
     listEl.innerHTML = '<div class="gm-empty">Nenhum operador registrado.</div>';
     return;
   }
+  // Preserva quais cards estavam abertos antes de re-renderizar
+  const expanded = new Set(
+    Array.from(listEl.querySelectorAll('.gm-agent-card.expanded'))
+         .map(el => el.id.replace('gm-card-', ''))
+  );
   listEl.innerHTML = '';
   chars.forEach(char => {
     const card = buildGMCard(char);
+    if (expanded.has(char.codename)) card.classList.add('expanded');
     listEl.appendChild(card);
   });
 }
@@ -3183,6 +3822,22 @@ function buildGMCard(char) {
         <div class="gm-ctrl-label">⬡ ARQUIVO PSICOLÓGICO</div>
         ${buildGMPsychHtml(char)}
       </div>
+      <div class="gm-ctrl-group">
+        <div class="gm-ctrl-label">⬡ RADAR PARANORMAL</div>
+        ${buildGMParanormalHtml(char)}
+      </div>
+      <div class="gm-ctrl-group">
+        <div class="gm-ctrl-label">⬡ STATUS NEGATIVOS</div>
+        ${buildGMStatusNegHtml(char)}
+      </div>
+      <div class="gm-ctrl-group">
+        <div class="gm-ctrl-label">⬡ MENSAGEM CIFRADA</div>
+        <div class="gm-cifrada-form">
+          <input id="gm-cifrada-input-${char.codename}" class="gm-text-input gm-cifrada-input"
+                 type="text" maxlength="200" placeholder="Mensagem secreta ao operador..." />
+          <button class="gm-cifrada-send" onclick="App.gmEnviarMensagemCifrada('${char.codename}')">&#9658; CIFRAR &amp; ENVIAR</button>
+        </div>
+      </div>
       <div class="gm-ctrl-group gm-danger-zone">
         <div class="gm-ctrl-label">⬡ ZONA DE PERIGO</div>
         <button id="gm-delete-btn-${char.codename}" class="gm-delete-btn"
@@ -3245,6 +3900,17 @@ const PSYCH_GATILHOS = [
   { id: 'elem_energia',      label: 'ENERGIA',       desc: 'A energia do Outro Lado invade a psique.',ico: '⚡' },
   { id: 'elem_conhecimento', label: 'CONHECIMENTO',  desc: 'Saber demais tem um custo.',             ico: '📖' },
 ];
+
+// ══════════════════════════════════════════════════════════════
+//  STATUS NEGATIVOS — constantes
+// ══════════════════════════════════════════════════════════════
+const STATUS_NEG = {
+  envenenado: { label: 'ENVENENADO', ico: '⊗', cor: '#44cc66', cssClass: 'status-envenenado' },
+  sangrando:  { label: 'SANGRANDO',  ico: '✦', cor: '#cc2233', cssClass: 'status-sangrando'  },
+  atordoado:  { label: 'ATORDOADO',  ico: '◎', cor: '#ccaa00', cssClass: 'status-atordoado'  },
+  exausto:    { label: 'EXAUSTO',    ico: '◑', cor: '#778899', cssClass: 'status-exausto'    },
+  queimado:   { label: 'QUEIMADO',   ico: '⊕', cor: '#ff6600', cssClass: 'status-queimado'   },
+};
 
 const PSYCH_LEVELS = [
   { min: 0,  max: 20,  id: 'estavel',    label: 'ESTÁVEL',       color: '#44aa55' },
@@ -3487,9 +4153,10 @@ function startMorteSpiral() {
   stopMorteSpiral();
   const ov = document.getElementById('psych-overlay');
   if (!ov) return;
-  const el = document.createElement('span');
-  el.className = 'psych-morte-spiral';
-  el.textContent = '꩜';
+  const el = document.createElement('img');
+  el.className = 'psych-morte-espirais';
+  el.src = 'elementos/espiraismorte.jpg';
+  el.alt = '';
   ov.appendChild(el);
   _morteSpiral = el;
   startMorteAudio();
@@ -3497,8 +4164,37 @@ function startMorteSpiral() {
 
 function stopMorteSpiral() {
   if (_morteSpiral) { try { _morteSpiral.remove(); } catch(_) {} _morteSpiral = null; }
-  document.querySelectorAll('.psych-morte-spiral').forEach(e => e.remove());
+  document.querySelectorAll('.psych-morte-espirais').forEach(e => e.remove());
   stopMorteAudio();
+}
+
+// Sangue: olho que aparece inesperadamente
+let _sangueOlhoTimeout = null;
+
+function startSangueOlho() {
+  stopSangueOlho();
+  function spawnOlho() {
+    const ov = document.getElementById('psych-overlay');
+    if (!ov || !ov.classList.contains('psych-g-elem_sangue')) { stopSangueOlho(); return; }
+    const el = document.createElement('img');
+    el.className = 'psych-sangue-olho';
+    el.src = 'elementos/olhosangue.png';
+    el.alt = '';
+    el.style.left = (5 + Math.random() * 80) + '%';
+    el.style.top  = (5 + Math.random() * 80) + '%';
+    const dur = 1.2 + Math.random() * 2.2;
+    el.style.animationDuration = dur + 's';
+    ov.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+    // Delay imprevisível: entre 0.8s e 9s
+    _sangueOlhoTimeout = setTimeout(spawnOlho, 800 + Math.random() * 8200);
+  }
+  spawnOlho();
+}
+
+function stopSangueOlho() {
+  if (_sangueOlhoTimeout) { clearTimeout(_sangueOlhoTimeout); _sangueOlhoTimeout = null; }
+  document.querySelectorAll('.psych-sangue-olho').forEach(e => e.remove());
 }
 
 function _spawnElemToken(ov, gatilhoId) {
@@ -3529,7 +4225,8 @@ function _spawnElemToken(ov, gatilhoId) {
 
 function startElemText(gatilhoId) {
   stopElemText(gatilhoId);
-  if (gatilhoId === 'elem_morte') startMorteSpiral();
+  if (gatilhoId === 'elem_morte')  startMorteSpiral();
+  if (gatilhoId === 'elem_sangue') startSangueOlho();
   const cfg = _ELEM_CFG[gatilhoId];
   if (!cfg) return;
   function spawn() {
@@ -3554,7 +4251,8 @@ function startElemText(gatilhoId) {
 
 function stopElemText(gatilhoId) {
   if (_elemTextTimeouts[gatilhoId]) { clearTimeout(_elemTextTimeouts[gatilhoId]); delete _elemTextTimeouts[gatilhoId]; }
-  if (gatilhoId === 'elem_morte') stopMorteSpiral();
+  if (gatilhoId === 'elem_morte')  stopMorteSpiral();
+  if (gatilhoId === 'elem_sangue') stopSangueOlho();
   const suffix = gatilhoId.replace('elem_', '');
   document.querySelectorAll('.psych-ptext-' + suffix).forEach(e => e.remove());
 }
@@ -3627,6 +4325,106 @@ function applyPsychEffects(psych) {
     if (!medicado && gatilhos.includes(id) && overlay) startElemText(id);
     else stopElemText(id);
   });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  STATUS NEGATIVOS — player display
+// ══════════════════════════════════════════════════════════════
+function applyStatusNeg(statusNeg) {
+  const active = statusNeg || [];
+  Object.values(STATUS_NEG).forEach(s => document.body.classList.remove(s.cssClass));
+  active.forEach(id => {
+    if (STATUS_NEG[id]) document.body.classList.add(STATUS_NEG[id].cssClass);
+  });
+  renderStatusNegBadges(active);
+}
+
+function renderStatusNegBadges(active) {
+  const el = document.getElementById('status-neg-strip');
+  if (!el) return;
+  if (!active || active.length === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = active.map(id => {
+    const s = STATUS_NEG[id];
+    if (!s) return '';
+    return `<div class="status-neg-badge" style="color:${s.cor};border-color:${s.cor}44" title="${s.label}">
+      <span class="status-neg-ico">${s.ico}</span>
+      <span class="status-neg-lbl">${s.label}</span>
+    </div>`;
+  }).join('');
+}
+
+async function gmToggleStatusNeg(codename, statusId) {
+  let char = null;
+  if (firebaseOk) {
+    const snap = await getDoc(doc(db, 'characters', codename));
+    if (snap.exists()) char = snap.data();
+  } else {
+    char = LocalDB.getChar(codename);
+  }
+  if (!char) return;
+  const current = char.statusNeg || [];
+  const newStatus = current.includes(statusId)
+    ? current.filter(s => s !== statusId)
+    : [...current, statusId];
+  await gmUpdateChar(codename, { statusNeg: newStatus });
+}
+
+function buildGMStatusNegHtml(char) {
+  const active = char.statusNeg || [];
+  const btns = Object.entries(STATUS_NEG).map(([id, s]) => {
+    const on = active.includes(id);
+    return `<button class="gm-sneg-btn${on ? ' gm-sneg-on' : ''}"
+                    style="${on ? `background:${s.cor}22;border-color:${s.cor};color:${s.cor}` : ''}"
+                    onclick="App.gmToggleStatusNeg('${char.codename}','${id}')">
+      <span>${s.ico}</span> ${s.label}
+    </button>`;
+  }).join('');
+  return `<div class="gm-sneg-grid">${btns}</div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MENSAGENS CIFRADAS — GM send / player receive
+// ══════════════════════════════════════════════════════════════
+async function gmEnviarMensagemCifrada(codename) {
+  const input = document.getElementById('gm-cifrada-input-' + codename);
+  const texto = input?.value.trim();
+  if (!texto) { showToast('Digite uma mensagem.', 'error'); return; }
+  await gmUpdateChar(codename, { mensagemCifrada: { texto, ts: Date.now() } });
+  if (input) input.value = '';
+  showToast(codename + ': mensagem cifrada enviada.', 'success', 1800);
+}
+
+function showMensagemCifrada(texto) {
+  const overlay = document.getElementById('cifrada-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('hidden');
+  const textEl   = document.getElementById('cifrada-text');
+  const labelEl  = document.getElementById('cifrada-label');
+  if (!textEl) return;
+  const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*<>[]{}!?';
+  let progress = 0;
+  const total  = texto.length;
+  if (labelEl) labelEl.textContent = 'DECODIFICANDO...';
+  const interval = setInterval(() => {
+    progress = Math.min(progress + 1, total);
+    const decoded = texto.slice(0, progress);
+    const noise   = Array.from({ length: total - progress }, () =>
+      CHARS[Math.floor(Math.random() * CHARS.length)]
+    ).join('');
+    textEl.textContent = decoded + noise;
+    if (progress >= total) {
+      clearInterval(interval);
+      if (labelEl) labelEl.textContent = '— MENSAGEM —';
+      sfx('open');
+    }
+  }, 55);
+  sfx('select');
+}
+
+function fecharMensagemCifrada() {
+  const overlay = document.getElementById('cifrada-overlay');
+  if (overlay) overlay.classList.add('hidden');
+  sfx('close');
 }
 
 async function gmDeleteOperador(codename) {
@@ -4074,6 +4872,9 @@ async function loadDocsState() {
     const readRaw = localStorage.getItem('vyper_docs_read_' + state.codename);
     docsReadSet = new Set(readRaw ? JSON.parse(readRaw) : []);
   }
+  await loadDocInteractions();
+  await loadDocCiphers();
+  loadVideoTrans();
 }
 
 function markDocRead(docId) {
@@ -4179,6 +4980,8 @@ function openDocViewer(docId) {
 
   applyDocTransform();
   $('doc-viewer').classList.remove('hidden');
+  closeDocInteractMode();
+  hideDocCtxMenu();
 
   // Scanner animation
   const scanLine = $('doc-scan-line');
@@ -4207,12 +5010,16 @@ function openDocViewer(docId) {
   }
 
   markDocRead(docId);
+  _renderCipherPanel(docId);
   renderDocsTab();
 }
 
 function closeDocViewer() {
   sfx('close');
   $('doc-viewer').classList.add('hidden');
+  closeDocInteractMode();
+  hideDocCtxMenu();
+  $('doc-interact-result')?.classList.add('hidden');
   docViewerState.docId  = null;
   docViewerState.uvMode = false;
   docViewerState.scale  = 1;
@@ -4388,6 +5195,37 @@ function initDocViewerEvents() {
     const uvImg = $('doc-image-uv');
     if (uvImg) { uvImg.style.setProperty('--tx', '-999px'); uvImg.style.setProperty('--ty', '-999px'); }
   });
+
+  // Track mousedown position for click-vs-drag detection
+  body.addEventListener('mousedown', (e) => {
+    _docMouseDownPos = { x: e.clientX, y: e.clientY };
+  });
+
+  // Context menu on right-click
+  body.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    const viewer = $('doc-viewer');
+    if (!viewer || viewer.classList.contains('hidden')) return;
+    const vRect = viewer.getBoundingClientRect();
+    const menu  = $('doc-ctx-menu');
+    if (!menu) return;
+    let mx = e.clientX - vRect.left;
+    let my = e.clientY - vRect.top;
+    menu.style.left = mx + 'px';
+    menu.style.top  = my + 'px';
+    menu.classList.remove('hidden');
+  });
+
+  // Click handler — hide menu + interact mode
+  body.addEventListener('click', (e) => {
+    hideDocCtxMenu();
+    if (!_docInteractMode) return;
+    if (_docMouseDownPos) {
+      const dist = Math.hypot(e.clientX - _docMouseDownPos.x, e.clientY - _docMouseDownPos.y);
+      if (dist > 10) return; // was a drag, not a click
+    }
+    handleDocInteractClick(e);
+  });
 }
 
 // ── New Doc Alert ─────────────────────────────────────────
@@ -4429,10 +5267,552 @@ function dismissNewDocAlert(openDoc = false) {
   }, 400);
 }
 
+// ══════════════════════════════════════════════════════════
+//  DOCUMENTOS — FOTOGRAFAR, FOTOS & INTERAGIR
+// ══════════════════════════════════════════════════════════
+
+// ── Sub-tabs de Documentos ────────────────────────────────
+function docsSubtab(tab) {
+  $('docs-panel-docs')?.classList.toggle('hidden', tab !== 'docs');
+  $('docs-panel-fotos')?.classList.toggle('hidden', tab !== 'fotos');
+  $('docs-panel-videos')?.classList.toggle('hidden', tab !== 'videos');
+  document.querySelectorAll('.docs-subtab-btn').forEach(b =>
+    b.classList.toggle('docs-subtab-active', b.dataset.subtab === tab));
+  if (tab === 'fotos') renderFotosGrid();
+  if (tab === 'videos') renderVideoTransTab();
+}
+
+// ── Fotos (localStorage) ──────────────────────────────────
+const FOTOS_LS_KEY = () => `vyper_fotos_${state.codename || ''}`;
+const MAX_FOTOS = 20;
+
+function _loadDocFotos() {
+  try { const r = localStorage.getItem(FOTOS_LS_KEY()); return r ? JSON.parse(r) : []; }
+  catch { return []; }
+}
+function _saveDocFotos(fotos) {
+  try { localStorage.setItem(FOTOS_LS_KEY(), JSON.stringify(fotos)); } catch {}
+}
+
+function renderFotosGrid() {
+  const el = $('fotos-grid');
+  if (!el) return;
+  const fotos = _loadDocFotos();
+  if (fotos.length === 0) {
+    el.innerHTML = '<div class="docs-empty">Nenhuma foto tirada ainda.</div>';
+    return;
+  }
+  el.innerHTML = fotos.slice().reverse().map(f => `
+    <div class="foto-card">
+      <img class="foto-thumb" src="${f.dataUrl}" alt="" />
+      <div class="foto-info">
+        <div class="foto-doc">${escHtml(f.docTitle || '?')}</div>
+        <div class="foto-ts">${new Date(f.ts).toLocaleString('pt-BR',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'})}</div>
+      </div>
+      <button class="foto-del" onclick="App.deleteDocFoto('${f.id}')">&#10005;</button>
+    </div>
+  `).join('');
+}
+
+function deleteDocFoto(id) {
+  _saveDocFotos(_loadDocFotos().filter(f => f.id !== id));
+  renderFotosGrid();
+}
+
+// ── Context menu ──────────────────────────────────────────
+function hideDocCtxMenu() {
+  $('doc-ctx-menu')?.classList.add('hidden');
+}
+
+// ── FOTOGRAFAR ────────────────────────────────────────────
+function docCtxFotografar() {
+  hideDocCtxMenu();
+  const body   = $('doc-viewer-body');
+  const canvas = $('doc-select-canvas');
+  if (!body || !canvas) return;
+
+  const bRect = body.getBoundingClientRect();
+  canvas.width  = Math.round(bRect.width);
+  canvas.height = Math.round(bRect.height);
+  canvas.classList.remove('hidden');
+  showToast('Arraste para selecionar a \u00e1rea (ESC = cancelar)', 'info', 5000);
+
+  let sel = { active: false, sx: 0, sy: 0, ex: 0, ey: 0 };
+  const ctx = canvas.getContext('2d');
+
+  function drawRect() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(0,0,0,0.40)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const rx = Math.min(sel.sx, sel.ex), ry = Math.min(sel.sy, sel.ey);
+    const rw = Math.abs(sel.ex - sel.sx), rh = Math.abs(sel.ey - sel.sy);
+    if (rw < 2 || rh < 2) return;
+    ctx.clearRect(rx, ry, rw, rh);
+    ctx.strokeStyle = '#22aa55'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+    ctx.strokeRect(rx + 0.5, ry + 0.5, rw, rh);
+    ctx.setLineDash([]); ctx.lineWidth = 2;
+    const ml = 10;
+    [[rx, ry], [rx+rw, ry], [rx, ry+rh], [rx+rw, ry+rh]].forEach(([cx, cy]) => {
+      const dx = cx === rx ? 1 : -1, dy = cy === ry ? 1 : -1;
+      ctx.beginPath(); ctx.moveTo(cx, cy + dy*ml); ctx.lineTo(cx, cy); ctx.lineTo(cx + dx*ml, cy);
+      ctx.stroke();
+    });
+  }
+
+  const onDown = (e) => { const r = canvas.getBoundingClientRect(); sel = { active:true, sx:e.clientX-r.left, sy:e.clientY-r.top, ex:e.clientX-r.left, ey:e.clientY-r.top }; };
+  const onMove = (e) => { if (!sel.active) return; const r = canvas.getBoundingClientRect(); sel.ex=e.clientX-r.left; sel.ey=e.clientY-r.top; drawRect(); };
+  const onUp = (e) => {
+    if (!sel.active) return;
+    sel.active = false;
+    const r = canvas.getBoundingClientRect(); sel.ex=e.clientX-r.left; sel.ey=e.clientY-r.top;
+    cleanup();
+    const rx=Math.min(sel.sx,sel.ex), ry=Math.min(sel.sy,sel.ey),
+          rw=Math.abs(sel.ex-sel.sx), rh=Math.abs(sel.ey-sel.sy);
+    if (rw > 10 && rh > 10) _captureDocArea(rx, ry, rw, rh, bRect);
+  };
+  const onKey = (e) => { if (e.key === 'Escape') cleanup(); };
+
+  function cleanup() {
+    canvas.classList.add('hidden'); ctx.clearRect(0,0,canvas.width,canvas.height);
+    canvas.removeEventListener('mousedown', onDown);
+    canvas.removeEventListener('mousemove', onMove);
+    canvas.removeEventListener('mouseup', onUp);
+    document.removeEventListener('keydown', onKey);
+  }
+
+  canvas.addEventListener('mousedown', onDown);
+  canvas.addEventListener('mousemove', onMove);
+  canvas.addEventListener('mouseup', onUp);
+  document.addEventListener('keydown', onKey);
+}
+
+function _captureDocArea(rx, ry, rw, rh, bodyRect) {
+  const imgEl = $('doc-image');
+  if (!imgEl || !imgEl.src) { showToast('Erro ao fotografar.', 'error', 2000); return; }
+
+  const imgRect = imgEl.getBoundingClientRect();
+  // Selection is in body-local coords; convert to viewport
+  const vx = rx + bodyRect.left, vy = ry + bodyRect.top;
+  // Clamp to image bounds
+  const ix = Math.max(0, vx - imgRect.left);
+  const iy = Math.max(0, vy - imgRect.top);
+  const iw = Math.min(imgRect.width  - ix, rw - Math.max(0, imgRect.left - vx));
+  const ih = Math.min(imgRect.height - iy, rh - Math.max(0, imgRect.top  - vy));
+  if (iw <= 5 || ih <= 5) { showToast('Selecione uma \u00e1rea sobre o documento.', 'info', 2500); return; }
+
+  // Map to natural image pixels
+  const scaleX = imgEl.naturalWidth  / imgRect.width;
+  const scaleY = imgEl.naturalHeight / imgRect.height;
+  const out = document.createElement('canvas');
+  out.width  = Math.round(iw * scaleX);
+  out.height = Math.round(ih * scaleY);
+  const ctx = out.getContext('2d');
+  ctx.drawImage(imgEl, ix*scaleX, iy*scaleY, out.width, out.height, 0, 0, out.width, out.height);
+  // Subtle scan-line tint
+  ctx.fillStyle = 'rgba(0,255,100,0.04)';
+  for (let y2 = 0; y2 < out.height; y2 += 4) ctx.fillRect(0, y2, out.width, 2);
+
+  const dataUrl = out.toDataURL('image/jpeg', 0.88);
+  const fotos = _loadDocFotos();
+  if (fotos.length >= MAX_FOTOS) fotos.shift();
+  const docDef = DOCUMENTS.find(d => d.id === docViewerState.docId);
+  fotos.push({ id: 'foto_' + Date.now(), docId: docViewerState.docId, docTitle: docDef?.title || '?', dataUrl, ts: Date.now() });
+  _saveDocFotos(fotos);
+  showToast('\uD83D\uDCF7 Foto salva na aba FOTOS!', 'success', 2200);
+  sfx('select');
+}
+
+// ── INTERAGIR ─────────────────────────────────────────────
+function docCtxInteragir() {
+  hideDocCtxMenu();
+  _docInteractMode = true;
+  const body = $('doc-viewer-body');
+  if (body) body.style.cursor = 'crosshair';
+  showToast('\u00c9 poss\u00edvel interagir com partes do documento. Clique em uma \u00e1rea de interesse. (ESC = cancelar)', 'info', 6000);
+}
+
+function closeDocInteractMode() {
+  _docInteractMode = false;
+  const body = $('doc-viewer-body');
+  if (body && !docViewerState.uvMode) body.style.cursor = '';
+}
+
+function handleDocInteractClick(e) {
+  const imgEl = $('doc-image');
+  if (!imgEl) return;
+  closeDocInteractMode();
+  const imgRect = imgEl.getBoundingClientRect();
+  const fx = (e.clientX - imgRect.left) / imgRect.width;
+  const fy = (e.clientY - imgRect.top)  / imgRect.height;
+  // Must be within image bounds
+  if (fx < 0 || fx > 1 || fy < 0 || fy > 1) { showToast('Nada de not\u00e1vel aqui.', 'info', 2000); return; }
+  const zones = docInteractionsState[docViewerState.docId] || [];
+  const hit   = zones.find(z => fx >= z.x && fx <= z.x+z.w && fy >= z.y && fy <= z.y+z.h);
+  if (hit) {
+    const lbl  = $('doc-interact-label');
+    const txt  = $('doc-interact-text');
+    const mod  = $('doc-interact-result');
+    if (lbl) lbl.textContent = '\u29ed ' + (hit.label  || 'INTERA\u00c7\u00c3O');
+    if (txt) txt.textContent = hit.result || '...';
+    if (mod) mod.classList.remove('hidden');
+    sfx('open');
+  } else {
+    showToast('Nada de not\u00e1vel aqui.', 'info', 2000);
+  }
+}
+
+function closeDocInteract() {
+  $('doc-interact-result')?.classList.add('hidden');
+}
+
+// ── Load/save doc interactions from Firestore ────────────
+async function loadDocInteractions() {
+  if (firebaseOk) {
+    try {
+      const snap = await getDoc(doc(db, 'gameState', 'docInteractions'));
+      docInteractionsState = snap.exists() ? (snap.data().zones || {}) : {};
+    } catch { docInteractionsState = {}; }
+    // Live updates
+    if (docInteractUnsub) docInteractUnsub();
+    docInteractUnsub = onSnapshot(doc(db, 'gameState', 'docInteractions'), (snap) => {
+      docInteractionsState = snap.exists() ? (snap.data().zones || {}) : {};
+    });
+  } else {
+    try { const r = localStorage.getItem('vyper_doc_interactions'); docInteractionsState = r ? JSON.parse(r) : {}; }
+    catch { docInteractionsState = {}; }
+  }
+}
+
+// ── GM: Zone Editor ───────────────────────────────────────
+function gmOpenZoneEditor(docId) {
+  _gmZoneDocId = docId;
+  const docDef = DOCUMENTS.find(d => d.id === docId);
+  if (!docDef) return;
+  $('gm-zone-modal-title').textContent = docDef.title + ' \u2014 ZONAS DE INTERA\u00c7\u00c3O';
+  const imgEl = $('gm-zone-img');
+  if (imgEl) {
+    imgEl.onload = () => _gmSetupZoneCanvas();
+    imgEl.src = docDef.image;
+  }
+  $('gm-zone-form-label').value  = '';
+  $('gm-zone-form-result').value = '';
+  _gmRenderZoneList();
+  $('gm-zone-modal').classList.remove('hidden');
+}
+
+function _gmSetupZoneCanvas() {
+  const canvas = $('gm-zone-canvas');
+  const imgEl  = $('gm-zone-img');
+  if (!canvas || !imgEl) return;
+  const r = imgEl.getBoundingClientRect();
+  canvas.width  = Math.round(r.width);
+  canvas.height = Math.round(r.height);
+  _gmClearZoneCanvas();
+  _gmDrawZones();
+
+  canvas.onmousedown = (e) => {
+    const cr = canvas.getBoundingClientRect();
+    _gmZoneSel = { active:true, startX:e.clientX-cr.left, startY:e.clientY-cr.top, endX:e.clientX-cr.left, endY:e.clientY-cr.top };
+  };
+  canvas.onmousemove = (e) => {
+    if (!_gmZoneSel.active) return;
+    const cr = canvas.getBoundingClientRect();
+    _gmZoneSel.endX=e.clientX-cr.left; _gmZoneSel.endY=e.clientY-cr.top;
+    _gmClearZoneCanvas(); _gmDrawZones(); _gmDrawSelRect();
+  };
+  canvas.onmouseup = (e) => {
+    if (!_gmZoneSel.active) return;
+    _gmZoneSel.active=false;
+    const cr = canvas.getBoundingClientRect();
+    _gmZoneSel.endX=e.clientX-cr.left; _gmZoneSel.endY=e.clientY-cr.top;
+    _gmClearZoneCanvas(); _gmDrawZones(); _gmDrawSelRect();
+    $('gm-zone-form-label')?.focus();
+  };
+}
+
+function _gmClearZoneCanvas() {
+  const c = $('gm-zone-canvas'); if (!c) return;
+  c.getContext('2d').clearRect(0, 0, c.width, c.height);
+}
+
+function _gmDrawZones() {
+  const c = $('gm-zone-canvas'); if (!c) return;
+  const ctx = c.getContext('2d');
+  (docInteractionsState[_gmZoneDocId] || []).forEach(z => {
+    const px=z.x*c.width, py=z.y*c.height, pw=z.w*c.width, ph=z.h*c.height;
+    ctx.fillStyle='rgba(34,170,85,0.14)'; ctx.fillRect(px,py,pw,ph);
+    ctx.strokeStyle='#22aa55cc'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+    ctx.strokeRect(px+0.5,py+0.5,pw,ph); ctx.setLineDash([]);
+    ctx.fillStyle='#22aa55'; ctx.font='10px monospace';
+    ctx.fillText(z.label, px+3, py+12);
+  });
+}
+
+function _gmDrawSelRect() {
+  const c = $('gm-zone-canvas'); if (!c) return;
+  const {startX:sx,startY:sy,endX:ex,endY:ey} = _gmZoneSel;
+  const rx=Math.min(sx,ex), ry=Math.min(sy,ey), rw=Math.abs(ex-sx), rh=Math.abs(ey-sy);
+  if (rw<5||rh<5) return;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='rgba(255,180,0,0.16)'; ctx.fillRect(rx,ry,rw,rh);
+  ctx.strokeStyle='#ffbb00cc'; ctx.lineWidth=1.5; ctx.setLineDash([5,3]);
+  ctx.strokeRect(rx+0.5,ry+0.5,rw,rh); ctx.setLineDash([]);
+}
+
+function _gmRenderZoneList() {
+  const el = $('gm-zone-list'); if (!el) return;
+  const zones = docInteractionsState[_gmZoneDocId] || [];
+  if (!zones.length) { el.innerHTML='<div class="gm-zone-empty">Nenhuma zona definida.</div>'; return; }
+  el.innerHTML = zones.map(z => `
+    <div class="gm-zone-item">
+      <span class="gm-zone-lbl">\u29ed ${escHtml(z.label)}</span>
+      <span class="gm-zone-pos">[${Math.round(z.x*100)}%,${Math.round(z.y*100)}% \u00d7 ${Math.round(z.w*100)}%,${Math.round(z.h*100)}%]</span>
+      <button class="gm-zone-del" onclick="App.gmRemoveDocZone('${z.id}')">&#10005;</button>
+    </div>
+  `).join('');
+}
+
+async function gmAddDocZone() {
+  const label  = ($('gm-zone-form-label')?.value  || '').trim();
+  const result = ($('gm-zone-form-result')?.value || '').trim();
+  if (!label || !result) { showToast('Preencha o r\u00f3tulo e o resultado.', 'error', 2000); return; }
+  const c = $('gm-zone-canvas');
+  const {startX:sx,startY:sy,endX:ex,endY:ey} = _gmZoneSel;
+  const rx=Math.min(sx,ex), ry=Math.min(sy,ey), rw=Math.abs(ex-sx), rh=Math.abs(ey-sy);
+  if (!c || rw < 8 || rh < 8) { showToast('Desenhe um ret\u00e2ngulo no documento primeiro.', 'error', 2500); return; }
+  const zone = { id:'zone_'+Date.now(), label, result, x:rx/c.width, y:ry/c.height, w:rw/c.width, h:rh/c.height };
+  if (!docInteractionsState[_gmZoneDocId]) docInteractionsState[_gmZoneDocId] = [];
+  docInteractionsState[_gmZoneDocId].push(zone);
+  await _gmSaveDocInteractions();
+  $('gm-zone-form-label').value=''; $('gm-zone-form-result').value='';
+  _gmZoneSel={ active:false, startX:0, startY:0, endX:0, endY:0 };
+  _gmClearZoneCanvas(); _gmDrawZones(); _gmRenderZoneList();
+  showToast('Zona adicionada!', 'success', 1800);
+}
+
+async function gmRemoveDocZone(zoneId) {
+  if (!_gmZoneDocId || !docInteractionsState[_gmZoneDocId]) return;
+  docInteractionsState[_gmZoneDocId] = docInteractionsState[_gmZoneDocId].filter(z => z.id !== zoneId);
+  await _gmSaveDocInteractions();
+  _gmClearZoneCanvas(); _gmDrawZones(); _gmRenderZoneList();
+}
+
+async function _gmSaveDocInteractions() {
+  if (firebaseOk) {
+    await setDoc(doc(db, 'gameState', 'docInteractions'), { zones: docInteractionsState });
+  } else {
+    localStorage.setItem('vyper_doc_interactions', JSON.stringify(docInteractionsState));
+  }
+}
+
+function gmCloseZoneModal() {
+  $('gm-zone-modal')?.classList.add('hidden');
+  _gmZoneDocId = null;
+  _gmZoneSel = { active:false, startX:0, startY:0, endX:0, endY:0 };
+}
+
+// ──────────────────────────────────────────────────────────
+//  DOC CIPHER SYSTEM
+// ──────────────────────────────────────────────────────────
+
+// Vigenère cipher — letras A-Z, preserva espaços/números/pontuação
+function _vigProcess(text, key, encode) {
+  const K = key.toUpperCase().replace(/[^A-Z]/g, '');
+  if (!K.length) return text.toUpperCase();
+  let ki = 0;
+  return text.toUpperCase().split('').map(ch => {
+    if (ch >= 'A' && ch <= 'Z') {
+      const shift = K.charCodeAt(ki % K.length) - 65;
+      ki++;
+      let c = ch.charCodeAt(0) - 65;
+      c = encode ? (c + shift) % 26 : (c - shift + 26) % 26;
+      return String.fromCharCode(c + 65);
+    }
+    return ch;
+  }).join('');
+}
+
+function _getCipherDeciphered() {
+  try { return JSON.parse(localStorage.getItem('vyper_deciphered_' + (state.codename || '')) || '{}'); }
+  catch { return {}; }
+}
+function _setCipherDeciphered(obj) {
+  localStorage.setItem('vyper_deciphered_' + (state.codename || ''), JSON.stringify(obj));
+}
+
+async function loadDocCiphers() {
+  if (firebaseOk) {
+    try {
+      const snap = await getDoc(doc(db, 'gameState', 'docCiphers'));
+      docCiphersState = snap.exists() ? (snap.data().ciphers || {}) : {};
+    } catch { docCiphersState = {}; }
+    if (docCiphersUnsub) docCiphersUnsub();
+    docCiphersUnsub = onSnapshot(doc(db, 'gameState', 'docCiphers'), (snap) => {
+      docCiphersState = snap.exists() ? (snap.data().ciphers || {}) : {};
+      if (docViewerState.docId) _renderCipherPanel(docViewerState.docId);
+      if (state.role === 'gm') renderGMDocs();
+    });
+  } else {
+    try { const r = localStorage.getItem('vyper_doc_ciphers'); docCiphersState = r ? JSON.parse(r) : {}; }
+    catch { docCiphersState = {}; }
+  }
+}
+
+function _renderCipherPanel(docId) {
+  const panel = $('doc-cipher-panel');
+  if (!panel) return;
+  const cipher = docCiphersState[docId];
+  if (!cipher || !cipher.text || !cipher.key) {
+    panel.classList.add('hidden');
+    return;
+  }
+  panel.classList.remove('hidden');
+  const ciphertextEl = $('doc-cipher-ciphertext');
+  const plaintextEl  = $('doc-cipher-plaintext');
+  const inputRow     = $('doc-cipher-input-row');
+  const badge        = $('doc-cipher-badge');
+  const feedback     = $('doc-cipher-feedback');
+  if (ciphertextEl) ciphertextEl.textContent = _vigProcess(cipher.text, cipher.key, true);
+  if (feedback) feedback.textContent = '';
+  const alreadyDone = !!_getCipherDeciphered()[docId];
+  if (alreadyDone) {
+    if (ciphertextEl) ciphertextEl.classList.add('hidden');
+    if (plaintextEl)  { plaintextEl.textContent = cipher.text; plaintextEl.classList.remove('hidden'); }
+    if (inputRow)     inputRow.classList.add('hidden');
+    if (badge)        badge.classList.remove('hidden');
+  } else {
+    if (ciphertextEl) ciphertextEl.classList.remove('hidden');
+    if (plaintextEl)  plaintextEl.classList.add('hidden');
+    if (inputRow)     inputRow.classList.remove('hidden');
+    if (badge)        badge.classList.add('hidden');
+    const inp = $('doc-cipher-key-input');
+    if (inp) { inp.value = ''; inp.disabled = false; }
+  }
+}
+
+function docTryDecipher() {
+  const docId  = docViewerState.docId;
+  const cipher = docCiphersState[docId];
+  if (!cipher) return;
+  const inp      = $('doc-cipher-key-input');
+  const feedback = $('doc-cipher-feedback');
+  const attempt  = (inp?.value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const correct  = (cipher.key || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!attempt) {
+    if (feedback) { feedback.textContent = '[ INSIRA A CHAVE ]'; feedback.className = 'doc-cipher-feedback doc-cipher-fail'; }
+    return;
+  }
+  if (attempt !== correct) {
+    if (feedback) { feedback.textContent = '[ CHAVE INCORRETA ]'; feedback.className = 'doc-cipher-feedback doc-cipher-fail'; }
+    if (inp) { inp.classList.add('cipher-shake'); setTimeout(() => inp.classList.remove('cipher-shake'), 400); }
+    return;
+  }
+  // Chave correta — animar decifragem
+  if (feedback) { feedback.textContent = '[ DECIFRAÇÃO BEM-SUCEDIDA ]'; feedback.className = 'doc-cipher-feedback doc-cipher-ok'; }
+  if (inp) inp.disabled = true;
+  const ciphertextEl = $('doc-cipher-ciphertext');
+  const plaintextEl  = $('doc-cipher-plaintext');
+  const inputRow     = $('doc-cipher-input-row');
+  const badge        = $('doc-cipher-badge');
+  const finalText = cipher.text.toUpperCase();
+  const animDuration = Math.min(finalText.length * 30 + 600, 4000);
+  _decodeText('doc-cipher-ciphertext', finalText, 28);
+  setTimeout(() => {
+    if (plaintextEl)  { plaintextEl.textContent = cipher.text; plaintextEl.classList.remove('hidden'); }
+    if (ciphertextEl) ciphertextEl.classList.add('hidden');
+    if (inputRow)     inputRow.classList.add('hidden');
+    if (badge)        badge.classList.remove('hidden');
+    const dec = _getCipherDeciphered();
+    dec[docId] = true;
+    _setCipherDeciphered(dec);
+    sfx('select');
+  }, animDuration);
+}
+
+function gmOpenCipherEditor(docId) {
+  _gmCipherDocId = docId;
+  const docDef = DOCUMENTS.find(d => d.id === docId);
+  const modal  = $('gm-cipher-modal');
+  if (!modal) return;
+  const title  = $('gm-cipher-modal-title');
+  if (title) title.textContent = 'CIFRA — ' + (docDef?.title || docId);
+  const existing = docCiphersState[docId];
+  const textEl = $('gm-cipher-text');
+  const keyEl  = $('gm-cipher-key');
+  if (textEl) textEl.value = existing?.text || '';
+  if (keyEl)  keyEl.value  = existing?.key  || '';
+  gmCipherPreviewUpdate();
+  modal.classList.remove('hidden');
+}
+
+function gmCloseCipherEditor() {
+  $('gm-cipher-modal')?.classList.add('hidden');
+  _gmCipherDocId = null;
+}
+
+function gmCipherPreviewUpdate() {
+  const text = ($('gm-cipher-text')?.value || '').trim();
+  const key  = ($('gm-cipher-key')?.value  || '').trim();
+  const prev = $('gm-cipher-preview');
+  if (!prev) return;
+  prev.textContent = (text && key) ? _vigProcess(text, key, true) : '—';
+}
+
+async function gmSaveCipher() {
+  if (!_gmCipherDocId) return;
+  const text = ($('gm-cipher-text')?.value || '').trim();
+  const key  = ($('gm-cipher-key')?.value  || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!text || !key) { showToast('Preencha a mensagem e a chave.', 'error'); return; }
+  docCiphersState[_gmCipherDocId] = { text, key };
+  await _gmSaveDocCiphers();
+  showToast('Cifra salva.', 'success', 1800);
+  gmCloseCipherEditor();
+  renderGMDocs();
+}
+
+async function gmClearCipher() {
+  if (!_gmCipherDocId) return;
+  delete docCiphersState[_gmCipherDocId];
+  await _gmSaveDocCiphers();
+  showToast('Cifra removida.', 'ok', 1800);
+  gmCloseCipherEditor();
+  renderGMDocs();
+}
+
+async function _gmSaveDocCiphers() {
+  if (firebaseOk) {
+    await setDoc(doc(db, 'gameState', 'docCiphers'), { ciphers: docCiphersState });
+  } else {
+    localStorage.setItem('vyper_doc_ciphers', JSON.stringify(docCiphersState));
+  }
+}
+
 // ── GM Docs Panel ─────────────────────────────────────────
-// ──────────────────────────────────────────────────────────
-//  MISSÃO TAB
-// ──────────────────────────────────────────────────────────
+function renderGMDocs() {
+  const listEl = $('gm-docs-list');
+  if (!listEl) return;
+  listEl.innerHTML = DOCUMENTS.map(d => {
+    const released  = docsReleasedState.includes(d.id);
+    const zoneCount = docInteractionsState[d.id]?.length || 0;
+    const hasCipher = !!docCiphersState[d.id];
+    return `<div class="gm-camo-item">
+      <div class="gm-camo-info">
+        <div class="gm-camo-nome">${escHtml(d.title)}</div>
+        <div class="gm-camo-status ${released ? 'gm-camo-released' : 'gm-camo-locked'}">
+          ${released ? '&#9670; LIBERADO' : '&#128274; BLOQUEADO'}
+        </div>
+      </div>
+      <button class="gm-doc-zones-btn"
+              onclick="App.gmOpenZoneEditor('${d.id}')">&#x2B21; ZONAS${zoneCount > 0 ? ' (' + zoneCount + ')' : ''}</button>
+      <button class="gm-doc-cipher-btn${hasCipher ? ' gm-doc-cipher-active' : ''}"
+              onclick="App.gmOpenCipherEditor('${d.id}')">&#9619; CIFRA${hasCipher ? ' &#10003;' : ''}</button>
+      <button class="gm-camo-toggle-btn ${released ? 'gm-camo-btn-lock' : 'gm-camo-btn-release'}"
+              onclick="App.gmToggleDocRelease('${d.id}')">
+        ${released ? 'BLOQUEAR' : 'LIBERAR'}
+      </button>
+    </div>`;
+  }).join('');
+}
 
 const MISSAO_DETAILS = [
   {
@@ -4675,34 +6055,8 @@ async function gmSaveMissaoText() {
 }
 
 // ──────────────────────────────────────────────────────────
-function renderGMDocs() {
-  const listEl = $('gm-docs-list');
-  if (!listEl) return;
-
-  if (DOCUMENTS.length === 0) {
-    listEl.innerHTML = '<div class="gm-fitas-empty">Nenhum documento cadastrado.</div>';
-    return;
-  }
-
-  listEl.innerHTML = DOCUMENTS.map(d => {
-    const released = docsReleasedState.includes(d.id);
-    return `<div class="gm-doc-item">
-      <div class="gm-doc-thumb">
-        <img src="${d.image}" alt="" class="gm-doc-thumb-img" onerror="this.style.display='none'" />
-      </div>
-      <div class="gm-doc-info">
-        <div class="gm-doc-title">${escHtml(d.title)}</div>
-        <div class="gm-doc-status ${released ? 'gm-doc-released' : 'gm-doc-locked'}">
-          ${released ? '&#9670; LIBERADO' : '&#128274; BLOQUEADO'}
-        </div>
-      </div>
-      <button class="gm-doc-toggle-btn ${released ? 'gm-doc-btn-lock' : 'gm-doc-btn-release'}"
-              onclick="App.gmToggleDocRelease('${d.id}')">
-        ${released ? 'BLOQUEAR' : 'LIBERAR'}
-      </button>
-    </div>`;
-  }).join('');
-}
+//  MISSÃO TAB
+// ──────────────────────────────────────────────────────────
 
 async function gmToggleDocRelease(docId) {
   const idx = docsReleasedState.indexOf(docId);
@@ -4714,6 +6068,229 @@ async function gmToggleDocRelease(docId) {
   await saveDocsState();
   renderGMDocs();
   showToast(idx === -1 ? 'Documento liberado para os jogadores.' : 'Documento bloqueado.', 'success', 2000);
+}
+
+// ══════════════════════════════════════════════════════════
+//  TRANSMISSÕES DE VÍDEO
+// ══════════════════════════════════════════════════════════
+
+function _persistVideoSeenSet() {
+  localStorage.setItem('vyper_videos_seen_' + (state.codename || ''), JSON.stringify([..._videoSeenSet]));
+}
+
+function loadVideoTrans() {
+  if (!firebaseOk) return;
+  if (videoTransUnsub) videoTransUnsub();
+  const seenRaw = localStorage.getItem('vyper_videos_seen_' + (state.codename || ''));
+  _videoSeenSet = new Set(seenRaw ? JSON.parse(seenRaw) : []);
+  _videoFirstLoad = true;
+  videoTransUnsub = onSnapshot(doc(db, 'gameState', 'videoTransmissions'), (snap) => {
+    videoTransState = snap.exists() ? snap.data() : { videos: [] };
+    if (!Array.isArray(videoTransState.videos)) videoTransState.videos = [];
+    if (_videoFirstLoad) {
+      // carregamento inicial: silenciosamente marcar vídeos já liberados como vistos
+      _videoFirstLoad = false;
+      videoTransState.videos.forEach(v => { if (v.released) _videoSeenSet.add(v.id); });
+      _persistVideoSeenSet();
+    } else {
+      // detectar novos lançamentos
+      videoTransState.videos.forEach(v => {
+        if (v.released && !_videoSeenSet.has(v.id)) showVideoTransAlert(v.id);
+      });
+    }
+    renderVideoTransTab();
+    if (state.role === 'gm') gmRenderVideoTrans();
+  });
+}
+
+function renderVideoTransTab() {
+  const container = $('video-trans-list');
+  if (!container) return;
+  const released = videoTransState.videos.filter(v => v.released);
+  if (!released.length) {
+    container.innerHTML = '<div class="docs-empty">Nenhuma transmissão de vídeo disponível.</div>';
+    return;
+  }
+  container.innerHTML = released.map(v => `
+    <div class="video-trans-card" onclick="App.openVideoPlayer('${escHtml(v.id)}')">
+      <div class="video-trans-thumb">
+        <div class="video-trans-play-icon">&#9654;</div>
+        <div class="video-trans-noise"></div>
+        <div class="video-trans-thumb-scan"></div>
+      </div>
+      <div class="video-trans-info">
+        <div class="video-trans-title">${escHtml(v.title)}</div>
+        <div class="video-trans-meta">&#9679; VHS &nbsp;&middot;&nbsp; ${v.releasedAt ? new Date(v.releasedAt).toLocaleDateString('pt-BR') : '&mdash;'}</div>
+      </div>
+      <div class="video-trans-arrow">&#9658;</div>
+    </div>
+  `).join('');
+}
+
+function openVideoPlayer(vId) {
+  const vid = videoTransState.videos.find(v => v.id === vId);
+  if (!vid) return;
+  const overlay = $('vhs-player-overlay');
+  const title   = $('vhs-player-title');
+  const screen  = $('vhs-player-screen');
+  const tsEl    = $('vhs-timestamp');
+  if (!overlay || !screen) return;
+  if (title) title.textContent = vid.title;
+  if (tsEl) {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    tsEl.textContent = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  }
+  screen.innerHTML = '';
+  const ytUrl = _ytEmbedUrl(vid.url);
+  if (ytUrl) {
+    const iframe = document.createElement('iframe');
+    iframe.src = ytUrl;
+    iframe.frameBorder = '0';
+    iframe.allow = 'autoplay; encrypted-media; fullscreen';
+    iframe.allowFullscreen = true;
+    iframe.className = 'vhs-iframe';
+    screen.appendChild(iframe);
+  } else if (_isDirectVideoUrl(vid.url)) {
+    const video = document.createElement('video');
+    video.src = vid.url;
+    video.controls = true;
+    video.autoplay = true;
+    video.className = 'vhs-video';
+    screen.appendChild(video);
+  } else {
+    const iframe = document.createElement('iframe');
+    iframe.src = vid.url;
+    iframe.frameBorder = '0';
+    iframe.allow = 'autoplay; encrypted-media; fullscreen';
+    iframe.allowFullscreen = true;
+    iframe.className = 'vhs-iframe';
+    screen.appendChild(iframe);
+  }
+  overlay.classList.remove('hidden');
+  void overlay.offsetWidth;
+  overlay.classList.add('vhs-active');
+}
+
+function closeVideoPlayer() {
+  const overlay = $('vhs-player-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('vhs-active');
+  setTimeout(() => {
+    overlay.classList.add('hidden');
+    const screen = $('vhs-player-screen');
+    if (screen) screen.innerHTML = '';
+  }, 320);
+}
+
+function showVideoTransAlert(vId) {
+  const vid = videoTransState.videos.find(v => v.id === vId);
+  if (!vid || _videoSeenSet.has(vId)) return;
+  _videoAlertId = vId;
+  _videoSeenSet.add(vId);
+  _persistVideoSeenSet();
+  const nameEl  = $('video-alert-title');
+  const alertEl = $('video-trans-alert');
+  if (nameEl) nameEl.textContent = vid.title;
+  if (alertEl) {
+    alertEl.classList.remove('hidden', 'doc-new-dismiss-out');
+    void alertEl.offsetWidth;
+    alertEl.classList.add('doc-new-visible');
+  }
+}
+
+function dismissVideoAlert(openVideo = false) {
+  const alertEl = $('video-trans-alert');
+  if (!alertEl) return;
+  alertEl.classList.remove('doc-new-visible');
+  alertEl.classList.add('doc-new-dismiss-out');
+  const vId = _videoAlertId;
+  _videoAlertId = null;
+  setTimeout(() => {
+    alertEl.classList.add('hidden');
+    alertEl.classList.remove('doc-new-dismiss-out');
+    if (openVideo && vId) {
+      switchTab('docs');
+      docsSubtab('videos');
+      setTimeout(() => openVideoPlayer(vId), 200);
+    }
+  }, 600);
+}
+
+function _ytEmbedUrl(url) {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  if (m) return `https://www.youtube.com/embed/${m[1]}?autoplay=1&controls=1&rel=0&modestbranding=1`;
+  return null;
+}
+
+function _isDirectVideoUrl(url) {
+  return /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url);
+}
+
+function gmRenderVideoTrans() {
+  const container = $('gm-video-list');
+  if (!container) return;
+  const videos = videoTransState.videos || [];
+  if (!videos.length) {
+    container.innerHTML = '<div class="gm-fitas-empty">Nenhuma transmissão cadastrada.</div>';
+    return;
+  }
+  container.innerHTML = videos.map(v => `
+    <div class="gm-video-item">
+      <div class="gm-video-info">
+        <div class="gm-video-title">${escHtml(v.title)}</div>
+        <div class="gm-video-url" title="${escHtml(v.url)}">${v.url.length > 38 ? escHtml(v.url.slice(0,38)) + '\u2026' : escHtml(v.url)}</div>
+      </div>
+      <div class="gm-video-actions">
+        <button class="gm-video-release-btn${v.released ? ' gm-video-released' : ''}"
+                onclick="App.gmToggleVideoRelease('${escHtml(v.id)}')">
+          ${v.released ? '&#9679;&nbsp;BLOQ.' : '&#9675;&nbsp;LIB.'}
+        </button>
+        <button class="gm-video-preview-btn" title="Visualizar" onclick="App.openVideoPlayer('${escHtml(v.id)}')">&#9654;</button>
+        <button class="gm-video-del-btn" title="Remover" onclick="App.gmRemoveVideoTrans('${escHtml(v.id)}')">&#10005;</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function gmAddVideoTrans() {
+  const titleEl = $('gm-video-add-title');
+  const urlEl   = $('gm-video-add-url');
+  if (!titleEl || !urlEl) return;
+  const title = titleEl.value.trim();
+  const url   = urlEl.value.trim();
+  if (!title) { showToast('Insira um título.', 'error'); return; }
+  if (!url || !url.startsWith('http')) { showToast('URL inválida.', 'error'); return; }
+  const newVid = { id: 'vid_' + Date.now(), title, url, released: false, releasedAt: null };
+  videoTransState.videos.push(newVid);
+  await _gmSaveVideoTrans();
+  titleEl.value = '';
+  urlEl.value = '';
+  showToast('Transmissão adicionada.', 'success', 1800);
+}
+
+async function gmRemoveVideoTrans(vId) {
+  videoTransState.videos = videoTransState.videos.filter(v => v.id !== vId);
+  await _gmSaveVideoTrans();
+  showToast('Transmissão removida.', 'ok', 1800);
+}
+
+async function gmToggleVideoRelease(vId) {
+  const vid = videoTransState.videos.find(v => v.id === vId);
+  if (!vid) return;
+  vid.released = !vid.released;
+  vid.releasedAt = vid.released ? Date.now() : null;
+  await _gmSaveVideoTrans();
+  showToast(vid.released ? 'Transmissão liberada para os agentes.' : 'Transmissão bloqueada.', 'success', 2000);
+}
+
+async function _gmSaveVideoTrans() {
+  try {
+    await setDoc(doc(db, 'gameState', 'videoTransmissions'), { videos: videoTransState.videos });
+  } catch (e) {
+    console.error('_gmSaveVideoTrans:', e);
+    showToast('Erro ao salvar transmissão.', 'error');
+  }
 }
 
 // ──────────────────────────────────────────────────────────
@@ -4767,8 +6344,17 @@ window.App = {
   toggleDocUV,
   saveDocAnnotation,
   gmToggleDocRelease,
+  gmOpenZoneEditor, gmCloseZoneModal, gmAddDocZone, gmRemoveDocZone,
+  gmOpenCipherEditor, gmCloseCipherEditor, gmSaveCipher, gmClearCipher, gmCipherPreviewUpdate,
+  docsSubtab, deleteDocFoto,
+  docCtxFotografar, docCtxInteragir, closeDocInteract, hideDocCtxMenu,
+  docTryDecipher,
   dismissNewDocAlert,
   markDocRead,
+  // ── VIDEO TRANS ──
+  openVideoPlayer, closeVideoPlayer,
+  renderVideoTransTab, dismissVideoAlert,
+  gmRenderVideoTrans, gmAddVideoTrans, gmRemoveVideoTrans, gmToggleVideoRelease,
   gmSaveMissaoText,
   openMissaoDetail,
   closeMissaoDetail,
@@ -4792,6 +6378,10 @@ window.App = {
   bolsaTransferir,
   renderBolsaActionsPublic,
   bolsaAutoPlaceStaged,
+  bolsaToggleCraftMode,
+  bolsaCraftToggleSlot,
+  bolsaCombinar,
+  craftTutSetTab,
   armaParaBolsa,
   gmEnviarParaBolsa,
   gmRemoverDaBolsa,
@@ -4800,6 +6390,9 @@ window.App = {
   gmLootDistribuir,
   gmDeleteOperador,
   gmSavePsych, gmToggleGatilho, gmSetMedicado, gmPsychSliderInput,
+  gmToggleStatusNeg,
+  gmEnviarMensagemCifrada, fecharMensagemCifrada,
+  gmSetParanormalNivel,
   bolsaCamoToggle,
   bolsaCamoSelect,
   equiparCamuflagem,
@@ -4811,6 +6404,18 @@ window.App = {
 // ──────────────────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    // Dismiss video alert
+    const videoAlert = $('video-trans-alert');
+    if (videoAlert && !videoAlert.classList.contains('hidden')) {
+      dismissVideoAlert(false);
+      return;
+    }
+    // Close VHS player
+    const vhsOverlay = $('vhs-player-overlay');
+    if (vhsOverlay && !vhsOverlay.classList.contains('hidden')) {
+      closeVideoPlayer();
+      return;
+    }
     // Dismiss new doc alert first
     const newAlert = $('doc-new-alert');
     if (newAlert && !newAlert.classList.contains('hidden')) {
@@ -4839,4 +6444,4 @@ document.addEventListener('keydown', (e) => {
 //  START
 // ──────────────────────────────────────────────────────────
 initDocViewerEvents();
-runBoot();
+runBoot(); 

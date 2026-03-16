@@ -13,6 +13,8 @@
 
 <!-- Psych overlay — full-screen effect layer, driven by CSS body classes -->
 <div id="psych-overlay" class="psych-overlay"></div>
+<!-- Paranormal radar overlay -->
+<div id="paranormal-overlay" class="paranormal-overlay pnl-ov-lv0"></div>
 
 <!-- BOOT -->
 <div id="screen-boot" class="screen active">
@@ -261,6 +263,9 @@
         </div>
       </div>
 
+      <!-- status negativos strip -->
+      <div id="status-neg-strip" class="status-neg-strip"></div>
+
     </div><!-- /s-center -->
 
     <!-- RIGHT: NAV -->
@@ -272,6 +277,10 @@
       <div class="nav-tab" id="nav-radio" onclick="App.switchTab('radio')">
         <div class="nav-ico-box"><img src="icones/7.png" class="nav-ico" /></div>
         <span class="nav-lbl">/RADIO</span>
+      </div>
+      <div class="nav-tab" id="nav-radar" onclick="App.switchTab('radar')">
+        <div class="nav-ico-box"><span class="nav-ico-char">&#x29ED;</span></div>
+        <span class="nav-lbl">/RADAR</span>
       </div>
       <div class="nav-tab" id="nav-docs" onclick="App.switchTab('docs')">
         <div class="nav-ico-box"><img src="icones/8.png" class="nav-ico" /></div>
@@ -409,11 +418,30 @@
         </div>
       </div>
     </div>
+    <div id="tab-panel-radar" class="tab-panel hidden">
+      <div id="paranormal-radar-section"></div>
+    </div>
     <div id="tab-panel-docs" class="tab-panel docs-tab-panel hidden">
       <div class="docs-wrap">
-        <div class="docs-heading">&#9658; DOCUMENTOS</div>
-        <div id="docs-list" class="docs-list">
-          <div class="docs-empty">Nenhum documento disponível.</div>
+        <div class="docs-subtab-bar">
+          <button class="docs-subtab-btn docs-subtab-active" data-subtab="docs" onclick="App.docsSubtab('docs')">&#9658; DOCUMENTOS</button>
+          <button class="docs-subtab-btn" data-subtab="fotos" onclick="App.docsSubtab('fotos')">&#9658; FOTOS</button>
+          <button class="docs-subtab-btn" data-subtab="videos" onclick="App.docsSubtab('videos')">&#9658; V&#205;DEOS</button>
+        </div>
+        <div id="docs-panel-docs">
+          <div id="docs-list" class="docs-list">
+            <div class="docs-empty">Nenhum documento dispon&#237;vel.</div>
+          </div>
+        </div>
+        <div id="docs-panel-fotos" class="hidden">
+          <div id="fotos-grid" class="fotos-grid">
+            <div class="docs-empty">Nenhuma foto tirada ainda.</div>
+          </div>
+        </div>
+        <div id="docs-panel-videos" class="hidden">
+          <div id="video-trans-list" class="video-trans-list">
+            <div class="docs-empty">Nenhuma transmiss&#227;o dispon&#237;vel.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -579,7 +607,15 @@
   <div id="tab-panel-bolsa" class="tab-panel bolsa-tab-panel hidden">
     <div class="bolsa-wrap">
 
-      <!-- COLUNA ESQUERDA: header + grid -->
+      <!-- COLUNA TUTORIAL: receitas de craft (esquerda) -->
+      <div class="bolsa-col-tutorial">
+        <div class="bolsa-tut-header">&#9874; COMBINACOES</div>
+        <div class="bolsa-tut-list" id="bolsa-tut-list">
+          <!-- preenchido por renderCraftTutorial() -->
+        </div>
+      </div>
+
+      <!-- COLUNA CENTRAL: header + grid -->
       <div class="bolsa-col-left">
         <div class="bolsa-header">
           <span class="bolsa-title">&#9649; BOLSA DE CAMPO</span>
@@ -592,11 +628,24 @@
         </div>
       </div>
 
-      <!-- COLUNA DIREITA: ações + fila + camuflagem -->
+      <!-- COLUNA DIREITA: ações + craft + fila + camuflagem -->
       <div class="bolsa-col-right">
         <div class="bolsa-actions" id="bolsa-actions">
           <div class="bolsa-hint">&#9658; Selecione um item para interagir</div>
         </div>
+
+        <!-- FABRICAR -->
+        <div class="bolsa-craft-section">
+          <div class="bolsa-craft-hdr" onclick="App.bolsaToggleCraftMode()">
+            <span class="bolsa-craft-hdr-ico">&#9874;</span>
+            <span class="bolsa-craft-hdr-title">FABRICAR</span>
+            <span class="craft-mode-badge" id="craft-mode-badge">INATIVO</span>
+          </div>
+          <div id="bolsa-craft-panel">
+            <div class="craft-hint-idle">&#9658; Ative para combinar ingredientes da bolsa</div>
+          </div>
+        </div>
+
         <div class="bolsa-staged-area">
           <div class="bolsa-staged-title">&#9649; AGUARDANDO ESPA&#xC7;O</div>
           <div class="bolsa-staged-list" id="bolsa-staged-list">
@@ -640,11 +689,41 @@
       <div class="doc-classified-wrap hidden" id="doc-classified-wrap">
         <div class="doc-classified-stamp">CLASSIFICADO</div>
       </div>
+      <canvas id="doc-select-canvas" class="doc-select-canvas hidden"></canvas>
     </div>
     <div class="doc-annotation-bar">
       <div class="doc-ann-label">&#9658; ANOTAÇÕES</div>
       <textarea class="doc-ann-input" id="doc-ann-input" placeholder="Suas anotações sobre este documento..." rows="3"></textarea>
       <button class="doc-ann-save" onclick="App.saveDocAnnotation()">SALVAR</button>
+    </div>
+    <!-- Cipher panel -->
+    <div id="doc-cipher-panel" class="doc-cipher-panel hidden">
+      <div class="doc-cipher-header">
+        <span class="doc-cipher-title">&#9619; MENSAGEM CIFRADA DETECTADA</span>
+        <span id="doc-cipher-badge" class="doc-cipher-badge hidden">&#10003; DECIFRADO</span>
+      </div>
+      <div id="doc-cipher-ciphertext" class="doc-cipher-ciphertext"></div>
+      <div id="doc-cipher-plaintext" class="doc-cipher-plaintext hidden"></div>
+      <div id="doc-cipher-input-row" class="doc-cipher-input-row">
+        <input id="doc-cipher-key-input" class="doc-cipher-key-input"
+               placeholder="INSERIR CHAVE..." maxlength="32"
+               onkeydown="if(event.key==='Enter')App.docTryDecipher()" />
+        <button class="doc-cipher-try-btn" onclick="App.docTryDecipher()">DECIFRAR</button>
+      </div>
+      <div id="doc-cipher-feedback" class="doc-cipher-feedback"></div>
+    </div>
+    <!-- Context menu -->
+    <div id="doc-ctx-menu" class="doc-ctx-menu hidden">
+      <button class="doc-ctx-item" onclick="App.docCtxFotografar()">&#128247; FOTOGRAFAR &#193;REA</button>
+      <button class="doc-ctx-item" onclick="App.docCtxInteragir()">&#9671; INTERAGIR</button>
+    </div>
+    <!-- Interact result -->
+    <div id="doc-interact-result" class="doc-interact-result hidden">
+      <div class="doc-interact-panel">
+        <div class="doc-interact-label" id="doc-interact-label">INTERA&#199;&#195;O</div>
+        <div class="doc-interact-text" id="doc-interact-text"></div>
+        <button class="doc-interact-close" onclick="App.closeDocInteract()">FECHAR</button>
+      </div>
     </div>
   </div>
 
@@ -663,6 +742,28 @@
       <div class="doc-new-actions">
         <button class="doc-new-btn-view" id="doc-new-btn-view" onclick="App.dismissNewDocAlert(true)">&#9658; VISUALIZAR ARQUIVO</button>
         <button class="doc-new-btn-dismiss" onclick="App.dismissNewDocAlert(false)">FECHAR</button>
+      </div>
+    </div>
+  </div>
+  <!-- Mensagem Cifrada overlay -->
+  <div id="cifrada-overlay" class="cifrada-overlay hidden">
+    <div class="cifrada-panel">
+      <div class="cifrada-header">⬡ TRANSMISSÃO RECEBIDA</div>
+      <div class="cifrada-label" id="cifrada-label">DECODIFICANDO...</div>
+      <div class="cifrada-text" id="cifrada-text"></div>
+      <button class="cifrada-close" onclick="App.fecharMensagemCifrada()">✕ FECHAR</button>
+    </div>
+  </div>
+  <!-- Alerta de transmissão de vídeo -->
+  <div id="video-trans-alert" class="video-trans-alert hidden">
+    <div class="video-alert-inner">
+      <div class="video-alert-header">[ TRANSMISS&#195;O DE V&#205;DEO RECEBIDA ]</div>
+      <div class="video-alert-icon">&#128249;</div>
+      <div class="video-alert-title-label" id="video-alert-title">&#8212;</div>
+      <div class="video-alert-subtitle">// SINAL INTERCEPTADO //</div>
+      <div class="video-alert-actions">
+        <button class="video-alert-btn-view" onclick="App.dismissVideoAlert(true)">&#9658; ASSISTIR TRANSMISS&#195;O</button>
+        <button class="video-alert-btn-dismiss" onclick="App.dismissVideoAlert(false)">FECHAR</button>
       </div>
     </div>
   </div>
@@ -819,7 +920,30 @@
       </div>
     </div>
 
-    <!-- ── Operadores (aberto por padrão) ─────────────── -->
+    <!-- ── Transmissões de Vídeo ────────────────────────────────── -->
+    <div class="gm-section gm-section-collapsed" id="gmsec-videos">
+      <div class="gm-sec-title gm-sec-toggle" onclick="App.gmToggleSection('videos')">
+        <span>&#9658; TRANSMISS&#213;ES DE V&#205;DEO</span>
+        <span class="gm-sec-chevron">&#9660;</span>
+      </div>
+      <div class="gm-section-body">
+        <div id="gm-video-list" class="gm-video-list">
+          <div class="gm-fitas-empty">Nenhuma transmiss&#227;o cadastrada.</div>
+        </div>
+        <div class="gm-video-form">
+          <div class="gm-video-form-row">
+            <input id="gm-video-add-title" class="gm-video-form-input" type="text"
+                   placeholder="T&#237;tulo da transmiss&#227;o..." maxlength="80" />
+          </div>
+          <div class="gm-video-form-row">
+            <input id="gm-video-add-url" class="gm-video-form-input" type="url"
+                   placeholder="URL do v&#237;deo (YouTube ou .mp4)..." />
+            <button class="gm-video-add-btn" onclick="App.gmAddVideoTrans()">+ ADICIONAR</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ── Operadores (aberto por padrão) ───────────────── -->
     <div class="gm-section" id="gmsec-agents">
       <div class="gm-sec-title gm-sec-toggle" onclick="App.gmToggleSection('agents')">
         <span>&#9658; OPERADORES REGISTRADOS</span>
@@ -874,6 +998,89 @@
   <div class="modal-panel">
     <div class="modal-title" id="grade-modal-title">SELECIONAR GRAU</div>
     <div class="modal-opts" id="grade-modal-options"></div>
+  </div>
+</div>
+
+<!-- GM Zone Editor Modal -->
+<div id="gm-zone-modal" class="gm-zone-modal hidden">
+  <div class="gm-zone-modal-inner">
+    <div class="gm-zone-modal-header">
+      <span id="gm-zone-modal-title">ZONAS DE INTERA&#199;&#195;O</span>
+      <button class="gm-zone-modal-close" onclick="App.gmCloseZoneModal()">&#10005; FECHAR</button>
+    </div>
+    <div class="gm-zone-modal-body">
+      <div class="gm-zone-img-wrap">
+        <img id="gm-zone-img" src="" alt="" class="gm-zone-img" />
+        <canvas id="gm-zone-canvas" class="gm-zone-canvas"></canvas>
+      </div>
+      <div class="gm-zone-side">
+        <div class="gm-zone-side-label">ZONAS DEFINIDAS</div>
+        <div id="gm-zone-list" class="gm-zone-list"></div>
+        <div class="gm-zone-form">
+          <div class="gm-zone-hint">Arraste na imagem para marcar uma &#225;rea.</div>
+          <div class="gm-zone-form-row">
+            <label class="gm-zone-form-lbl">R&#211;TULO</label>
+            <input id="gm-zone-form-label" class="gm-zone-form-input" type="text" placeholder="Ex: Assinatura" maxlength="50" />
+          </div>
+          <div class="gm-zone-form-row">
+            <label class="gm-zone-form-lbl">RESULTADO</label>
+            <textarea id="gm-zone-form-result" class="gm-zone-form-textarea" placeholder="O que o jogador v&#234; ao interagir..." rows="4"></textarea>
+          </div>
+          <button class="gm-zone-add-btn" onclick="App.gmAddDocZone()">+ ADICIONAR ZONA</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="gm-cipher-modal" class="gm-cipher-modal hidden">
+  <div class="gm-cipher-modal-inner">
+    <div class="gm-cipher-modal-header">
+      <span id="gm-cipher-modal-title">EDITOR DE CIFRA</span>
+      <button class="gm-cipher-modal-close" onclick="App.gmCloseCipherEditor()">&#10005; FECHAR</button>
+    </div>
+    <div class="gm-cipher-modal-body">
+      <div class="gm-cipher-form-row">
+        <label class="gm-cipher-lbl">MENSAGEM SECRETA</label>
+        <textarea id="gm-cipher-text" class="gm-cipher-textarea"
+                  placeholder="Texto revelado quando decifrado..." rows="4"
+                  oninput="App.gmCipherPreviewUpdate()"></textarea>
+      </div>
+      <div class="gm-cipher-form-row">
+        <label class="gm-cipher-lbl">CHAVE DE DECIFRAGEM</label>
+        <input id="gm-cipher-key" class="gm-cipher-input" type="text"
+               placeholder="Ex: ARCANJO" maxlength="32"
+               oninput="App.gmCipherPreviewUpdate()" />
+      </div>
+      <div class="gm-cipher-form-row">
+        <label class="gm-cipher-lbl">PR&#201;VIA — texto cifrado (o que o jogador v&#234;)</label>
+        <div id="gm-cipher-preview" class="gm-cipher-preview">—</div>
+      </div>
+    </div>
+    <div class="gm-cipher-modal-footer">
+      <button class="gm-cipher-save-btn" onclick="App.gmSaveCipher()">SALVAR CIFRA</button>
+      <button class="gm-cipher-clear-btn" onclick="App.gmClearCipher()">REMOVER CIFRA</button>
+      <button class="gm-cipher-cancel-btn" onclick="App.gmCloseCipherEditor()">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- VHS Player -->
+<div id="vhs-player-overlay" class="vhs-player-overlay hidden">
+  <div class="vhs-player-header">
+    <span class="vhs-player-title" id="vhs-player-title">TRANSMISS&#195;O</span>
+    <button class="vhs-player-close" onclick="App.closeVideoPlayer()">&#10005; FECHAR</button>
+  </div>
+  <div class="vhs-player-body">
+    <div id="vhs-player-screen" class="vhs-player-screen"></div>
+    <div class="vhs-scanlines"></div>
+    <div class="vhs-noise-overlay"></div>
+    <div class="vhs-glitch-lines"></div>
+    <div class="vhs-hud">
+      <div class="vhs-channel">CH-04 // INTERCEPTADO</div>
+      <div class="vhs-rec-badge"><div class="vhs-rec-dot"></div>REC</div>
+      <div class="vhs-timestamp" id="vhs-timestamp">00/00/0000 00:00:00</div>
+    </div>
   </div>
 </div>
 
