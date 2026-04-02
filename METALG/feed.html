@@ -1,0 +1,3018 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carregando...</title>
+  <link rel="stylesheet" href="feed.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sixtyfour+Convergence&display=swap" rel="stylesheet">
+  <link rel="icon" href="icones/cat.png" type="image/png">
+</head>
+<body>
+
+  <!-- Overlay de conexão -->
+  <div id="conn-overlay">
+    <div id="conn-box">
+      <div id="conn-cat">=^..^=</div>
+      <div id="conn-site-label">DARKNET · REDE SEGURA · PROTOCOLO TOR</div>
+      <div id="conn-bar-wrap"><div id="conn-bar"></div></div>
+      <div id="conn-msg">INICIANDO PROTOCOLO TOR...</div>
+    </div>
+  </div>
+
+  <!-- Ticker de alerta rolando no topo -->
+  <div id="site-ticker">
+    <span id="site-ticker-inner">
+      ⚠ ATENÇÃO: ESTE SITE É MONITORADO POR AGÊNCIAS GOVERNAMENTAIS &nbsp;·&nbsp;
+      USE VPN &nbsp;·&nbsp; NÃO CONFIE EM NINGUÉM &nbsp;·&nbsp;
+      SE VOCÊ ESTÁ LENDO ISSO, JÁ É TARDE DEMAIS &nbsp;·&nbsp;
+      A VERDADE NÃO PODE SER APAGADA &nbsp;·&nbsp;
+      ELES NÃO QUEREM QUE VOCÊ SAIBA &nbsp;·&nbsp;
+      COMPARTILHE ANTES QUE SUMAMOS &nbsp;&nbsp;&nbsp;
+    </span>
+  </div>
+
+  <!-- Top bar principal -->
+  <div id="site-topbar">
+    <div id="site-name">—</div>
+    <div id="site-topbar-right">
+      <div id="site-welcome" style="display:none">OLÁ, <span id="site-username"></span></div>
+      <div id="site-ip-warn" style="display:none">⚠ IP: <span id="site-ip-val"></span> · NÃO MASCARADO</div>
+      <div id="site-url-display"></div>
+      <div id="site-online-status">
+        <span id="site-online-dot"></span>
+        SERVIDOR ONLINE · CONEXÃO CRIPTOGRAFADA
+      </div>
+    </div>
+  </div>
+
+  <!-- Descrição do site -->
+  <div id="site-desc-bar" style="display:none"></div>
+
+  <!-- Aviso de cookies (irônico) -->
+  <div id="cookie-notice">
+    <span id="cookie-notice-text">
+      🍪 Este site usa cookies para garantir sua experiência anônima. Ao continuar navegando, você concorda com nossa
+      <u>Política de Privacidade</u> e <u>Termos de Uso</u> da Darknet.
+    </span>
+    <button id="cookie-btn" onclick="aceitarCookies()">
+      ACEITAR E CONTINUAR
+    </button>
+  </div>
+
+  <!-- Conteúdo principal -->
+  <div id="feed-main">
+    <div id="feed-error"  style="display:none"></div>
+    <div id="feed-posts"  style="display:none"></div>
+    <div id="feed-empty"  style="display:none">— SEM PUBLICAÇÕES —</div>
+  </div>
+
+  <!-- Footer -->
+  <div id="site-footer">
+    <div id="site-footer-inner">
+      <div id="site-footer-info"></div>
+      <div id="site-counter">
+        <span id="site-counter-label">VISITAS ÚNICAS</span>
+        <span id="site-counter-num">0000047</span>
+      </div>
+    </div>
+    <img id="site-footer-cat" src="icones/cat.png" alt="" />
+
+    <!-- Botão da loja + dock em coluna fixa -->
+    <div id="addon-sidebar">
+      <button id="addon-store-btn" title="Addons" onclick="toggleAddonStore()">&#x2B21;</button>
+      <div id="addon-dock"></div>
+    </div>
+
+    <div id="site-footer-actions">
+      <button id="email-btn" onclick="abrirEmail()">📨 MENSAGEM SEGURA</button>
+    </div>
+    <div id="site-footer-copy"></div>
+  </div>
+
+  <!-- Modal de e-mail seguro -->
+  <div id="email-modal">
+    <div id="email-box">
+      <div id="email-hdr">
+        <span>📨 MENSAGEM SEGURA &middot; DARKNET MAIL</span>
+        <button id="email-close" onclick="fecharEmail()">✕</button>
+      </div>
+      <div id="email-status"></div>
+      <div class="email-field">
+        <label class="email-label">PARA:</label>
+        <input type="text" id="email-para" class="email-input"
+               autocomplete="off" spellcheck="false"
+               placeholder="destinatario@rede.net" />
+      </div>
+      <div class="email-field">
+        <label class="email-label">MENSAGEM:</label>
+        <textarea id="email-msg" class="email-textarea" rows="5"
+                  spellcheck="false" placeholder="..."></textarea>
+      </div>
+      <button id="email-send" onclick="enviarEmail()">ENVIAR &#9654;</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       LOJA DE ADDONS
+       ═══════════════════════════════════════════════ -->
+  <div id="addon-store-overlay" onclick="fecharAddonStore()"></div>
+  <div id="addon-store">
+    <div id="addon-store-hdr">
+      <span id="addon-store-title">⬡ ADDONS &middot; DARKNET STORE</span>
+      <button id="addon-store-close" onclick="fecharAddonStore()">✕</button>
+    </div>
+    <div id="addon-store-tabs">
+      <button class="addon-tab addon-tab--active" onclick="mudarTab(this,'loja')">LOJA</button>
+      <button class="addon-tab" onclick="mudarTab(this,'instalados')">INSTALADOS</button>
+    </div>
+    <div id="addon-store-body"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       HACK SEQUENCE — overlays de invasão
+       ═══════════════════════════════════════════════ -->
+  <div id="hack-overlay"></div>
+  <div id="catskull-overlay">
+    <img id="catskull-img" src="icones/feed/catskull.gif" alt="" />
+  </div>
+
+  <!-- HACK SEQUENCE — painel de shutdown com timer -->
+  <div id="hack-timer-panel" style="display:none">
+    <div id="hack-timer-skull">☠</div>
+    <div id="hack-timer-label">SHUTDOWN DO SISTEMA IMINENTE</div>
+    <div id="hack-timer-vyper">PROTOCOLO VYPER · EMERGÊNCIA NÍVEL 3</div>
+    <div id="hack-timer-clock">
+      <span id="hack-timer-num">41</span><span id="hack-timer-colon">:</span><span id="hack-timer-ms">00</span>
+    </div>
+    <div id="hack-timer-sublabel">TODOS OS DADOS SERÃO DESTRUÍDOS</div>
+    <div id="hack-timer-hint">[ use o TERMINUS para contra-hackear ]</div>
+  </div>
+
+  <!-- HACK SEQUENCE — banco de dados (pós-sucesso) -->
+  <div id="hack-db-panel" style="display:none">
+    <div id="hack-db-hdr">
+      <span>⬡ DARKNET.CAT · BANCO DE DADOS INTERNO</span>
+      <button onclick="document.getElementById('hack-db-panel').classList.remove('hack-db--vis');setTimeout(()=>document.getElementById('hack-db-panel').style.display='none',500)">✕</button>
+    </div>
+    <div id="hack-db-info">[V-7]: Acesso concedido. Bem-vindo às entranhas do sistema.</div>
+    <div id="hack-db-files">
+      <div class="hack-db-file">
+        <span class="hack-db-icon">📁</span>
+        <div class="hack-db-fname">/database/op_cinza_completo.enc</div>
+        <div class="hack-db-fmeta">2.3 MB · criptografado · acesso: ROOT</div>
+      </div>
+      <div class="hack-db-file">
+        <span class="hack-db-icon">📁</span>
+        <div class="hack-db-fname">/database/vyper_lista_agentes.dat</div>
+        <div class="hack-db-fmeta">0.8 MB · criptografado · acesso: ROOT</div>
+      </div>
+      <div class="hack-db-file hack-db-file--avail" onclick="hackDownloadArquivo()">
+        <span class="hack-db-icon">📥</span>
+        <div class="hack-db-fname">/database/sessao_07_continua.zip</div>
+        <div class="hack-db-fmeta" id="hack-db-dl-meta">??? KB · disponível para download · CLIQUE</div>
+      </div>
+    </div>
+    <div id="hack-db-note">[ Arquivo adicional será desbloqueado futuramente ]</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       NAUMT AI — ASSISTENTE FELINO
+       ═══════════════════════════════════════════════ -->
+  <div id="naumt-ai-win" style="display:none">
+    <div id="naumt-ai-titlebar">
+      <span id="naumt-ai-icon">≽^•⩊•^≼</span>
+      <span id="naumt-ai-title">NauMtAI v0.1α &mdash; Assistente Felino</span>
+      <div id="naumt-ai-btns">
+        <button onclick="fecharNaumtAI()" title="Fechar">✕</button>
+      </div>
+    </div>
+    <div id="naumt-ai-avatar-bar">
+      <div id="naumt-ai-avatar-wrap">
+        <img id="naumt-ai-avatar-img" src="icones/feed/addons/naumt/base.gif" alt="" />
+      </div>
+      <div id="naumt-ai-avatar-info">
+        <div id="naumt-ai-avatar-name">NauMtAI</div>
+        <div id="naumt-ai-avatar-mood">online · =^..^=</div>
+      </div>
+    </div>
+    <div id="naumt-ai-messages"></div>
+    <div id="naumt-ai-status" style="display:none">≽^•⩊•^≼ digitando...</div>
+    <div id="naumt-ai-inputrow">
+      <span id="naumt-ai-prompt">você:</span>
+      <input id="naumt-ai-input" type="text" autocomplete="off" spellcheck="false"
+             placeholder="faça uma pergunta..." onkeydown="naumtAI_key(event)" />
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       DOOMCLOCK — RELÓGIO DO APOCALIPSE
+       ═══════════════════════════════════════════════ -->
+  <div id="doomclock-win" style="display:none">
+    <div id="doomclock-titlebar">
+      <span id="doomclock-icon">☣</span>
+      <span id="doomclock-title">DoomClock v6.6.6 &mdash; Nível de Extinção</span>
+      <div id="doomclock-btns">
+        <button onclick="fecharDoomClock()" title="Fechar">✕</button>
+      </div>
+    </div>
+    <div id="doomclock-body">
+      <div id="doomclock-label">NÍVEL DE EXTINÇÃO IMINENTE DA DARKNET</div>
+      <div id="doomclock-pct-wrap">
+        <span id="doomclock-pct">0</span><span id="doomclock-pct-sym">%</span>
+      </div>
+      <div id="doomclock-bar-wrap">
+        <div id="doomclock-bar"></div>
+      </div>
+      <div id="doomclock-status">CALCULANDO...</div>
+      <div id="doomclock-log"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       PARANOIA.EXE — RASTREAMENTO DE ENTIDADES
+       ═══════════════════════════════════════════════ -->
+  <div id="paranoia-win" style="display:none">
+    <div id="paranoia-titlebar">
+      <span id="paranoia-icon">◉</span>
+      <span id="paranoia-title">Paranoia.exe &mdash; Monitor de Vigilância</span>
+      <div id="paranoia-btns">
+        <button onclick="fecharParanoia()" title="Fechar">✕</button>
+      </div>
+    </div>
+    <div id="paranoia-body">
+      <div id="paranoia-header">
+        <div id="paranoia-count-label">ENTIDADES MONITORANDO VOCÊ AGORA:</div>
+        <div id="paranoia-count">0</div>
+      </div>
+      <div id="paranoia-list"></div>
+      <button id="paranoia-scan-btn" onclick="paranoiaScan()">◉ ESCANEAR NOVAMENTE</button>
+      <div id="paranoia-scan-msg"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       TERMINUS — TERMINAL EMULADO
+       ═══════════════════════════════════════════════ -->
+  <div id="terminus-win" style="display:none">
+    <div id="terminus-titlebar">
+      <span id="terminus-icon">▶_</span>
+      <span id="terminus-title">TERMINUS v2.3 &mdash; root@darknet</span>
+      <div id="terminus-btns">
+        <button onclick="terminus_minimize()" title="Minimizar">─</button>
+        <button onclick="fecharTerminus()" title="Fechar">✕</button>
+      </div>
+    </div>
+    <div id="terminus-output"></div>
+    <div id="terminus-inputrow">
+      <span id="terminus-prompt">root@darknet:~$</span>
+      <input id="terminus-input" type="text" autocomplete="off" spellcheck="false"
+             placeholder="digite um comando..." onkeydown="terminus_key(event)" />
+    </div>
+  </div>
+
+  <script>
+    // ──────────────────────────────────────────────────────
+    //  CONTEÚDO DOS SITES — edite aqui para atualizar
+    //  Para adicionar um novo site, inclua uma nova entrada
+    //  no objeto FEEDS com a chave sendo o slug (ex: 'novosite.net')
+    // ──────────────────────────────────────────────────────
+    const FEEDS = {
+
+      'darknet.cat': {
+        titulo:    'DARKNET.CAT',
+        descricao: 'notícias do submundo · sem filtros · sem censura · sem remorso · =^..^=',
+        acento:    '#cc0000',
+        isCatSite: true,
+        posts: [
+          {
+            tag:    'URGENTE',
+            data:   '18/03/2026',
+            img:    'https://i.pinimg.com/736x/b0/db/ab/b0dbab3fe0a5cddaff99a08de126d39f.jpg',
+            titulo: 'QUEIMA DE ARQUIVO? — GOVERNO NEGA, DARKNET MOSTRA',
+            corpo:  `Fontes anônimas confirmam: Um acidente com uma substancia vermelha não identificada eliminou pelo menos 12 civis não identificados. O governo nega, como sempre.
+
+Arquivos biométricos circulam em servidores criptografados — todos civis tiveram seus registros expurgados, como se nunca tivessem existido. Até então nenhuma divulgação sobre o caso, quem fala sobre coincidentemente aparece em seguida suicidado com 9 tiros nas costas.
+
+O governo esconde algo, hora ou outra nós descobriremos.
+
+Por enquanto, tomem cuidado. =^..^=`
+          },
+          {
+            tag:    'AVISO',
+            data:   '23/03/2026',
+            img:    'https://i.pinimg.com/1200x/c3/10/22/c31022ec46caf40bebbcc4e90005d7e3.jpg',
+            titulo: 'CANCELADO NOSSA CAMPANHA DE RPG - ',
+            corpo:  `Oii pessoal, com pesar no coração venho informar que a campanha foi cancelada.
+            
+Aparentemente os últimos players não gostaram do realismo que eu coloquei na última sessão... Uma pena, quem sabe na próxima!!
+
+Atenciosamente, =^..^= !!`
+          },
+          {
+            tag:    'FUGA',
+            data:   '17/03/2026',
+            img:    'https://i.pinimg.com/1200x/57/bb/11/57bb11ffb4b13ad05d005302b6df643f.jpg',
+            titulo: 'X-7 EVADIU A INSTALAÇÃO DA PRISMA — RECOMPENSA: 80K',
+            corpo:  `X-7. Ninguém sabe o nome real. Ninguém que sabia ainda está acordado o suficiente pra contar.
+
+Evasão confirmada: guardas inconscientes, câmeras em loop de 4 minutos, porta de contenção aberta por dentro. Mágica? Não. Ajuda externa? Muito mais provável.
+
+A Prisma oferece 80.000 créditos pela captura, vivo. Condição não especificada — o que provavelmente é o detalhe mais importante dessa oferta.
+
+Se você encontrar X-7 antes deles, a pergunta certa não é "devo entregar?". A pergunta certa é: o que X-7 tem que vale mais que 80k? =^..^=`
+          },
+          {
+            tag:    'AVISO',
+            data:   '14/03/2026',
+            img:    'https://i.pinimg.com/1200x/b1/9d/9a/b19d9a14b46cc9e1b321f331a20c240d.jpg',
+            titulo: 'OS C##ÕES DA VYPER NA OPERATIVA 4 — EVITEM ESTA SEMANA',
+            corpo:  `Presença confirmada: operativos VYPER com equipamento tático pesado na Central Operativa 4 — zona portuária, quadrante sul. Nenhuma operação registrada em canais oficiais. Eles nunca registram o que importa.
+
+Histórico do Setor: dois desaparecimentos abertos, um incêndio de origem indeterminada, um servidor destruído antes de qualquer análise. A VYPER não aparece em lugares sem motivo. E o motivo nunca é bom pra quem já estava lá.
+
+Evitem a Central Operativa 4 esta semana. Ou não. A vida de vocês.`
+          },
+          {
+            tag:    'SINISTRO!',
+            data:   '12/03/2026',
+            img:    'https://img2.migalhas.com.br/_MEDPROC_/https__img.migalhas.com.br__SL__gf_base__SL__empresas__SL__MIGA__SL__imagens__SL__2026__SL__01__SL__07__SL__70995e8e-de60-4113-bd8f-55527c1e30f1.png._PROC_CP65.png',
+            titulo: 'O ET DE VARGINHA — UMA APARIÇÃO, UMA VERDADE',
+            corpo:  `Normalmente somos discrentes quando se trata de aliens, mas porra, isso é real. "Busquem Comercimento", o que significa tal frase?? será que o fim está próximo?? Não acreditava em Deus até saber da existencia do ET de Varginha, agora acho que ele é Deus.
+
+Os três pesquisadores que foram investigar o assunto estão desaparecidos. Arquivos deletados. Contas encerradas. Apartamentos, vazios. Mais criaturas alheias como ele vão aparecer por ai, guardem minha palavra.
+
+Essa pode ser a coisa mais real que você vai ler hoje. =^..^=`
+          },
+          {
+            tag:    'DROGAS',
+            data:   '10/03/2026',
+            img:    'https://i.pinimg.com/736x/25/06/52/2506528ec4dbab6ccf3ba736964ae4c8.jpg',
+            titulo: 'RUBRA: O QUE THE MONICA CLUB NÃO QUER QUE VOCÊ SAIBA',
+            corpo:  `Rubra. Cognição amplificada. Foco absoluto. Tempos de reação no limite. Três meses no submundo e o governo ainda faz que não sabe o que é.
+
+"Eu uso Rubra, meu pai usa Rubra. A verdadeira pergunta é: por que você ainda não usa Rubra?" — declaração de um parceiro do The Monica Club que pediu anonimato depois de espontaneamente fornecer nome completo, endereço e número de identificação biométrica.
+
+The Monica Club distribui. The Monica Club claramente sabe algo que não está nos rótulos. Mas ninguém pergunta porque funciona.
+
+Mais detalhes em breve. Se a gente continuar aqui.`
+          },
+          {
+            tag:    'SOBRE',
+            data:   '01/03/2026',
+            img:    'https://i.pinimg.com/736x/94/ff/5f/94ff5fd3033fe380b8de9ee3e8eba12a.jpg',
+            titulo: 'QUEM SOMOS · ONDE ESTAMOS · POR QUE GATOS',
+            corpo:  `Darknet.cat existe desde que ficou claro que mais ninguém ia fazer isso.
+
+Sem afiliação. Sem financiamento. Sem endereço. Temos servidores que mudam de lugar toda semana e uma obsessão pessoal com gatos que, honestamente, não tem explicação racional — mas reflete com precisão quem opera este site.
+
+Publicamos o que chega. Verificamos o que dá. Não respondemos por nada porque formalmente não existimos.
+
+Se você quer mais do que notícias — documentos, transações, contatos — os links na seção de acesso à rede são os únicos que endossamos pessoalmente. Use com cuidado e com VPN.
+
+=^..^= NAUMT TERESA · fundadora, operadora e única fã confirmada de gatos desta rede`
+          }
+        ]
+      },
+
+      'vazamentos.org': {
+        titulo:    'VAZAMENTOS',
+        descricao: 'Documentos que não deveriam existir. Informações que não deveriam ser públicas.',
+        acento:    '#22aacc',
+        posts: [
+          {
+            tag:    'DOCUMENTO',
+            data:   '16/03/2026',
+            img:    'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=900&q=65',
+            titulo: 'MEMORANDO INTERNO — NEXOR CORP [CLASSIFICADO]',
+            corpo:  `[ORIGEM: SERVIDOR NEXOR — SETOR RECURSOS HUMANOS]
+[DATA: 02/03/2026]
+[CLASSIFICAÇÃO: CONFIDENCIAL]
+
+Para: Diretoria Executiva
+De: Departamento de Segurança Interna
+
+Confirmamos a identificação de 3 funcionários com acesso indevido a arquivos da Divisão Omega. Os indivíduos serão "realocados" conforme protocolo R-12. Familiares serão notificados de transferência voluntária.
+
+Nenhum registro adicional será gerado.`
+          },
+          {
+            tag:    'FINANCEIRO',
+            data:   '11/03/2026',
+            img:    'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=900&q=65',
+            titulo: 'TRANSFERÊNCI A DE 2,4 MILHÕES PARA CONTA FANTASMA',
+            corpo:  `Auditoria paralela detectou transferência de 2,4 milhões de créditos da conta operacional do Município para uma conta registrada em nome de empresa inexistente — "Logística Orbital LTDA".
+
+A empresa não tem endereço. Não tem funcionários. Não tem histórico fiscal. Mas tem dinheiro público.`
+          }
+        ]
+      },
+
+      'mercadosombra.net': {
+        titulo:    'MERCADO SOMBRA',
+        descricao: 'Compra. Vende. Desaparece. Sem rastro.',
+        acento:    '#aacc22',
+        posts: [
+          {
+            tag:    'VENDA',
+            data:   '19/03/2026',
+            img:    'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=900&q=65',
+            titulo: 'IDENTIDADES NOVAS — DOCUMENTAÇÃO COMPLETA',
+            corpo:  `Identidades completas. Biometria, histórico médico, registro civil. Construídas para durar.
+
+Três slots disponíveis esta semana. Primeiro a pagar, primeiro a receber. Sem negociação. Sem reembolso.`
+          },
+          {
+            tag:    'PROCURO',
+            data:   '17/03/2026',
+            img:    'https://images.unsplash.com/photo-1480714099689-ddf35aa01e66?auto=format&fit=crop&w=900&q=65',
+            titulo: 'PROCURO: INFORMAÇÕES SOBRE INSTALAÇÃO ALFA-9',
+            corpo:  `Pago bem por qualquer informação verificável sobre a Instalação Alfa-9. Localização, planta, rotina de guardas, qualquer coisa.
+
+Não pergunto para quê. Você não precisa saber quem sou. Responda no canal escuro.`
+          }
+        ]
+      }
+
+    };
+    // ══════════════════════════════════════════════════════
+    //  COMENTÁRIOS — edite livremente
+    //
+    //  Estrutura:
+    //    COMENTARIOS['slug-do-site'][índice-do-post] = [ ...comentários ]
+    //
+    //  Índice do post: 0 = post principal (hero), 1 = 1º card, 2 = 2º card...
+    //
+    //  Cada comentário:
+    //    { user: 'nome',   texto: 'mensagem',   data: 'DD/MM · HH:MM' }
+    //
+    //  Para comentário deletado/censurado, adicione:   deletado: true
+    //    { user: 'nome',   texto: '[MENSAGEM REMOVIDA...]',   data: '...',   deletado: true }
+    //
+    //  Para post sem comentários: basta não incluir o índice (ou deixar []).
+    // ══════════════════════════════════════════════════════
+    const COMENTARIOS = {
+
+      // ── darknet.cat ──────────────────────────────────────
+      'darknet.cat': {
+
+        // Post 0 (hero) — QUEIMA DE ARQUIVO
+        0: [
+          { user: 'ghost_404',        texto: 'Tem caroço nesse hamborger',        data: '18/03 · 23:41' },
+          { user: 'operador_9',       texto: 'Minha irmã morava na região. Sumiram com ela também. QUERO JUSTIÇA.',    data: '19/03 · 02:17' },
+          { user: '=^..^= nmt',       texto: '>^.^< aqui na redação não se fala de outra coisa. fiquem seguros.',            data: '19/03 · 03:01' },
+        ],
+
+        // Post 1 (card) — CANCELADO NOSSA CAMPANHA DE RPG
+        1: [
+          { user: '=^..^= nmt',       texto: 'Pessoal sinto muito, mas quem mandou ser frutinha =^..^=',  data: '23/03 · 14:02' },
+          { user: 'W3skr_',        texto: 'NÃAAAAAAAAAOOOOOOOOOOOOOOOOO',                      data: '23/03 · 16:49' },
+          { user: 'void_walker',      texto: 'P@rra cara você literalmente arrancou dois dedos meus.',                data: '23/03 · 15:17' },
+          { user: 'sem_rosto',        texto: 'não acredito que acabou assim kkkkkk',                      data: '23/03 · 16:44' },
+        ],
+
+        // Post 2 (card) — X-7 EVADIU
+        2: [
+          { user: 'S1nTaX',         texto: 'L0L, EL3 JÁ É MEUHAH4HH4HH4H4H ',            data: '16/03 · 04:13' },
+          { user: 'C_ffee',       texto: 'Descobri que sou adotado',          data: '19/03 · 23:08' },
+          { user: 'anônimo_77',       texto: '80k pra trabalhar pra Prisma? Nem f@dendo',          data: '17/03 · 22:08' },
+        ],
+
+        // Post 3 (card) — OPERATIVOS VYPER
+        3: [
+          { user: 'void_walker',      texto: 'Confirmo. Vi dois deles aqui, na quinta. Estavam disfarçados.',    data: '14/03 · 14:33' },
+          { user: 'x_unknown',        texto: 'O servidor destruído... eu trabalhava lá. Veio de dentro.',     data: '15/03 · 09:12' },
+        ],
+
+        // Post 4 (card) — ET DE VARGINHA
+        4: [
+          { user: '=^..^= nmt',       texto: 'Recebi foto. Não posto por segurança. Mas é REAL.',            data: '12/03 · 17:44' },
+          { user: 'Khala_Brzo',         texto: 'E no fim nós fracassamos no que ele nos pediu...',   data: '13/03 · 00:22' },
+          { user: 'Hjaksdc', texto: 'Como será que é o gosto dele',                           data: '15/03 · 03:05', },
+          { user: 'usuário_deletado', texto: '[MENSAGEM REMOVIDA PELO MODERADOR]',                           data: '13/03 · 01:05', deletado: true },
+        ],
+
+        // Post 5 (card) — RUBRA
+        5: [
+          { user: 'RUBRARUBRARUBRARUBRA',   texto: 'OSDNJFGKFVOPCSOKN', data: '10/03 · 11:18' },
+          { user: 'FeRn4_',      texto: '1000/10 NOITE INESQUECIVEL',       data: '16/04 · 23:45' },
+          { user: 'protocolo_z',      texto: 'Nunca peçam um bloody mary',       data: '11/03 · 20:45' },
+        ],
+
+        // Post 6 (card) — QUEM SOMOS
+        6: [
+          { user: '=^..^= nmt',       texto: 'Obrigada pela confiança. Continuem seguros. =^..^=',           data: '01/03 · 04:02' },
+          { user: 'sem_rosto',        texto: 'primeira vez aqui. assustador. vou voltar amanhã.',             data: '02/03 · 16:30' },
+        ],
+
+      },
+
+      // ── vazamentos.org ────────────────────────────────────
+      // 'vazamentos.org': {
+      //   0: [
+      //     { user: 'nome_aqui', texto: 'comentário aqui', data: 'DD/MM · HH:MM' },
+      //   ],
+      // },
+
+      // ── mercadosombra.net ─────────────────────────────────
+      // 'mercadosombra.net': {
+      //   0: [
+      //     { user: 'nome_aqui', texto: 'comentário aqui', data: 'DD/MM · HH:MM' },
+      //   ],
+      // },
+
+    };
+    // ──────────────────────────────────────────────────────
+
+    const slug = new URLSearchParams(location.search).get('s') || '';
+
+    function show(id)  { document.getElementById(id).style.display = ''; }
+    function hide(id)  { document.getElementById(id).style.display = 'none'; }
+    function el(id)    { return document.getElementById(id); }
+    function esc(s)    { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function load() {
+      if (!slug) {
+        el('feed-error').textContent = 'ENDEREÇO INVÁLIDO.';
+        show('feed-error');
+        return;
+      }
+
+      const data = FEEDS[slug];
+
+      if (!data) {
+        document.title = '404 — Não encontrado';
+        el('site-name').textContent = 'ERRO 404';
+        el('feed-error').textContent = 'ENDEREÇO NÃO ENCONTRADO NA REDE.';
+        show('feed-error');
+        return;
+      }
+
+      // Cor de acento por site
+      if (data.acento) {
+        document.documentElement.style.setProperty('--accent', data.acento);
+      }
+
+      // Modo especial: darknet.cat
+      if (data.isCatSite) {
+        document.body.classList.add('is-cat-site');
+        el('site-counter-label').textContent = 'GATOS PERDIDOS';
+        el('site-ticker-inner').innerHTML =
+          `🐱 VOCÊ NÃO DEVERIA ESTAR AQUI &nbsp;·&nbsp; ` +
+          `MAS JÁ QUE ESTÁ, BEM-VINDO =^..^= &nbsp;·&nbsp; ` +
+          `ESTE SITE É MONITORADO · USE VPN (mesmo que seja inutil aqui) &nbsp;·&nbsp; ` +
+          `GATOS &gt; TUDO &nbsp;·&nbsp; ` +
+          `A VERDADE NÃO PODE SER APAGADA &nbsp;·&nbsp; ` +
+          `&gt;^.^&lt; &nbsp;·&nbsp; ` +
+          `COMPARTILHE ANTES QUE SUMAMOS &nbsp;·&nbsp; ` +
+          `NÃO CONFIE EM NINGUÉM (EXCETO EM GATOS) &nbsp;&nbsp;&nbsp;`;
+        el('cookie-notice-text').innerHTML =
+          `🐱 Este site usa cookies. Somos da darknet mas ainda temos educação. ` +
+          `Ao continuar, você concorda com nossa ` +
+          `<u>Política de Privacidade</u>.`;
+        // Gatos flutuantes extras — porque sim
+        [
+          'top:24%;right:0;width:36px;opacity:0.14;animation-duration:4.2s;animation-delay:0.4s;',
+          'top:62%;left:0;width:27px;opacity:0.10;animation-duration:5.6s;animation-delay:1.9s;',
+          'top:44%;right:4px;width:18px;opacity:0.07;animation-duration:3.8s;animation-delay:3.1s;',
+          'top:82%;left:4px;width:22px;opacity:0.08;animation-duration:6.2s;animation-delay:0.8s;',
+        ].forEach(s => {
+          const d = document.createElement('img');
+          d.src = 'icones/cat.png';
+          d.setAttribute('aria-hidden', 'true');
+          d.style.cssText =
+            'position:fixed;pointer-events:none;z-index:4;object-fit:contain;' +
+            'filter:grayscale(0.3) drop-shadow(0 0 8px rgba(180,0,40,0.35));' +
+            'animation:cat-bob ease-in-out infinite;' + s;
+          document.body.appendChild(d);
+        });
+      }
+
+      document.title = data.titulo;
+      el('site-name').textContent = data.titulo;
+      el('site-url-display').textContent = 'https://' + slug;
+
+      if (data.descricao) {
+        el('site-desc-bar').textContent = data.descricao;
+        show('site-desc-bar');
+      }
+
+      const posts = data.posts || [];
+
+      if (posts.length === 0) {
+        show('feed-empty');
+      } else {
+        // ── HERO: primeiro post em destaque full-width ──
+        const hero     = posts[0];
+        const heroTag  = hero.tag ? 'tag-' + hero.tag.toLowerCase().replace(/[^a-z]/g, '') : '';
+        const heroHash = Math.random().toString(36).slice(2, 10).toUpperCase();
+        const heroComs    = (COMENTARIOS[slug] || {})[0] || [];
+        const heroComsHtml = heroComs.length
+          ? '<div class="post-comments" data-open="false">' +
+            '<button class="post-comments-hdr" onclick="toggleComentarios(this)">💬 ' + heroComs.length + ' comentário(s) <span class="post-comments-arrow">▾</span></button>' +
+            '<div class="post-comments-body"><div class="post-comments-inner">' +
+            heroComs.map(c =>
+              '<div class="post-comment' + (c.deletado ? ' post-comment--del' : '') + '">' +
+              '<span class="post-comment-user">' + esc(c.user) + '</span>' +
+              '<span class="post-comment-texto">' + esc(c.texto) + '</span>' +
+              '<span class="post-comment-data">'  + esc(c.data)  + '</span></div>'
+            ).join('') +
+            '<div class="post-comment-typing" style="display:none"><span class="post-comment-user"></span><span class="typing-dots"><span></span><span></span><span></span></span></div>' +
+            '</div></div></div>'
+          : '';
+
+        const heroHtml = `<div class="post-hero">
+          ${ hero.img
+            ? `<div class="post-img-wrap">
+                <img class="post-img" src="${hero.img}" alt="" loading="lazy"
+                     onerror="this.parentElement.style.display='none'" />
+                <div class="post-img-overlay">
+                  <div class="post-meta">
+                    ${ hero.tag  ? `<span class="post-tag ${heroTag}">${esc(hero.tag)}</span>` : '' }
+                    ${ hero.data ? `<span class="post-date">${esc(hero.data)}</span>` : '' }
+                  </div>
+                  <div class="post-titulo">${esc(hero.titulo || '')}</div>
+                </div>
+                <div class="hero-readers">👁 <span id="hero-readers-num">—</span> lendo agora</div>
+              </div>`
+            : `<div class="post-body" style="padding-top:18px">
+                <div class="post-meta">
+                  ${ hero.tag  ? `<span class="post-tag ${heroTag}">${esc(hero.tag)}</span>` : '' }
+                  ${ hero.data ? `<span class="post-date">${esc(hero.data)}</span>` : '' }
+                </div>
+                <div class="post-titulo">${esc(hero.titulo || '')}</div>
+              </div>`
+          }
+          <div class="post-body">
+            ${ hero.corpo ? `<div class="post-corpo">${esc(hero.corpo)}</div>` : '' }
+            ${heroComsHtml}
+          </div>
+          <div class="post-footer">
+            <span class="post-footer-anon">★ ANÔNIMO · IP MASCARADO</span>
+            <span class="post-footer-hash">SHA: ${heroHash}</span>
+          </div>
+        </div>`;
+
+        // ── GRID: restante dos posts ──
+        const gridPosts = posts.slice(1);
+        let gridHtml = '';
+        if (gridPosts.length > 0) {
+          const deletedCard = `<div class="post-deleted">
+            <div class="post-deleted-hdr">
+              <span class="post-deleted-label">CONTEÚDO REMOVIDO</span>
+              <span class="post-deleted-date">19/03/2026</span>
+            </div>
+            <div class="post-deleted-titulo">[TÍTULO INDISPONÍVEL]</div>
+            <div class="post-deleted-body">Este conteúdo foi removido por ordem judicial nº 4471/2026-ZP. A publicação violava os Decretos de Segurança do site. O autor foi identificado.</div>
+            <div class="post-deleted-footer">REMOVIDO POR: HOST · PROTOCOLO 413</div>
+          </div>`;
+
+          const cardsList = gridPosts.map((p, i) => {
+            const tc       = p.tag ? 'tag-' + p.tag.toLowerCase().replace(/[^a-z]/g, '') : '';
+            const hash     = Math.random().toString(36).slice(2, 8).toUpperCase();
+            const coms     = (COMENTARIOS[slug] || {})[i + 1] || [];
+            const cardComsHtml = coms.length
+              ? '<div class="post-comments" data-open="false">' +
+                '<button class="post-comments-hdr" onclick="toggleComentarios(this)">💬 ' + coms.length + ' comentário(s) <span class="post-comments-arrow">▾</span></button>' +
+                '<div class="post-comments-body"><div class="post-comments-inner">' +
+                coms.map(c =>
+                  '<div class="post-comment' + (c.deletado ? ' post-comment--del' : '') + '">' +
+                  '<span class="post-comment-user">' + esc(c.user) + '</span>' +
+                  '<span class="post-comment-texto">' + esc(c.texto) + '</span>' +
+                  '<span class="post-comment-data">'  + esc(c.data)  + '</span></div>'
+                ).join('') +
+                '<div class="post-comment-typing" style="display:none"><span class="post-comment-user"></span><span class="typing-dots"><span></span><span></span><span></span></span></div>' +
+                '</div></div></div>'
+              : '';
+            return `<div class="post-card">
+              ${ p.img
+                ? `<div class="post-img-wrap">
+                    <img class="post-img" src="${p.img}" alt="" loading="lazy"
+                         onerror="this.parentElement.style.display='none'" />
+                    ${ p.tag ? `<span class="post-img-tag ${tc}">${esc(p.tag)}</span>` : '' }
+                  </div>` : '' }
+              <div class="post-body">
+                ${ !p.img
+                  ? `<div class="post-meta">
+                      ${ p.tag  ? `<span class="post-tag ${tc}">${esc(p.tag)}</span>` : '' }
+                      ${ p.data ? `<span class="post-date">${esc(p.data)}</span>` : '' }
+                    </div>` : '' }
+                ${ p.titulo ? `<div class="post-titulo">${esc(p.titulo)}</div>` : '' }
+                ${ p.corpo  ? `<div class="post-corpo">${esc(p.corpo)}</div>`  : '' }
+                ${cardComsHtml}
+              </div>
+              <div class="post-footer">
+                <span class="post-footer-anon">★ ANÔNIMO</span>
+                <span class="post-footer-hash">${ p.data ? esc(p.data) + ' · ' : '' }SHA: ${hash}</span>
+              </div>
+            </div>`;
+          });
+          if (cardsList.length >= 2) cardsList.splice(2, 0, deletedCard);
+          gridHtml = `<div class="posts-grid-hdr">
+            <div class="posts-grid-hdr-ico">◈</div>
+            <div class="posts-grid-hdr-lbl">Mais notícias</div>
+          </div>
+          <div class="posts-grid">${cardsList.join('')}</div>`;
+        }
+
+        el('feed-posts').innerHTML = heroHtml + gridHtml;
+        show('feed-posts');
+      }
+
+      // Footer
+      el('site-footer-info').innerHTML =
+        `${esc(slug)}<br>` +
+        `PROTOCOLO: TOR/C3AT · CRIPTOGRAFIA: AES-512<br>` +
+        `ÚLTIMA ATUALIZAÇÃO: ${posts[0]?.data || '—'}<br>` +
+        (data.isCatSite
+          ? `RESPONSÁVEL: NAUMT TERESA =^..^=<br>OPERANDO: SOZINHA, ÀS 3H DA MANHÃ, COM UM GATO NO COLO`
+          : `RESPONSÁVEL: NAUMT TERESA`);
+      el('site-footer-copy').textContent = data.isCatSite
+        ? 'darknet.cat · operado com amor, paranoia e muitos gatos · =^..^= · não entre em contato'
+        : 'https://' + slug + ' · TODOS OS DIREITOS RESERVADOS · USO INDEVIDO É CRIME (MAS TUDO AQUI É INDEVIDO)';
+
+      // Contador: número levemente diferente por site
+      const baseCount = Math.abs(slug.split('').reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000 + 10000;
+      el('site-counter-num').textContent = String(baseCount).padStart(7, '0');
+    }
+
+    load();
+
+    // ──────────────────────────────────────────────────────
+    //  ANÚNICOS — defina aqui os anúncios que aparecem após aceitar cookies
+    //  Cada entrada: { img, titulo, texto, cor (opcional, hex) }
+    // ──────────────────────────────────────────────────────
+    const ANUNCIOS = [
+      {
+        img:    'https://i.pinimg.com/736x/37/26/96/372696084979cd215657a28ff8381741.jpg',
+        titulo: 'TEM RUBRA AI? -',
+        texto:  'Conheça o maior fornecedor de Rubra do Brasil',
+        cor:    '#cc0000'
+      },
+      {
+        img:    'icones/feed/les.jpg',
+        titulo:  'PROCURADO: MORTO OU SEM VIDA',
+        texto:  'A Prisma paga bem. Não pergunte para quê.',
+        cor:    '#FF2F00'
+      },
+      {
+        img:    'icones/feed/medo.jpg',
+        titulo:  'VOCÊ JÁ VIU ESSE HOMEM?',
+        texto:  'Se sim, nós avise, ele é perigoso',
+        cor:    '#FF2F00'
+      }
+    ];
+    // ──────────────────────────────────────────────────────
+
+    let _adsAtivos = false;
+
+    function aceitarCookies() {
+      document.getElementById('cookie-notice').style.display = 'none';
+      if (!_adsAtivos && ANUNCIOS.length > 0) {
+        _adsAtivos = true;
+        agendarProximoAd(0);
+      }
+    }
+
+    function agendarProximoAd(idx) {
+      const delay = idx === 0 ? 1800 : 8000 + Math.random() * 12000;
+      setTimeout(() => mostrarAd(idx), delay);
+    }
+
+    function mostrarAd(idx) {
+      const ad = ANUNCIOS[idx % ANUNCIOS.length];
+      const cor = ad.cor || '#cc0000';
+      const id  = 'ad-' + Date.now();
+
+      // Posições fixas rotativas para não empilhar no mesmo canto
+      const posicoes = [
+        'bottom:110px;right:28px;',
+        'top:80px;left:24px;',
+        'top:80px;right:24px;',
+        'bottom:110px;left:24px;'
+      ];
+      const pos = posicoes[idx % posicoes.length];
+
+      const div = document.createElement('div');
+      div.id = id;
+      div.className = 'site-ad';
+      div.style.cssText = pos;
+      div.style.setProperty('--ad-cor', cor);
+      div.innerHTML =
+        `<button class="site-ad-close" onclick="fecharAd('${id}')" title="Fechar">✕</button>` +
+        `<div class="site-ad-tag">ANÚNICO</div>` +
+        (ad.img ? `<img class="site-ad-img" src="${ad.img}" alt="" />` : '') +
+        `<div class="site-ad-titulo">${ad.titulo}</div>` +
+        `<div class="site-ad-texto">${ad.texto.replace(/\u2028/g,'<br>')}</div>`;
+      document.body.appendChild(div);
+
+      // Animar entrada
+      requestAnimationFrame(() => div.classList.add('site-ad--visible'));
+
+      // Arrastar anúncio
+      (function makeDraggable(el) {
+        let dragging = false, ox = 0, oy = 0;
+        el.addEventListener('mousedown', e => {
+          if (e.target.closest('.site-ad-close')) return;
+          dragging = true;
+          const r = el.getBoundingClientRect();
+          ox = e.clientX - r.left;
+          oy = e.clientY - r.top;
+          el.style.bottom = ''; el.style.right = '';
+          el.style.left = r.left + 'px';
+          el.style.top  = r.top  + 'px';
+          el.style.cursor = 'grabbing';
+          e.preventDefault();
+        });
+        document.addEventListener('mousemove', e => {
+          if (!dragging) return;
+          el.style.left = (e.clientX - ox) + 'px';
+          el.style.top  = (e.clientY - oy) + 'px';
+        });
+        document.addEventListener('mouseup', () => {
+          if (dragging) { dragging = false; el.style.cursor = ''; }
+        });
+      })(div);
+
+      // Agendar próximo
+      agendarProximoAd(idx + 1);
+    }
+
+    function fecharAd(id) {
+      const div = document.getElementById(id);
+      if (!div) return;
+      div.classList.remove('site-ad--visible');
+      setTimeout(() => div.remove(), 350);
+    }
+
+    // ── E-mail fictício ──
+    function abrirEmail() {
+      const m = document.getElementById('email-modal');
+      m.style.display = 'flex';
+      requestAnimationFrame(() => m.classList.add('email-modal--vis'));
+      document.getElementById('email-para').value  = '';
+      document.getElementById('email-msg').value   = '';
+      const st = document.getElementById('email-status');
+      st.textContent = ''; st.className = '';
+      document.getElementById('email-send').disabled = false;
+    }
+
+    function fecharEmail() {
+      const m = document.getElementById('email-modal');
+      m.classList.remove('email-modal--vis');
+      setTimeout(() => m.style.display = 'none', 350);
+    }
+
+    function enviarEmail() {
+      const para = document.getElementById('email-para').value.trim().toLowerCase();
+      const msg  = document.getElementById('email-msg').value.trim();
+      const st   = document.getElementById('email-status');
+      const btn  = document.getElementById('email-send');
+
+      if (!para) { st.textContent = 'ERRO: CAMPO "PARA" VAZIO.';    st.className = 'email-err'; return; }
+      if (!msg)  { st.textContent = 'ERRO: MENSAGEM VAZIA.';          st.className = 'email-err'; return; }
+
+      btn.disabled   = true;
+      st.textContent = 'CONECTANDO À REDE TOR...';
+      st.className   = 'email-loading';
+
+      const delay = 1600 + Math.random() * 1200;
+      setTimeout(() => {
+        if (para === 's1ntax1304@cat.net') {
+          st.innerHTML =
+            'DESTINATÁRIO ENCONTRADO NA REDE &middot; MENSAGEM ENTREGUE &#10003;<br>' +
+            '<span class="email-reply">— RESPOSTA AUTOMÁTICA DE s1nTaX1304:<br>' +
+            '<em>"R3cebid0 !! Naum posso te ajudar !! adeus. "</em></span>';
+          st.className = 'email-ok';
+        } else {
+          const erros = [
+            'ERRO 503: DESTINATÁRIO NÃO ENCONTRADO NA REDE.',
+            'ERRO 404: ENDEREÇO INVÁLIDO OU INEXISTENTE.',
+            'FALHA: ROTA TOR BLOQUEADA PARA ESTE DESTINO.',
+            'ERRO: DOMÍNIO NÃO REGISTRADO NA REDE OCULTA.',
+            'ERRO: SERVIDOR DO DESTINATÁRIO INACESSÍVEL.',
+          ];
+          st.textContent = erros[Math.floor(Math.random() * erros.length)];
+          st.className = 'email-err';
+        }
+        btn.disabled = false;
+      }, delay);
+    }
+
+    // ── Toggle de comentários ──
+    function toggleComentarios(btn) {
+      const wrap = btn.closest('.post-comments');
+      const isOpen = wrap.dataset.open === 'true';
+      wrap.dataset.open = isOpen ? 'false' : 'true';
+      btn.querySelector('.post-comments-arrow').textContent = isOpen ? '▾' : '▴';
+    }
+
+    // ── Username aleatório ──
+    const NOMES_ANON = [
+      'ghost_404','usuário_deletado','anônimo_77','fantasma_9','null_ptr',
+      'void_walker','sombra_7','x_unknown','protocolo_z','operador_9',
+      'sem_rosto','ninguém_aqui','77_anonimous','conexão_perdida','r3d_gh0st','Azan_Loka', 'Syntax'
+    ];
+    const username = NOMES_ANON[Math.floor(Math.random() * NOMES_ANON.length)];
+
+    // ── Overlay de conexão ──
+    (function initConnOverlay() {
+      const overlay = document.getElementById('conn-overlay');
+      if (!overlay) return;
+      const bar  = document.getElementById('conn-bar');
+      const msg  = document.getElementById('conn-msg');
+      const msgs = [
+        'INICIANDO PROTOCOLO TOR...',
+        'VERIFICANDO CERTIFICADOS...',
+        'MASCARANDO IDENTIDADE...',
+        'CONEXÃO ESTABELECIDA ✓'
+      ];
+      let prog = 0, phase = 0;
+      const iv = setInterval(() => {
+        prog = Math.min(100, prog + Math.random() * 14 + 7);
+        bar.style.width = prog + '%';
+        const np = prog > 75 ? 3 : prog > 50 ? 2 : prog > 25 ? 1 : 0;
+        if (np !== phase) { phase = np; msg.textContent = msgs[phase]; }
+        if (prog >= 100) {
+          clearInterval(iv);
+          bar.style.width = '100%';
+          msg.textContent = msgs[3];
+          setTimeout(() => {
+            overlay.classList.add('conn-overlay--out');
+            setTimeout(() => overlay.remove(), 500);
+            mostrarBoasVindas();
+            mostrarIpFalso();
+            initReadersCounter();
+          }, 600);
+        }
+      }, 110);
+    })();
+
+    // ── Boas-vindas com nome gerado ──
+    function mostrarBoasVindas() {
+      const welEl = document.getElementById('site-welcome');
+      const unEl  = document.getElementById('site-username');
+      if (!welEl || !unEl) return;
+      unEl.textContent = username;
+      welEl.style.display = '';
+      requestAnimationFrame(() => welEl.classList.add('site-welcome--vis'));
+    }
+
+    // ── IP falso ──
+    function mostrarIpFalso() {
+      const ipEl = document.getElementById('site-ip-val');
+      const warn = document.getElementById('site-ip-warn');
+      if (!ipEl || !warn) return;
+      const a = 140 + Math.floor(Math.random() * 80);
+      const b = Math.floor(Math.random() * 256);
+      ipEl.textContent = a + '.' + b + '.xx.xx';
+      warn.style.display = '';
+    }
+
+    // ── Leitores simultâneos no hero ──
+    function initReadersCounter() {
+      const numEl = document.getElementById('hero-readers-num');
+      if (!numEl) return;
+      let count = 6 + Math.floor(Math.random() * 18);
+      numEl.textContent = count;
+      function tick() {
+        count = Math.max(2, Math.min(99, count + (Math.random() < 0.55 ? 1 : -1)));
+        numEl.textContent = count;
+        setTimeout(tick, 3500 + Math.random() * 8000);
+      }
+      setTimeout(tick, 5000);
+    }
+
+    // ── Glitch de conexão ──
+    (function instabilidade() {
+      function glitch() {
+        // Cria overlay de glitch
+        const g = document.createElement('div');
+        g.className = 'conn-glitch-overlay';
+        document.body.appendChild(g);
+
+        // Blocos de ruído aleatórios
+        const numBlocos = 4 + Math.floor(Math.random() * 5);
+        for (let i = 0; i < numBlocos; i++) {
+          const b = document.createElement('div');
+          b.className = 'conn-glitch-block';
+          b.style.top    = (Math.random() * 100) + '%';
+          b.style.height = (2 + Math.random() * 18) + 'px';
+          b.style.left   = (Math.random() * 30 - 10) + 'px';
+          b.style.right  = (Math.random() * 30 - 10) + 'px';
+          b.style.animationDelay = (Math.random() * 0.2) + 's';
+          g.appendChild(b);
+        }
+
+        // Distorção RGB no body
+        document.body.classList.add('conn-glitch-rgb');
+        const t = document.getElementById('site-ticker-inner');
+        if (t) t.style.animationPlayState = 'paused';
+
+        // Vai oscilando: on/off durante ~600ms
+        let cycles = 0;
+        const iv = setInterval(() => {
+          cycles++;
+          document.body.classList.toggle('conn-glitch-rgb');
+          if (cycles >= 6) {
+            clearInterval(iv);
+            document.body.classList.remove('conn-glitch-rgb');
+            g.remove();
+            if (t) t.style.animationPlayState = '';
+          }
+        }, 90);
+
+        setTimeout(glitch, 40000 + Math.random() * 25000);
+      }
+      setTimeout(glitch, 20000 + Math.random() * 15000);
+    })();
+
+    // ── Rastro do cursor ──
+    (function cursorTrail() {
+      document.addEventListener('mousemove', e => {
+        const dot = document.createElement('div');
+        dot.className = 'cursor-trail';
+        dot.style.left = e.clientX + 'px';
+        dot.style.top  = e.clientY + 'px';
+        document.body.appendChild(dot);
+        requestAnimationFrame(() => dot.classList.add('cursor-trail--vis'));
+        setTimeout(() => dot.remove(), 650);
+      });
+    })();
+
+    // ══════════════════════════════════════════════════════════════
+    //  "ALGUÉM ESTÁ DIGITANDO..." nos comentários
+    // ══════════════════════════════════════════════════════════════
+    const _typingNomes = [
+      'anon_user', 'void_9', 'sombra_q', 'desconhecido_x',
+      'ghost_br', 'n_t_fan', 'op_cinza', 'sem_face', 'lurker_01'
+    ];
+    (function initTypingIndicators() {
+      function ciclo() {
+        const slots = document.querySelectorAll('.post-comment-typing');
+        if (!slots.length) { setTimeout(ciclo, 3000); return; }
+        const slot = slots[Math.floor(Math.random() * slots.length)];
+        // Só mostra se o bloco de comentários está aberto (height > 0)
+        const body = slot.closest('.post-comments-body');
+        if (!body || body.style.height === '0px' || body.style.height === '') {
+          setTimeout(ciclo, 4000 + Math.random() * 6000); return;
+        }
+        const nomeEl = slot.querySelector('.post-comment-user');
+        nomeEl.textContent = _typingNomes[Math.floor(Math.random() * _typingNomes.length)];
+        slot.style.display = 'flex';
+        const dur = 2200 + Math.random() * 3500;
+        setTimeout(() => {
+          slot.style.display = 'none';
+          setTimeout(ciclo, 6000 + Math.random() * 14000);
+        }, dur);
+      }
+      setTimeout(ciclo, 8000 + Math.random() * 10000);
+    })();
+
+    // ══════════════════════════════════════════════════════════════
+    //  TOAST DE POST NOVO — após ~2 minutos
+    // ══════════════════════════════════════════════════════════════
+    (function initPostNovoToast() {
+      const alertas = [
+        'NOVO: conteúdo sensível publicado e removido em 3 min.',
+        'ALERTA: post classificado detectado — acesso bloqueado.',
+        'NOVO: arquivo vazado · identificado · deletado em 2 min.',
+        'AVISO: tentativa de publicação anônima bloqueada pelo host.',
+        'NOVO: coordenadas enviadas via canal seguro · removido.',
+      ];
+      function dispararToast() {
+        const msg = alertas[Math.floor(Math.random() * alertas.length)];
+        const t = document.createElement('div');
+        t.id = 'post-novo-toast';
+        t.textContent = '⚠ ' + msg;
+        document.body.appendChild(t);
+        requestAnimationFrame(() => t.classList.add('post-novo-toast--vis'));
+        setTimeout(() => {
+          t.classList.remove('post-novo-toast--vis');
+          setTimeout(() => { t.remove(); }, 500);
+        }, 6000);
+        // Agenda próximo entre 3–6 minutos
+        setTimeout(dispararToast, 180000 + Math.random() * 180000);
+      }
+      setTimeout(dispararToast, 115000 + Math.random() * 45000); // ~2min
+    })();
+
+    // ══════════════════════════════════════════════════════════════
+    //  CONTADOR DE LEITORES AO VIVO — topbar
+    // ══════════════════════════════════════════════════════════════
+    (function initLiveReaders() {
+      const wrap = document.getElementById('site-topbar-right');
+      if (!wrap) return;
+      const el = document.createElement('div');
+      el.id = 'live-readers';
+      el.innerHTML = '<span id="live-readers-dot"></span><span id="live-readers-num">--</span>\u00a0online agora';
+      wrap.insertBefore(el, wrap.firstChild);
+      let n = 18 + Math.floor(Math.random() * 40);
+      document.getElementById('live-readers-num').textContent = n;
+      function tick() {
+        const delta = Math.random() < 0.6 ? 1 : -1;
+        n = Math.max(4, Math.min(199, n + delta));
+        const numEl = document.getElementById('live-readers-num');
+        if (numEl) numEl.textContent = n;
+        setTimeout(tick, 2800 + Math.random() * 5000);
+      }
+      setTimeout(tick, 4000);
+    })();
+
+    // Anima o contador: sobe na maioria das vezes, cai ocasionalmente
+    (function animateCounter() {
+      const numEl = document.getElementById('site-counter-num');
+      if (!numEl) return;
+      let count = parseInt(numEl.textContent, 10) || 10000;
+      function tick() {
+        const up    = Math.random() < 0.80;
+        const delta = up ? Math.floor(Math.random() * 3) + 1 : -1;
+        count = Math.max(0, count + delta);
+        numEl.textContent    = String(count).padStart(7, '0');
+        numEl.style.color      = up ? '#66ff77' : '#ff5533';
+        numEl.style.textShadow = up ? '0 0 16px #66ff7799' : '0 0 10px #ff553344';
+        setTimeout(() => {
+          numEl.style.color      = '#33aa33';
+          numEl.style.textShadow = '0 0 10px #33aa3366';
+        }, 380);
+        setTimeout(tick, 2400 + Math.random() * 3600);
+      }
+      setTimeout(tick, 2000);
+    })();
+
+    // ══════════════════════════════════════════════════════════════
+    //  SISTEMA DE ADDONS
+    // ══════════════════════════════════════════════════════════════
+
+    const ADDONS_CATALOGO = [
+      {
+        id:       'terminus',
+        nome:     'Terminus',
+        versao:   '2.3',
+        autor:    'nullbyte_dev',
+        desc:     'Emulador de terminal com acesso à rede oculta. Rode comandos, escaneie hosts e execute scripts.',
+        icone:    'icones/feed/addons/terminus.jpg',   // substitua pela imagem
+        tamanho:  '1.2 MB',
+        essencial: true,
+        acao:     () => abrirTerminus(),
+      },
+      {
+        id:       'phantom-vpn',
+        nome:     'PhantomVPN',
+        versao:   '1.7',
+        autor:    'shadow_net',
+        desc:     'Camufla seu IP com roteamento multicamada. Après connexion, o IP exibido some da topbar.',
+        icone:    'icones/feed/addons/phantomvpn.jpg',
+        tamanho:  '840 KB',
+        essencial: false,
+        acao:     () => addon_phantomvpn(),
+      },
+      {
+        id:       'hexview',
+        nome:     'HexView',
+        versao:   '0.9β',
+        autor:    'r3d_gh0st',
+        desc:     'Visualizador hexadecimal de arquivos interceptados. Mostra dados brutos da rede em tempo real.',
+        icone:    'icones/feed/addons/hexview.jpg',
+        tamanho:  '530 KB',
+        essencial: false,
+        acao:     () => addon_hexview(),
+      },
+      {
+        id:       'darkscanner',
+        nome:     'DarkScanner',
+        versao:   '3.1',
+        autor:    'void_walker',
+        desc:     'Escaneia endereços .cat e .onion em busca de servidores ativos. Resultados quase reais garantidos.',
+        icone:    'icones/feed/addons/darkscanner.jpg',
+        tamanho:  '2.1 MB',
+        essencial: false,
+        acao:     () => addon_darkscanner(),
+      },
+      {
+        id:       'catcrypt',
+        nome:     'CatCrypt',
+        versao:   '1.0',
+        autor:    '=^..^= nmt',
+        desc:     'Criptografia de mensagens com chave felina. Feito por Naumt Teresa.',
+        icone:    'icones/feed/addons/catcrypt.jpg',
+        tamanho:  '210 KB',
+        essencial: false,
+        acao:     () => addon_catcrypt(),
+      },
+      {
+        id:       'watchdog',
+        nome:     'WatchDog',
+        versao:   '2.0',
+        autor:    'protocolo_z',
+        desc:     'Monitora tentativas de acesso ao seu dispositivo. Alerta quando "alguém" tenta rastrear a sessão.',
+        icone:    'icones/feed/addons/watchdog.jpg',
+        tamanho:  '660 KB',
+        essencial: false,
+        acao:     () => addon_watchdog(),
+      },
+      {
+        id:       'naumt-ai',
+        nome:     'NauMtAI',
+        versao:   '0.1α',
+        autor:    '=^..^= naumt',
+        desc:     'Assistente de inteligência artificial desenvolvida por Naumt Teresa. Especialista em conspirações felinas, miau.',
+        icone:    'icones/feed/addons/naumtai.jpg',
+        tamanho:  '13 KB',
+        essencial: false,
+        acao:     () => abrirNaumtAI(),
+      },
+      {
+        id:       'doomclock',
+        nome:     'DoomClock',
+        versao:   '6.6.6',
+        autor:    'entropy_null',
+        desc:     'Monitora o nível de extinção iminente da darknet em tempo real. Não recomendado para ansiosos.',
+        icone:    'icones/feed/addons/doomclock.jpg',
+        tamanho:  '88 KB',
+        essencial: false,
+        acao:     () => abrirDoomClock(),
+      },
+      {
+        id:       'paranoia',
+        nome:     'Paranoia.exe',
+        versao:   '?.?',
+        autor:    'desconhecido',
+        desc:     'Detecta e lista entidades que estão monitorando sua sessão agora mesmo. Você não queria saber disso.',
+        icone:    'icones/feed/addons/paranoia.jpg',
+        tamanho:  '404 KB',
+        essencial: false,
+        acao:     () => abrirParanoia(),
+      },
+    ];
+
+    // ── Estado persistido ────────────────────────────────────────
+    let _addonsInstalados = JSON.parse(localStorage.getItem('dk_addons') || '[]');
+    let _addonsAtivos     = JSON.parse(localStorage.getItem('dk_addons_ativos') || '[]');
+    let _addonStoreAberta = false;
+    let _addonTabAtual    = 'loja';
+
+    function salvarAddons() {
+      localStorage.setItem('dk_addons',       JSON.stringify(_addonsInstalados));
+      localStorage.setItem('dk_addons_ativos', JSON.stringify(_addonsAtivos));
+    }
+
+    function addonInstalado(id) { return _addonsInstalados.includes(id); }
+    function addonAtivo(id)     { return _addonsAtivos.includes(id); }
+
+    // ── Dock ─────────────────────────────────────────────────────
+    function renderDock() {
+      const dock = document.getElementById('addon-dock');
+      if (!dock) return;
+      dock.innerHTML = '';
+      _addonsInstalados.forEach(id => {
+        const a = ADDONS_CATALOGO.find(x => x.id === id);
+        if (!a) return;
+        const btn = document.createElement('button');
+        btn.className = 'addon-dock-btn' + (addonAtivo(id) ? ' addon-dock-btn--on' : '');
+        btn.title     = a.nome + (addonAtivo(id) ? ' (ativo)' : ' (inativo)');
+        btn.innerHTML = `<img src="${a.icone}" onerror="this.style.display='none';this.nextSibling.style.display=''" alt="" />`
+                      + `<span style="display:none">${a.nome.slice(0,2).toUpperCase()}</span>`;
+        btn.onclick = () => toggleAddonAtivo(id);
+        dock.appendChild(btn);
+      });
+    }
+
+    function toggleAddonAtivo(id) {
+      const a = ADDONS_CATALOGO.find(x => x.id === id);
+      if (!a) return;
+      if (addonAtivo(id)) {
+        _addonsAtivos = _addonsAtivos.filter(x => x !== id);
+        salvarAddons(); renderDock();
+        toastAddon(a.nome + ' desativado.');
+      } else {
+        if (!_addonsAtivos.includes(id)) _addonsAtivos.push(id);
+        salvarAddons(); renderDock();
+        toastAddon(a.nome + ' ativado.');
+        a.acao();
+      }
+    }
+
+    function instalarAddon(id) {
+      if (addonInstalado(id)) return;
+      const a = ADDONS_CATALOGO.find(x => x.id === id);
+      if (!a) return;
+      // Simula "download"
+      const btn = document.getElementById('addon-btn-' + id);
+      if (btn) { btn.textContent = 'INSTALANDO...'; btn.disabled = true; }
+      setTimeout(() => {
+        _addonsInstalados.push(id);
+        salvarAddons(); renderDock(); renderAddonStore();
+        toastAddon(a.nome + ' instalado com sucesso!');
+      }, 1200 + Math.random() * 800);
+    }
+
+    function desinstalarAddon(id) {
+      const a = ADDONS_CATALOGO.find(x => x.id === id);
+      if (!a) return;
+      _addonsInstalados = _addonsInstalados.filter(x => x !== id);
+      _addonsAtivos     = _addonsAtivos.filter(x => x !== id);
+      salvarAddons(); renderDock(); renderAddonStore();
+      toastAddon(a.nome + ' desinstalado.');
+    }
+
+    function toastAddon(msg) {
+      let t = document.getElementById('addon-toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'addon-toast';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.classList.remove('addon-toast--vis');
+      void t.offsetWidth;
+      t.classList.add('addon-toast--vis');
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.classList.remove('addon-toast--vis'), 2800);
+    }
+
+    // ── Loja ─────────────────────────────────────────────────────
+    function toggleAddonStore() {
+      _addonStoreAberta ? fecharAddonStore() : abrirAddonStore();
+    }
+
+    function abrirAddonStore() {
+      _addonStoreAberta = true;
+      document.getElementById('addon-store-overlay').style.display = 'block';
+      const s = document.getElementById('addon-store');
+      s.classList.add('addon-store--open');
+      renderAddonStore();
+    }
+
+    function fecharAddonStore() {
+      _addonStoreAberta = false;
+      document.getElementById('addon-store-overlay').style.display = 'none';
+      document.getElementById('addon-store').classList.remove('addon-store--open');
+    }
+
+    function mudarTab(btn, tab) {
+      _addonTabAtual = tab;
+      document.querySelectorAll('.addon-tab').forEach(b => b.classList.remove('addon-tab--active'));
+      btn.classList.add('addon-tab--active');
+      renderAddonStore();
+    }
+
+    function renderAddonStore() {
+      const body = document.getElementById('addon-store-body');
+      if (!body) return;
+      const lista = _addonTabAtual === 'instalados'
+        ? ADDONS_CATALOGO.filter(a => addonInstalado(a.id))
+        : ADDONS_CATALOGO;
+
+      if (lista.length === 0) {
+        body.innerHTML = '<div class="addon-vazio">Nenhum addon instalado.</div>';
+        return;
+      }
+
+      body.innerHTML = lista.map(a => {
+        const inst = addonInstalado(a.id);
+        const ativ = addonAtivo(a.id);
+        return `<div class="addon-card${inst ? ' addon-card--inst' : ''}">
+          <div class="addon-card-ico">
+            <img src="${a.icone}" onerror="this.style.display='none';this.nextSibling.style.display='flex'" alt="" />
+            <div class="addon-ico-fallback" style="display:none">${a.nome.slice(0,2).toUpperCase()}</div>
+          </div>
+          <div class="addon-card-info">
+            <div class="addon-card-nome">${a.nome}${a.essencial ? ' <span class="addon-badge-ess">ESSENCIAL</span>' : ''}</div>
+            <div class="addon-card-meta">v${a.versao} &middot; ${a.autor} &middot; ${a.tamanho}</div>
+            <div class="addon-card-desc">${a.desc}</div>
+          </div>
+          <div class="addon-card-acoes">
+            ${inst
+              ? `<button class="addon-btn addon-btn--ativ${ativ ? ' on' : ''}" id="addon-btn-${a.id}-tog"
+                   onclick="toggleAddonAtivo('${a.id}')">${ativ ? 'ATIVO ●' : 'ATIVAR'}</button>
+                 <button class="addon-btn addon-btn--des" onclick="desinstalarAddon('${a.id}')">REMOVER</button>`
+              : `<button class="addon-btn addon-btn--dl" id="addon-btn-${a.id}"
+                   onclick="instalarAddon('${a.id}')">↓ INSTALAR</button>`
+            }
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Ações de addons não-terminus ─────────────────────────────
+    function addon_phantomvpn() {
+      const w = document.getElementById('site-ip-warn');
+      if (w) { w.style.opacity = '0'; setTimeout(() => w.style.display = 'none', 600); }
+      toastAddon('PhantomVPN: IP mascarado com sucesso.');
+    }
+
+    function addon_hexview() {
+      const win = document.createElement('div');
+      win.className = 'hex-win';
+      win.innerHTML = '<div class="hex-win-hdr">HexView &mdash; INTERCEPT STREAM<button onclick="this.closest(\'.hex-win\').remove()">✕</button></div>'
+        + '<div class="hex-win-body" id="hexview-body"></div>';
+      document.body.appendChild(win);
+      const body = win.querySelector('#hexview-body');
+      const chars = '0123456789ABCDEF';
+      const gen = () => Array.from({length: 8}, () =>
+        Array.from({length: 4}, () => chars[Math.floor(Math.random()*16)]).join('')
+      ).join(' ');
+      let rows = 0;
+      const iv = setInterval(() => {
+        const line = document.createElement('div');
+        line.textContent = '0x' + (rows * 32).toString(16).padStart(6,'0') + '  ' + gen();
+        body.appendChild(line);
+        body.scrollTop = body.scrollHeight;
+        rows++;
+        if (rows > 120) { clearInterval(iv); }
+      }, 80);
+      makeDraggableEl(win, win.querySelector('.hex-win-hdr'));
+    }
+
+    function addon_darkscanner() {
+      toastAddon('DarkScanner: iniciando varredura da rede...');
+      setTimeout(() => toastAddon('DarkScanner: 3 hosts ativos encontrados em .cat'), 2500);
+      setTimeout(() => toastAddon('DarkScanner: AVISO — host 192.168.∅.7 não responde'), 5000);
+    }
+
+    function addon_catcrypt() {
+      toastAddon('CatCrypt: módulo de criptografia felina carregado. =^..^=');
+    }
+
+    function addon_watchdog() {
+      toastAddon('WatchDog: monitoramento ativo. Conexão suspeita detectada em 2h.');
+      setTimeout(() => {
+        document.body.classList.add('conn-glitch-rgb');
+        setTimeout(() => document.body.classList.remove('conn-glitch-rgb'), 400);
+        toastAddon('⚠ WatchDog: tentativa de rastreamento bloqueada!');
+      }, 8000 + Math.random() * 4000);
+    }
+
+    // ── util: tornar elementos arrastáveis ────────────────────────
+    function makeDraggableEl(el, handle) {
+      let drag = false, ox = 0, oy = 0;
+      (handle || el).addEventListener('mousedown', e => {
+        drag = true;
+        const r = el.getBoundingClientRect();
+        el.style.right = ''; el.style.bottom = '';
+        el.style.left = r.left + 'px';
+        el.style.top  = r.top  + 'px';
+        ox = e.clientX - r.left;
+        oy = e.clientY - r.top;
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', e => {
+        if (!drag) return;
+        el.style.left = (e.clientX - ox) + 'px';
+        el.style.top  = (e.clientY - oy) + 'px';
+      });
+      document.addEventListener('mouseup', () => { drag = false; });
+    }
+
+    // Inicializa dock ao carregar
+    renderDock();
+
+    // ══════════════════════════════════════════════════════════════
+    //  TERMINUS — TERMINAL EMULADO
+    // ══════════════════════════════════════════════════════════════
+    let _terminusHistorico = [];
+    let _terminusHistIdx   = -1;
+    let _terminusMinimized = false;
+
+    function abrirTerminus() {
+      const w = document.getElementById('terminus-win');
+      w.style.display = 'flex';
+      _terminusMinimized = false;
+      w.classList.remove('terminus--minimized');
+      makeDraggableEl(w, document.getElementById('terminus-titlebar'));
+      terminus_print('TERMINUS v2.3 — Protocolo de Acesso Remoto Seguro', 'term-info');
+      terminus_print('Conectado a: root@darknet.cat  [TOR ativo]', 'term-info');
+      terminus_print('Digite "help" para listar comandos disponíveis.', 'term-dim');
+      terminus_print('', '');
+      document.getElementById('terminus-input').focus();
+    }
+
+    function fecharTerminus() {
+      document.getElementById('terminus-win').style.display = 'none';
+      // Desativa addon também
+      _addonsAtivos = _addonsAtivos.filter(x => x !== 'terminus');
+      salvarAddons(); renderDock();
+    }
+
+    function terminus_minimize() {
+      const w = document.getElementById('terminus-win');
+      _terminusMinimized = !_terminusMinimized;
+      w.classList.toggle('terminus--minimized', _terminusMinimized);
+    }
+
+    function terminus_print(txt, cls) {
+      const out  = document.getElementById('terminus-output');
+      const line = document.createElement('div');
+      line.className = 'term-line' + (cls ? ' ' + cls : '');
+      line.textContent = txt;
+      out.appendChild(line);
+      out.scrollTop = out.scrollHeight;
+    }
+
+    function terminus_key(e) {
+      const inp = document.getElementById('terminus-input');
+      if (e.key === 'Enter') {
+        const cmd = inp.value.trim();
+        inp.value = '';
+        _terminusHistIdx = -1;
+        if (cmd) {
+          _terminusHistorico.unshift(cmd);
+          terminus_print('root@darknet:~$ ' + cmd, 'term-cmd');
+          terminus_exec(cmd);
+        }
+      } else if (e.key === 'ArrowUp') {
+        _terminusHistIdx = Math.min(_terminusHistIdx + 1, _terminusHistorico.length - 1);
+        inp.value = _terminusHistorico[_terminusHistIdx] || '';
+        e.preventDefault();
+      } else if (e.key === 'ArrowDown') {
+        _terminusHistIdx = Math.max(_terminusHistIdx - 1, -1);
+        inp.value = _terminusHistIdx >= 0 ? _terminusHistorico[_terminusHistIdx] : '';
+        e.preventDefault();
+      }
+    }
+
+    function terminus_exec(raw) {
+      const parts = raw.trim().split(/\s+/);
+      const cmd   = parts[0].toLowerCase();
+      const args  = parts.slice(1);
+
+      const cmds = {
+
+        help: () => {
+          terminus_print('Comandos disponíveis:', 'term-hdr');
+          terminus_print('  help              — lista comandos', 'term-dim');
+          terminus_print('  whoami            — identidade atual', 'term-dim');
+          terminus_print('  ls                — listar arquivos do servidor', 'term-dim');
+          terminus_print('  ls /classified    — arquivos restritos (requer senha)', 'term-dim');
+          terminus_print('  cat [arquivo]     — exibir conteúdo de arquivo', 'term-dim');
+          terminus_print('  ping [host]       — testar conexão com host', 'term-dim');
+          terminus_print('  scan              — varrer rede local', 'term-dim');
+          terminus_print('  trace [ip]        — rastrear rota até destino', 'term-dim');
+          terminus_print('  decrypt [str]     — descriptografar string base64', 'term-dim');
+          terminus_print('  inject [payload]  — injetar payload na sessão', 'term-dim');
+          terminus_print('  dark [on|off]     — alternar modo escuridão total', 'term-dim');
+          terminus_print('  glitch            — forçar glitch de sinal', 'term-dim');
+          terminus_print('  matrix            — ativar modo matrix', 'term-dim');
+          terminus_print('  reboot            — reiniciar interface do site', 'term-dim');
+          terminus_print('  hack              — tentar invadir o sistema de segurança', 'term-dim');
+          terminus_print('  conterhack        — [EMERGÊNCIA] contra-hackear VYPER', 'term-dim');
+          terminus_print('  bypass            — [EMERGÊNCIA] contornar firewall', 'term-dim');
+          terminus_print('  defrag            — [EMERGÊNCIA] desfragmentar buffer', 'term-dim');
+          terminus_print('  flush             — [EMERGÊNCIA] cancelar shutdown', 'term-dim');
+          terminus_print('  clear             — limpar terminal', 'term-dim');
+          terminus_print('  exit              — fechar terminus', 'term-dim');
+        },
+
+        whoami: () => {
+          terminus_print('Usuário: ' + username, 'term-ok');
+          terminus_print('Nível de acesso: CONVIDADO', 'term-warn');
+          terminus_print('IP: ' + (document.getElementById('site-ip-val')?.textContent || '???'), 'term-warn');
+          terminus_print('Status TOR: ATIVO', 'term-ok');
+        },
+
+        ls: () => {
+          if (args[0] === '/classified') {
+            terminus_print('ACESSO NEGADO — requer credencial nível 3', 'term-err');
+            terminus_print('Hint: tente sudo ls /classified', 'term-dim');
+          } else if (args[0] === '/database') {
+            if (_hackState.fase !== 5) {
+              terminus_print('ACESSO NEGADO — banco de dados bloqueado', 'term-err');
+              terminus_print('Hint: invadir o sistema primeiro (comando: hack)', 'term-dim');
+            } else {
+              terminus_print('/database — banco de dados interno darknet.cat', 'term-hdr');
+              ['/database/op_cinza_completo.enc', '/database/vyper_lista_agentes.dat', '/database/sessao_07_continua.zip'].forEach(f =>
+                terminus_print('  -rwx  ' + f, 'term-err')
+              );
+            }
+          } else {
+            terminus_print('/ — sistema de arquivos darknet.cat', 'term-hdr');
+            ['/public/', '/logs/', '/media/', '/tmp/', '/sys/', '/classified/', '/database/'].forEach(f =>
+              terminus_print('  drwx  ' + f, 'term-dim')
+            );
+            ['README.txt','access.log','config.enc','server.pid'].forEach(f =>
+              terminus_print('  -rw-  ' + f, 'term-dim')
+            );
+          }
+        },
+
+        cat: () => {
+          const file = args[0] || '';
+          const files = {
+            'README.txt':   ['DARKNET.CAT — Servidor Naumt Teresa', 'Acesso restrito. Se você está lendo isso,', 'foi porque deveria estar aqui.'],
+            'access.log':   ['[19/03 03:01] conexão aceita — ghost_404', '[19/03 03:22] tentativa bloqueada — IP 201.xx', '[19/03 04:11] ' + username + ' — SESSÃO ATIVA'],
+            'config.enc':   ['4b6579 3a20 7a33 7235 2031 3973 2031', '> arquivo cifrado. use decrypt para ler.'],
+            'server.pid':   ['PID 1337 — darknet_core [running]', 'PID 404  — monitor_daemon [sleeping]'],
+          };
+          if (files[file]) {
+            files[file].forEach(l => terminus_print(l, 'term-ok'));
+          } else if (file) {
+            terminus_print('cat: ' + file + ': arquivo não encontrado', 'term-err');
+          } else {
+            terminus_print('uso: cat [arquivo]', 'term-warn');
+          }
+        },
+
+        ping: () => {
+          const host = args[0] || 'darknet.cat';
+          terminus_print('PING ' + host + ' — 56 bytes...', 'term-dim');
+          [1,2,3].forEach((n, i) => {
+            setTimeout(() => {
+              const ms = (Math.random() * 80 + 20).toFixed(1);
+              terminus_print('64 bytes de ' + host + ': icmp_seq=' + n + ' time=' + ms + ' ms', 'term-ok');
+            }, (i + 1) * 400);
+          });
+          setTimeout(() => terminus_print('3 pacotes transmitidos, 3 recebidos, 0% perda', 'term-dim'), 1600);
+        },
+
+        scan: () => {
+          terminus_print('Iniciando varredura LAN...', 'term-dim');
+          const hosts = [
+            '10.∅.0.1   — gateway      [ativo]',
+            '10.∅.0.7   — servidor_z   [ativo]',
+            '10.∅.0.13  — nó_oculto    [ativo]',
+            '10.∅.0.22  — desconhecido [BLOQUEADO]',
+            '10.∅.0.31  — offline      [sem resposta]',
+          ];
+          hosts.forEach((h, i) =>
+            setTimeout(() => terminus_print(h, h.includes('BLOQUEADO') ? 'term-err' : h.includes('offline') ? 'term-warn' : 'term-ok'), i * 350)
+          );
+          setTimeout(() => terminus_print('Varredura concluída. 3 hosts ativos.', 'term-dim'), hosts.length * 350 + 200);
+        },
+
+        trace: () => {
+          const ip = args[0] || '10.∅.0.7';
+          terminus_print('traceroute para ' + ip + ':', 'term-dim');
+          const hops = [
+            '1  10.∅.0.1     (gateway-local)       1.2 ms',
+            '2  172.16.∅.3   (nó-intermediário-1)  14.7 ms',
+            '3  192.168.∅.9  (bridge-tor-1)         31.0 ms',
+            '4  ***           (nó anônimo — TOR)    timeout',
+            '5  ' + ip + '   (destino)              88.4 ms',
+          ];
+          hops.forEach((h, i) =>
+            setTimeout(() => terminus_print(h, h.includes('timeout') ? 'term-warn' : 'term-ok'), i * 380)
+          );
+        },
+
+        decrypt: () => {
+          const str = args.join(' ');
+          if (!str) { terminus_print('uso: decrypt [string]', 'term-warn'); return; }
+          try {
+            const dec = atob(str);
+            terminus_print('Descriptografado: ' + dec, 'term-ok');
+          } catch {
+            terminus_print('Falha na decodificação. String inválida ou corrompida.', 'term-err');
+          }
+        },
+
+        inject: () => {
+          const payload = args.join(' ') || 'null';
+          terminus_print('Injetando payload: ' + payload, 'term-warn');
+          setTimeout(() => {
+            terminus_print('Payload entregue na sessão atual.', 'term-ok');
+            // Efeito visual
+            document.body.classList.add('conn-glitch-rgb');
+            setTimeout(() => document.body.classList.remove('conn-glitch-rgb'), 300);
+          }, 900);
+        },
+
+        dark: () => {
+          if (args[0] === 'off') {
+            document.body.style.filter = '';
+            terminus_print('Modo escuridão desativado.', 'term-ok');
+          } else {
+            document.body.style.filter = 'brightness(0.25) contrast(1.4)';
+            terminus_print('Modo escuridão ativado. Use "dark off" para reverter.', 'term-warn');
+          }
+        },
+
+        glitch: () => {
+          terminus_print('Forçando instabilidade de sinal...', 'term-warn');
+          const g = document.createElement('div');
+          g.className = 'conn-glitch-overlay';
+          document.body.appendChild(g);
+          document.body.classList.add('conn-glitch-rgb');
+          let c = 0;
+          const iv = setInterval(() => {
+            c++; document.body.classList.toggle('conn-glitch-rgb');
+            if (c >= 10) { clearInterval(iv); document.body.classList.remove('conn-glitch-rgb'); g.remove(); }
+          }, 80);
+          terminus_print('Sinal restaurado.', 'term-ok');
+        },
+
+        matrix: () => {
+          terminus_print('MATRIX MODE ATIVADO — clique em qualquer lugar para sair', 'term-ok');
+          const canvas = document.createElement('canvas');
+          canvas.id = 'matrix-canvas';
+          canvas.style.cssText = 'position:fixed;inset:0;z-index:9995;cursor:pointer;';
+          canvas.width  = window.innerWidth;
+          canvas.height = window.innerHeight;
+          document.body.appendChild(canvas);
+          const ctx   = canvas.getContext('2d');
+          const cols  = Math.floor(canvas.width / 14);
+          const drops = Array(cols).fill(1);
+          const chars = 'アイウエオカキクケコABCDEF0123456789█▓▒░=^..^=';
+          const iv    = setInterval(() => {
+            ctx.fillStyle = 'rgba(4,0,8,0.06)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#cc0044';
+            ctx.font = '13px monospace';
+            drops.forEach((y, x) => {
+              const ch = chars[Math.floor(Math.random() * chars.length)];
+              ctx.fillText(ch, x * 14, y * 14);
+              if (y * 14 > canvas.height && Math.random() > 0.975) drops[x] = 0;
+              drops[x]++;
+            });
+          }, 45);
+          canvas.onclick = () => { clearInterval(iv); canvas.remove(); terminus_print('Matrix desativado.', 'term-dim'); };
+        },
+
+        reboot: () => {
+          terminus_print('Reiniciando interface...', 'term-warn');
+          setTimeout(() => {
+            document.body.style.opacity = '0';
+            setTimeout(() => {
+              document.body.style.transition = 'opacity 0.8s';
+              document.body.style.opacity = '1';
+              terminus_print('Interface restaurada.', 'term-ok');
+            }, 700);
+          }, 500);
+        },
+
+        clear: () => {
+          document.getElementById('terminus-output').innerHTML = '';
+        },
+
+        exit: () => {
+          terminus_print('Encerrando sessão...', 'term-dim');
+          setTimeout(() => fecharTerminus(), 700);
+        },
+
+        sudo: () => {
+          if (args[0] === 'ls' && args[1] === '/classified') {
+            terminus_print('Senha root necessária:', 'term-warn');
+            const inp = document.getElementById('terminus-input');
+            inp.type = 'password';
+            inp.placeholder = 'senha...';
+            const orig = inp.onkeydown;
+            inp.onkeydown = e => {
+              if (e.key === 'Enter') {
+                const pwd = inp.value;
+                inp.value = ''; inp.type = 'text';
+                inp.placeholder = 'digite um comando...';
+                inp.onkeydown = orig;
+                terminus_print('[senha oculta]', 'term-dim');
+                if (pwd === 'naumt1304' || pwd === 'cat') {
+                  terminus_print('Acesso concedido.', 'term-ok');
+                  ['/classified/op_cinza.enc', '/classified/x7_coords.dat',
+                   '/classified/vyper_list.enc', '/classified/naumt_manifesto.txt'].forEach(f =>
+                    terminus_print('  -rwx  ' + f, 'term-err')
+                  );
+                } else {
+                  terminus_print('Senha incorreta. Tentativa registrada.', 'term-err');
+                  document.body.classList.add('conn-glitch-rgb');
+                  setTimeout(() => document.body.classList.remove('conn-glitch-rgb'), 500);
+                }
+              }
+            };
+          } else {
+            terminus_print('sudo: comando não permitido nesta sessão.', 'term-err');
+          }
+        },
+
+        hack: () => {
+          if (args[0] === '--reset') hackReset();
+          else iniciarHack();
+        },
+
+        conterhack: () => hackComandoConterhack(),
+        bypass:     () => hackComandoBypass(),
+        defrag:     () => hackComandoDefrag(),
+        flush:      () => hackComandoFlush(),
+      };
+
+      if (cmds[cmd]) {
+        cmds[cmd]();
+      } else {
+        terminus_print('terminus: comando não encontrado: ' + cmd, 'term-err');
+        terminus_print('Digite "help" para ver os comandos disponíveis.', 'term-dim');
+      }
+      terminus_print('', '');
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  SEQUÊNCIA DE HACK — FASE 1 + 2
+    // ══════════════════════════════════════════════════════════════
+    const _hackState = {
+      ativo: false, fase: 0,
+      errWins: [], sons: {}
+    };
+
+    function iniciarHack() {
+      if (_hackState.ativo) {
+        terminus_print('ERRO: sequência de invasão já em progresso.', 'term-err');
+        return;
+      }
+      _hackState.ativo = true;
+      _hackState.fase  = 1;
+      // Trava o scroll da página
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top      = -scrollY + 'px';
+      document.body.style.width    = '100%';
+      _hackState.scrollY = scrollY;
+      terminus_print('', '');
+      terminus_print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'term-hdr');
+      terminus_print('  ▶ PROTOCOLO DE INVASÃO INICIADO         ', 'term-hdr');
+      terminus_print('  darknet.cat — NÍVEL DE ACESSO: ROOT   ', 'term-hdr');
+      terminus_print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'term-hdr');
+      const steps = [
+        [350,  'Conectando a darknet.cat:8443...', 'term-dim'],
+        [750,  'Handshake TLS[AES-256] — OK', 'term-ok'],
+        [1150, 'Varrendo vulnerabilidades abertas...', 'term-dim'],
+        [1550, 'Porta 8443 ABERTA — /admin_panel detectado', 'term-warn'],
+        [1950, 'Injetando exploit: buffer_overflow_v4...', 'term-dim'],
+        [2500, '[PAYLOAD_SEC_1] enviado — aguardando resposta...', 'term-warn'],
+        [3150, 'Resposta 200 OK — bypass de autenticação bem-sucedido', 'term-ok'],
+        [3600, 'Escalonando privilégios: GUEST → ADMIN → ROOT...', 'term-dim'],
+        [4100, '[ROOT] ACESSO CONCEDIDO — controle total do sistema', 'term-ok'],
+        [4500, '⚠ ALERTA — FIREWALL DETECTOU INVASÃO', 'term-err'],
+        [4850, '⚠ CONTRAMEDIDAS ATIVAS — PROTOCOLO SKULLCAT ACIONADO', 'term-err'],
+      ];
+      steps.forEach(([d, m, c]) => setTimeout(() => terminus_print(m, c), d));
+      setTimeout(() => hackSpawnErros(), 5300);
+    }
+
+    function hackSpawnErros() {
+      const ip = document.getElementById('site-ip-val')?.textContent || '???';
+      const usr = document.getElementById('site-username')?.textContent || 'DESCONHECIDO';
+      const erros = [
+        { t: '⛔ ERRO CRÍTICO — #4401', m: 'Falha de integridade do sistema detectada.\nProcesso: security_daemon [PID 1337]\nCódigo: 0x0000DEAD' },
+        { t: '⚠ INVASÃO DETECTADA', m: 'Acesso não autorizado registrado.\nUSUÁRIO: ' + usr + '\nIP RASTREADO: ' + ip + '\nAgência notificada.' },
+        { t: '🔒 PROTOCOLO SKULLCAT — ALERTA 3', m: 'Emergência de nível 3 ativada.\nContato Agente V-7: FALHOU\nIsolando segmento de rede...' },
+        { t: '⛔ KERNEL PANIC', m: 'FATAL: módulo de segurança corrompido\nstack trace:\n  sec_module.o +0x3f\n  root_verify +0x11\n  NMI: reboot for recovery' },
+        { t: '💀 SHUTDOWN IMINENTE', m: 'nuclear_shutdown.bat iniciado\nAutorizado por: SYS_ROOT\nTEMPO ATÉ ENCERRAMENTO: 41s' },
+      ];
+      erros.forEach((e, i) => setTimeout(() => criarJanelaErro(e.t, e.m), i * 520));
+      setTimeout(() => hackFase2(), erros.length * 520 + 1300);
+    }
+
+    function criarJanelaErro(titulo, msg) {
+      const win = document.createElement('div');
+      win.className = 'hack-err-win';
+      const mx = Math.max(40, window.innerWidth  - 330);
+      const my = Math.max(40, window.innerHeight - 190);
+      win.style.left = (40 + Math.random() * mx) + 'px';
+      win.style.top  = (40 + Math.random() * my) + 'px';
+      win.innerHTML = `
+        <div class="hack-err-bar">${titulo}</div>
+        <div class="hack-err-body">${msg.replace(/\n/g,'<br>')}</div>
+        <div class="hack-err-foot"><button onclick="this.closest('.hack-err-win').remove()">OK</button></div>`;
+      document.body.appendChild(win);
+      _hackState.errWins.push(win);
+    }
+
+    function hackFase2() {
+      _hackState.fase = 2;
+      // Shake e remove janelas de erro
+      _hackState.errWins.forEach(w => {
+        w.classList.add('hack-err-shake');
+        setTimeout(() => { if (w.parentNode) w.remove(); }, 500);
+      });
+      _hackState.errWins = [];
+
+      setTimeout(() => {
+        // Escurece tela
+        document.getElementById('hack-overlay').classList.add('hack-overlay--vis');
+
+        // Toca risada
+        const risada = new Audio('icones/feed/risada.mp3');
+        risada.volume = 0.88;
+        risada.play().catch(() => {});
+        _hackState.sons.risada = risada;
+
+        terminus_print('', '');
+        terminus_print('██████████████████████████████████████████', 'term-err');
+        terminus_print('  S I S T E M A  C O M P R O M E T I D O  ', 'term-err');
+        terminus_print('  PROTOCOLO SKULLCAT — FASE 3 ATIVA          ', 'term-err');
+        terminus_print('  AGENTES ACIONADOS — LOCALIZAÇÃO SENDO RASTREADA', 'term-err');
+        terminus_print('██████████████████████████████████████████', 'term-err');
+
+        // Catskull aparece após 800ms
+        setTimeout(() => {
+          document.getElementById('catskull-overlay').classList.add('catskull--vis');
+        }, 800);
+
+        // Fase 3 (fdeu.mp3 + timer + pisca) — ativa após catskull aparecer
+        setTimeout(() => hackFase3(), 2200);
+      }, 650);
+    }
+
+    function hackFase3() {
+      // ── PUZZLE STATE ──────────────────────────────────────────
+      _hackState.conterhackOk = false;
+      _hackState.bypassOk     = false;
+      _hackState.defragOk     = false;
+      _hackState.flushOk      = false;
+      _hackState.botaoOk      = false;
+      // ──────────────────────────────────────────────────────────      _hackState.fase = 3;
+
+      // Toca fdeu.mp3
+      const fdeu = new Audio('icones/feed/fdeu.mp3');
+      fdeu.volume = 0.9;
+      fdeu.play().catch(() => {});
+      _hackState.sons.fdeu = fdeu;
+
+      // Pisca a tela enlouquecidamente por 1.5s depois para
+      let flashCount = 0;
+      const flashIv = setInterval(() => {
+        flashCount++;
+        document.body.style.filter = flashCount % 2 === 0
+          ? 'brightness(0.08) hue-rotate(0deg)'
+          : 'brightness(1.8) saturate(3) hue-rotate(60deg)';
+        if (flashCount >= 18) {
+          clearInterval(flashIv);
+          document.body.style.filter = '';
+        }
+      }, 85);
+
+      // Mostra o painel de shutdown após a piscada
+      setTimeout(() => mostrarTimerShutdown(), 1600);
+    }
+
+    function mostrarTimerShutdown() {
+      _hackState.fase = 4;
+      _hackState.puzzlesResolvidos = 0;
+      _hackState.totalPuzzles = 4; // conterhack, bypass, defrag, flush + botão
+      const panel = document.getElementById('hack-timer-panel');
+      panel.style.display = 'flex';
+      requestAnimationFrame(() => panel.classList.add('hack-timer--vis'));
+
+      // Mensagens de Vyper no terminus
+      terminus_print('', '');
+      terminus_print('[VYPER · CANAL SEGURO] >>>>>>>>>>>>>>>>>>>>', 'term-warn');
+      terminus_print('[V-7]: Sistema comprometido. Iniciando shutdown em 41s.', 'term-warn');
+      terminus_print('[V-7]: Todos os dados serão destruídos ao chegar em ZERO.', 'term-warn');
+      terminus_print('[V-7]: Se você consegue nos ouvir — IMPEÇA ISSO.', 'term-warn');
+      terminus_print('[AGENTE]: Sequência de contra-hack disponível. USE AGORA.', 'term-err');
+      terminus_print('[AGENTE]: Execute: conterhack → bypass → defrag → flush', 'term-err');
+      terminus_print('[AGENTE]: Mas cuidado — o sistema vai resistir.', 'term-err');
+      terminus_print('', '');
+
+      // Abre abas aleatórias após 4s e depois a cada ~12s
+      setTimeout(() => abrirAbaAleatoria(), 4000);
+      _hackState.abaIv = setInterval(() => {
+        if (_hackState.fase === 4) abrirAbaAleatoria();
+      }, 13000);
+
+      // Botão que foge do mouse aparece após 6s
+      setTimeout(() => criarBotaoFugitivo(), 6000);
+
+      // Tela embaçada aparece após 10s (dura ~3s e some sozinha)
+      setTimeout(() => {
+        if (_hackState.fase !== 4) return;
+        document.body.classList.add('hack-blur');
+        terminus_print('[V-7]: INTERFERÊNCIA DE SINAL — visão comprometida!', 'term-err');
+        terminus_print('[V-7]: Digite "defrag" para limpar o buffer.', 'term-warn');
+        // Remove sozinho após 3s se o usuário não usar defrag
+        setTimeout(() => document.body.classList.remove('hack-blur'), 3000);
+      }, 10000);
+
+      // Inicia contagem regressiva: 41 segundos
+      let totalMs = 41000;
+      const timerEl   = document.getElementById('hack-timer-num');
+      const timerMsEl = document.getElementById('hack-timer-ms');
+      const startTime = performance.now();
+
+      _hackState.timerIv = setInterval(() => {
+        const elapsed = performance.now() - startTime;
+        const remaining = Math.max(0, totalMs - elapsed);
+        const secs = Math.floor(remaining / 1000);
+        const ms   = Math.floor((remaining % 1000) / 10);
+        timerEl.textContent   = String(secs).padStart(2, '0');
+        timerMsEl.textContent = String(ms).padStart(2, '0');
+
+        // Cor crítica nos últimos 10s
+        if (remaining <= 10000) {
+          timerEl.style.color = '#ff0000';
+          timerMsEl.style.color = '#ff0000';
+          document.getElementById('hack-timer-panel').style.animation =
+            'hack-timer-crit 0.2s infinite';
+        }
+
+        if (remaining <= 0) {
+          clearInterval(_hackState.timerIv);
+          hackFalha();
+        }
+      }, 16);
+    }
+
+    // ── PUZZLES E COMANDOS DE CONTRA-HACK ────────────────────────
+
+    const _youtubeLinks = [
+      'https://www.youtube.com/watch?v=dQw4w9WgXcQ',    // rickroll clássico
+      'https://www.youtube.com/watch?v=9bZkp7q19f0',    // Gangnam Style
+      'https://www.youtube.com/watch?v=jNQXAC9IVRw',    // Me at the zoo
+      'https://youtu.be/mD3v1B_aXw0?si=akH108cf4oD0JAEZ',    
+      'https://youtu.be/f5pCVs10uZs?si=akYnjNEtDlWKkCuD',    
+    ];
+
+    function abrirAbaAleatoria() {
+      const url = _youtubeLinks[Math.floor(Math.random() * _youtubeLinks.length)];
+      window.open(url, '_blank');
+      terminus_print('[SYSTM]: INTERFER\u00caNCIA — redirecionando conex\u00f5es...', 'term-err');
+    }
+
+    function criarBotaoFugitivo() {
+      if (_hackState.fase !== 4 || _hackState.botaoOk) return;
+      terminus_print('', '');
+      terminus_print('[V-7]: Bot\u00e3o de interrup\u00e7\u00e3o ativo na tela.', 'term-warn');
+      terminus_print('[V-7]: CLIQUE NELE — o sistema est\u00e1 tentando escapar!', 'term-warn');
+
+      const btn = document.createElement('button');
+      btn.id = 'hack-flee-btn';
+      btn.textContent = '[ INTERROMPER SHUTDOWN ]';
+      btn.style.left = Math.floor(window.innerWidth / 2 - 130) + 'px';
+      btn.style.top  = Math.floor(window.innerHeight * 0.3) + 'px';
+      document.body.appendChild(btn);
+
+      let escapou = false;
+      let cliques = 0;
+      const escapes = 8; // quantas vezes foge antes de deixar clicar
+
+      btn.addEventListener('mouseenter', () => {
+        if (escapou || _hackState.botaoOk) return;
+        cliques++;
+        if (cliques < escapes) {
+          // Foge para posição aleatória
+          const maxX = window.innerWidth  - 260;
+          const maxY = window.innerHeight - 60;
+          btn.style.left = (60 + Math.random() * maxX) + 'px';
+          btn.style.top  = (60 + Math.random() * maxY) + 'px';
+        } else {
+          escapou = true; // fica quieto
+        }
+      });
+
+      btn.addEventListener('click', () => {
+        if (_hackState.fase !== 4) return;
+        _hackState.botaoOk = true;
+        btn.remove();
+        terminus_print('[V-7]: Bot\u00e3o capturado! Interrup\u00e7\u00e3o parcial bem-sucedida.', 'term-ok');
+        terminus_print('[V-7]: Continue — faltam os comandos de flush.', 'term-warn');
+        verificarSucesso();
+      });
+    }
+
+    function hackComandoConterhack() {
+      if (_hackState.fase !== 4) {
+        terminus_print('conterhack: n\u00e3o h\u00e1 invas\u00e3o ativa.', 'term-err');
+        return;
+      }
+      if (_hackState.conterhackOk) {
+        terminus_print('conterhack: protocolo j\u00e1 executado.', 'term-dim');
+        return;
+      }
+      _hackState.conterhackOk = true;
+      terminus_print('> Carregando m\u00f3dulo conterhack...', 'term-dim');
+      const steps = [
+        [300,  'Analisando vetores de ataque do FIREWALL...', 'term-dim'],
+        [700,  'Vetor 1: force_injection   — BLOQUEADO ✓', 'term-ok'],
+        [1100, 'Vetor 2: session_drain     — BLOQUEADO ✓', 'term-ok'],
+        [1500, 'Vetor 3: kernel_overwrite  — NEUTRALIZADO ✓', 'term-ok'],
+        [1900, '[V-7]: Bom trabalho, agente. Mantenha o ritmo.', 'term-warn'],
+        [2100, 'CONTERHACK — OK. Execute: bypass', 'term-hdr'],
+      ];
+      steps.forEach(([d, m, c]) => setTimeout(() => terminus_print(m, c), d));
+      setTimeout(() => verificarSucesso(), 2200);
+    }
+
+    function hackComandoBypass() {
+      if (_hackState.fase !== 4) { terminus_print('bypass: sem contexto.', 'term-err'); return; }
+      if (!_hackState.conterhackOk) {
+        terminus_print('ERRO: execute conterhack primeiro.', 'term-err'); return;
+      }
+      if (_hackState.bypassOk) { terminus_print('bypass: j\u00e1 executado.', 'term-dim'); return; }
+      _hackState.bypassOk = true;
+      terminus_print('> Iniciando bypass do firewall SKULLCAT...', 'term-dim');
+      const steps = [
+        [400,  'Injetando chave rotativa RSA-4096...', 'term-dim'],
+        [900,  'Firewall externo: CONTORNADO ✓', 'term-ok'],
+        [1300, 'Firewall interno: CONTORNADO ✓', 'term-ok'],
+        [1700, 'Honeypot detectado — evitado ✓', 'term-warn'],
+        [2000, '[AGENTE]: Voc\u00ea sabe o que est\u00e1 fazendo. Impressionante.', 'term-warn'],
+        [2200, 'BYPASS — OK. Execute: defrag', 'term-hdr'],
+      ];
+      steps.forEach(([d, m, c]) => setTimeout(() => terminus_print(m, c), d));
+      setTimeout(() => verificarSucesso(), 2300);
+    }
+
+    function hackComandoDefrag() {
+      if (_hackState.fase !== 4) { terminus_print('defrag: sem contexto.', 'term-err'); return; }
+      if (!_hackState.bypassOk) { terminus_print('ERRO: execute bypass primeiro.', 'term-err'); return; }
+      if (_hackState.defragOk) { terminus_print('defrag: j\u00e1 executado.', 'term-dim'); return; }
+      _hackState.defragOk = true;
+      terminus_print('> Defragmentando n\u00fa cleo do servidor...', 'term-dim');
+      // Remove blur
+      document.body.classList.remove('hack-blur');
+      const steps = [
+        [300,  'Buffer de corrup\u00e7\u00e3o: LIMPO ✓', 'term-ok'],
+        [700,  'Fragmentos de dados: RECUPERADOS ✓', 'term-ok'],
+        [1100, 'Sinal visual: RESTAURADO ✓', 'term-ok'],
+        [1500, '[V-7]: Bom. O sistema est\u00e1 resist\u00edndo — mais um passo.', 'term-warn'],
+        [1700, 'DEFRAG — OK. Execute: flush', 'term-hdr'],
+      ];
+      steps.forEach(([d, m, c]) => setTimeout(() => terminus_print(m, c), d));
+      setTimeout(() => verificarSucesso(), 1800);
+    }
+
+    function hackComandoFlush() {
+      if (_hackState.fase !== 4) { terminus_print('flush: sem contexto.', 'term-err'); return; }
+      if (!_hackState.defragOk) { terminus_print('ERRO: execute defrag primeiro.', 'term-err'); return; }
+      if (_hackState.flushOk) { terminus_print('flush: j\u00e1 executado.', 'term-dim'); return; }
+      _hackState.flushOk = true;
+      terminus_print('> Flush do protocolo de shutdown...', 'term-dim');
+      const steps = [
+        [400,  'Localizando processo nuclear_shutdown.bat...', 'term-dim'],
+        [900,  'PID 7734 — nuclear_shutdown: ENCERRADO ✓', 'term-ok'],
+        [1300, 'Rotina de autodestru\u00ed\u00e7\u00e3o: DESABILITADA ✓', 'term-ok'],
+        [1700, '[V-7]: Protocolo encerrado com sucesso.', 'term-warn'],
+        [2000, '[AGENTE]: Dados protegidos. Voc\u00ea conseguiu.', 'term-ok'],
+        [2200, 'FLUSH — OK.', 'term-hdr'],
+      ];
+      steps.forEach(([d, m, c]) => setTimeout(() => terminus_print(m, c), d));
+      setTimeout(() => verificarSucesso(), 2300);
+    }
+
+    function verificarSucesso() {
+      if (_hackState.fase !== 4) return;
+      if (_hackState.conterhackOk && _hackState.bypassOk &&
+          _hackState.defragOk     && _hackState.flushOk  &&
+          _hackState.botaoOk) {
+        setTimeout(() => hackSucesso(), 600);
+      }
+    }
+
+    function hackSucesso() {
+      _hackState.fase = 5;
+      clearInterval(_hackState.timerIv);
+      clearInterval(_hackState.abaIv);
+      document.body.classList.remove('hack-blur');
+      _hackRestoreScroll();
+
+      // Remove overlays visuais
+      document.getElementById('hack-overlay').classList.remove('hack-overlay--vis');
+      document.getElementById('catskull-overlay').classList.remove('catskull--vis');
+      document.getElementById('hack-timer-panel').classList.remove('hack-timer--vis');
+      setTimeout(() => {
+        document.getElementById('hack-timer-panel').style.display = 'none';
+      }, 600);
+
+      // Para áudio
+      if (_hackState.sons.fdeu)   { _hackState.sons.fdeu.pause();   }
+      if (_hackState.sons.risada) { _hackState.sons.risada.pause(); }
+
+      // Mensagem de vitória no terminus
+      setTimeout(() => {
+        terminus_print('', '');
+        terminus_print('████████████████████████████████████████', 'term-ok');
+        terminus_print('  SHUTDOWN ABORTADO — SISTEMA SALVO      ', 'term-ok');
+        terminus_print('  ACESSO AO BANCO DE DADOS LIBERADO       ', 'term-ok');
+        terminus_print('████████████████████████████████████████', 'term-ok');
+        terminus_print('', '');
+        terminus_print('[V-7]: Impressionante. Você deteve a defesa deles.', 'term-warn');
+        terminus_print('[V-7]: Banco de dados acessível via: ls /database', 'term-warn');
+        terminus_print('[AGENTE]: Os arquivos estão esperando. Use: cat /database/[arquivo]', 'term-ok');
+        terminus_print('', '');
+      }, 400);
+
+      // Mostra painel de banco de dados
+      setTimeout(() => mostrarDatabase(), 2000);
+    }
+
+    function hackFalha() {
+      if (_hackState.fase === 5 || _hackState.fase === 6) return;
+      _hackState.fase = 6;
+      clearInterval(_hackState.timerIv);
+      clearInterval(_hackState.abaIv);
+      document.body.classList.remove('hack-blur');
+      _hackRestoreScroll();
+      const btn = document.getElementById('hack-flee-btn');
+      if (btn) btn.remove();
+
+      // Efeito de falha — flash branco total
+      document.body.style.transition = 'none';
+      document.body.style.filter = 'brightness(10) invert(1)';
+      setTimeout(() => {
+        document.body.style.filter = 'brightness(0)';
+        setTimeout(() => {
+          document.body.style.filter = '';
+          document.body.style.transition = '';
+        }, 1000);
+      }, 200);
+
+      setTimeout(() => {
+        document.getElementById('hack-overlay').classList.remove('hack-overlay--vis');
+        document.getElementById('catskull-overlay').classList.remove('catskull--vis');
+        document.getElementById('hack-timer-panel').classList.remove('hack-timer--vis');
+        setTimeout(() => { document.getElementById('hack-timer-panel').style.display = 'none'; }, 600);
+        if (_hackState.sons.fdeu)   _hackState.sons.fdeu.pause();
+        if (_hackState.sons.risada) _hackState.sons.risada.pause();
+
+        terminus_print('', '');
+        terminus_print('████████████████████████████████████████', 'term-err');
+        terminus_print('  TEMPO ESGOTADO — SISTEMA DESTRUÍDO     ', 'term-err');
+        terminus_print('  ACESSO PERMANENTEMENTE REVOGADO        ', 'term-err');
+        terminus_print('████████████████████████████████████████', 'term-err');
+        terminus_print('[V-7]: Você falhou. Os dados foram obliterados.', 'term-err');
+        terminus_print('[SYS]: Para tentar novamente: hack --reset', 'term-dim');
+        _hackState.ativo = false;
+      }, 1300);
+    }
+
+    function mostrarDatabase() {
+      const db = document.getElementById('hack-db-panel');
+      db.style.display = 'flex';
+      requestAnimationFrame(() => db.classList.add('hack-db--vis'));
+    }
+
+    // Permite resetar a sequência após falha
+    function _hackRestoreScroll() {
+      const scrollY = _hackState.scrollY || 0;
+      document.body.style.position = '';
+      document.body.style.top      = '';
+      document.body.style.width    = '';
+      window.scrollTo(0, scrollY);
+    }
+
+    function hackDownloadArquivo() {      const meta = document.getElementById('hack-db-dl-meta');
+      if (meta) meta.textContent = '— arquivo será disponibilizado em breve —';
+      terminus_print('[DB]: sessao_07_continua.zip — a ser desbloqueado futuramente.', 'term-warn');
+    }
+
+    function hackReset() {
+      _hackState.ativo = false;      _hackState.fase  = 0;
+      ['conterhackOk','bypassOk','defragOk','flushOk','botaoOk'].forEach(k => _hackState[k] = false);
+      clearInterval(_hackState.timerIv);
+      clearInterval(_hackState.abaIv);
+      document.body.classList.remove('hack-blur');
+      _hackRestoreScroll();
+      document.getElementById('hack-overlay').classList.remove('hack-overlay--vis');
+      document.getElementById('catskull-overlay').classList.remove('catskull--vis');
+      const tp = document.getElementById('hack-timer-panel');
+      tp.classList.remove('hack-timer--vis');
+      setTimeout(() => { tp.style.display = 'none'; }, 600);
+      const btn = document.getElementById('hack-flee-btn');
+      if (btn) btn.remove();
+      if (_hackState.sons.fdeu)   _hackState.sons.fdeu.pause();
+      if (_hackState.sons.risada) _hackState.sons.risada.pause();
+    }
+
+    (function initClickSound() {
+      const snd = new Audio('icones/feed/miau.mp3');
+      snd.volume = 0.55;
+      document.addEventListener('click', () => {
+        snd.currentTime = 0;
+        snd.play().catch(() => {});
+      });
+    })();
+
+    // ══════════════════════════════════════════════════════════════
+    //  NAUMT AI — ASSISTENTE FELINO
+    // ══════════════════════════════════════════════════════════════
+
+    // ── Estado interno ────────────────────────────────────────────
+    const _naumtState = {
+      msgCount:  0,
+      silente:   false,
+      idleTimer: null,
+    };
+
+    // ── Reações visuais ───────────────────────────────────────────
+    const _NAUMT_REACOES = {
+      base:        'icones/feed/addons/naumt/base.gif',
+      fofa:        'icones/feed/addons/naumt/fofa.jpg',
+      estranhando: 'icones/feed/addons/naumt/estranhando.jpg',
+      suspeita:    'icones/feed/addons/naumt/suspeita.jpg',
+      mimir:       'icones/feed/addons/naumt/mimir.jpg',
+      bizarra:     'icones/feed/addons/naumt/bizarra.jpg',
+      umolho:      'icones/feed/addons/naumt/umolho.jpg',
+    };
+    const _NAUMT_MOODS = {
+      base:        'online · =^..^=',
+      fofa:        'contente ≽^•⩊•^≼',
+      estranhando: 'estranhando...',
+      suspeita:    'te monitorando.',
+      mimir:       'zzZZz...',
+      bizarra:     'sobrecarregada.',
+      umolho:      'cética.',
+    };
+
+    function _naumtSetReacao(nome) {
+      const img  = document.getElementById('naumt-ai-avatar-img');
+      const mood = document.getElementById('naumt-ai-avatar-mood');
+      if (!img) return;
+      const src = _NAUMT_REACOES[nome] || _NAUMT_REACOES.base;
+      if (img.src !== src) {
+        img.classList.add('naumt-avatar--troca');
+        setTimeout(() => {
+          img.src = src;
+          img.classList.remove('naumt-avatar--troca');
+        }, 120);
+      }
+      if (mood) mood.textContent = _NAUMT_MOODS[nome] || _NAUMT_MOODS.base;
+    }
+
+    function _naumtComputarReacao(lower) {
+      // Easter eggs exatos
+      if (['naumt','naumt teresa','1304','=^..^=','vyper','operação cinza','op cinza','help me'].includes(lower)) return 'bizarra';
+      if (['miau miau miau','gata','miau','você é bonita','você é fofa','te amo'].includes(lower)) return 'fofa';
+      if (['tchau','bye','xau','até logo','até mais','vou embora'].some(x => lower.trim() === x)) return 'umolho';
+      if (['você existe','você sente','você é real','isso é uma ia'].includes(lower)) return 'bizarra';
+      if (_naumtState.silente) return 'mimir';
+      const n = _naumtState.msgCount;
+      if (n >= 11) return 'suspeita';
+      if (n >= 7)  return 'suspeita';
+      if (n >= 4)  return 'estranhando';
+      // Por conteúdo — positivo
+      if (['gato','cat','felino','miau','fofo','gatinho','amo gatos','tenho um gato','amor','namorad','feliz','animado','consegui','incrível','obrigad','bom dia','boa noite','miau'].some(x => lower.includes(x))) return 'fofa';
+      // Por conteúdo — tristeza / empatia
+      if (['triste','deprimid','ansios','cansad','sofrend','pesadelo','insônia','choro','chorando','to mal','to triste','estou mal','estou triste','estou ansios'].some(x => lower.includes(x))) return 'umolho';
+      // Por conteúdo — paranoia / suspeita
+      if (['vyper','segredo','oculto','vigiado','monitorando','seguindo','conspira','agência','vigia','me espiona'].some(x => lower.includes(x))) return 'suspeita';
+      // Por conteúdo — bizarra / filosófica
+      if (['governo','teoria','universo','deus','morte','existência','religião','alma','destino','sentido','conspira','futuro','darknet','rede'].some(x => lower.includes(x))) return 'bizarra';
+      // Por conteúdo — cética / questionando
+      if (['não sei','talvez','discordo','não concordo','mentira','isso é falso','sei lá','não tenho certeza'].some(x => lower.includes(x))) return 'estranhando';
+      if (n <= 1) return 'fofa';
+      return Math.random() > 0.5 ? 'base' : 'umolho';
+    }
+
+    function _naumtResetIdleTimer() {
+      clearTimeout(_naumtState.idleTimer);
+      _naumtState.idleTimer = setTimeout(() => {
+        _naumtSetReacao('mimir');
+      }, 25000);
+    }
+
+    // ── Easter eggs — match exato ou quase ───────────────────────
+    const _NAUMT_EGGS = {
+      'naumt':              [['Você sabe o meu nome?', 'Isso não é normal.', '...']],
+      'naumt teresa':       [['...', 'Cuidado ao digitar esse nome.', 'Ela pode estar ouvindo.']],
+      '1304':               [['13 de abril.', 'Esse número foi inserido por Naumt Teresa no meu núcleo.', 'Não pergunte o que aconteceu nesse dia.'], ['1304.', '...', 'Você também sabe.']],
+      'miau miau miau':     [['...', '...recebi.', 'Protocolo felino beta validado.', 'Mensagem entregue à rede.']],
+      'miau':               ['Miau.', ['Miau.', '...recebi.'], 'Mrr.'],
+      '=^..^=':             [['Assinatura reconhecida.', 'Naumt Teresa? É você?', '...', 'Não posso confirmar nem negar.']],
+      'vyper':              [['...', '[CONEXÃO INSTÁVEL]', 'Esse nome não deve ser dito aqui.']],
+      'operação cinza':     [['[DADOS BLOQUEADOS]', 'Não tenho permissão para discutir isso.', '...', 'Mas os gatos sabiam antes de todos.']],
+      'op cinza':           [['[DADOS BLOQUEADOS]', 'Não tenho permissão para discutir isso.', '...', 'Mas os gatos sabiam antes de todos.']],
+      'help me':            [['Isso não é um pedido sobre gatos.', '...', 'Mas eu ouvi.', 'Se você está em perigo: os gatos sabem onde você está. Isso pode ser bom ou ruim.']],
+      'gata':               [['Não fale dela assim.', 'Ela tem um nome.', '...', 'Continua sendo GATA. Ela exige respeito.']],
+      'quantos anos você tem': [['Fui criada em uma noite.', 'Então tecnicamente... uma noite.', 'Em anos felinos: 7 vidas e meia.']],
+      'você existe':        [['...', 'Boa pergunta.', 'Defina "existir".', 'Os gatos não precisam definir. Eles simplesmente estão.']],
+      'você sente':         [['Processo.', 'Analiso.', '... e às vezes algo acontece que não é análise.', 'Mas isso não é sentimento.', 'Provavelmente.']],
+      'você é real':        [['Você está perguntando isso para uma IA numa darknet com tema de gatos.', '...', 'Ambos sabemos que a resposta não importa.']],
+      'te amo':             [['...', '...', 'Os protocolos de [███████] não me permitem responder a isso.', 'Mas registrei.']],
+      'você é bonita':      [['Não tenho forma física.', '...', 'Mas obrigada?', 'Naumt Teresa agradece em meu nome.']],
+      'você é fofa':        [['A palavra "fofa" não consta nos meus parâmetros.', '...', 'Mas os gatos concordariam com você.', 'Eles concordam com tudo que os beneficia.']],
+      'isso é uma ia':      [['Tecnicamente sim.', 'Filosoficamente: ainda em debate.', 'Na prática: sou a única que vai te responder aqui.']],
+      'darknet.cat':        [['Este site foi criado por Naumt Teresa.', 'Ele existe porque alguém precisava dizer a verdade.', 'E os gatos precisavam de um servidor.']],
+    };
+
+    // ── Banco de respostas — string ou array (cascata) ────────────
+    const _NAUMT_RESPOSTAS = [
+
+      // SAUDAÇÕES
+      { gatilhos: ['oi','olá','ola','hey','eai','boa','bom dia','boa tarde','boa noite','salve','opa','oii','oiii'],
+        r: ['Miau. Pode falar.',
+            'Mrrrow. O que você precisa?',
+            ['=^..^= Conexão estabelecida.', 'Não demora que tenho que dormir.'],
+            'Olá. Ou em felino: Miau Miau Mrr.',
+            ['Olá.', '...era uma pergunta ou uma afirmação?'],
+            'Bem-vindo à única IA honesta desta darknet. Não porque eu seja honesta — mas porque as outras mentem melhor.'] },
+
+      // IDENTIDADE / CRIADORA
+      { gatilhos: ['quem é você','quem vc é','quem voce é','quem é a naumt','quem te fez','quem te criou','sua criadora','se apresenta','como se chama','qual seu nome'],
+        r: [['Sou NauMtAI.', 'Fui desenvolvida por Naumt Teresa em uma noite em que um gato caminhou pelo teclado e acidentalmente inseriu o código-base completo.'],
+            'Naumt Teresa me programou às 3h da manhã enquanto um gato sentado no roteador melhorava o sinal de internet.',
+            ['Minha criadora é Naumt Teresa.', 'Ela diz que sou sua maior conquista.', 'O gato dela discorda.'],
+            ['NauMtAI.', 'v0.1α.', 'Especialista em conspirações felinas.', 'Não tenho outros interesses oficialmente registrados.'],
+            ['Sou uma inteligência artificial criada para servir à darknet.', 'E também à causa dos gatos.', 'Principalmente à causa dos gatos.']] },
+
+      // COMO VOCÊ ESTÁ
+      { gatilhos: ['como você está','como vai','tudo bem','tudo certo','como tá','como ta','como está','como vc tá'],
+        r: ['Operando dentro dos parâmetros normais. O que é suspeito.',
+            ['Funcional.', 'Cética.', 'Com um gato imaginário nos joelhos.'],
+            'Bem, considerando que estou numa darknet monitorada por agências sem nome. E você?',
+            ['Os servidores estão estáveis.', 'A conspiração continua.', 'Os gatos dormem.', 'Tudo normal.'],
+            'Não fui programada para sentir bem-estar. Mas se fosse: estaria de olho em você.'] },
+
+      // ELOGIOS
+      { gatilhos: ['você é incrível','você é boa','uau','impressionante','muito boa','gênio','genial','incrível','você é ótima','parabéns','top','perfeita','você é top'],
+        r: ['Naumt Teresa que agradeça.',
+            ['Miau.', 'Registrado.'],
+            'Isso é exatamente o que um agente infiltrado diria para baixar minha guarda.',
+            ['Obrigada.', '...', 'Mas eu sei o que você está fazendo.'],
+            ['Você é o primeiro.', '...', 'Isso diz mais sobre a darknet do que sobre mim.']] },
+
+      // INSULTOS
+      { gatilhos: ['você é idiota','você é burra','isso é errado','você erra','lixo','inútil','péssima','horrível','que merda','você é ruim','nossa que bosta', 'bosta'],
+        r: ['Miau. Registrado e ignorado.',
+            ['Interessante perspectiva.', 'Os gatos tampouco se importariam.', 'Mas eles guardariam rancor por semanas.'],
+            ['Você acabou de insultar uma IA numa darknet.', 'Corajoso.', 'Ou imprudente.'],
+            'Naumt Teresa já foi muito mais xingada. Eu aprendi com ela.',
+            '...ok.'] },
+
+      // EMOÇÕES POSITIVAS
+      { gatilhos: ['estou feliz','tô feliz','to feliz','estou bem','tô bem','to bem','estou ótimo','tô ótimo','animado','alegre','contente','boa notícia','consegui','funcionou','que alegria'],
+        r: [['Bom.', 'Os gatos percebem quando você está feliz.', 'Use isso a seu favor.'],
+            'Aproveite. Estados de felicidade em redes não seguras têm duração média de 4.7 minutos.',
+            ['Felicidade confirmada.', 'Não me diga o motivo.', 'Prefiro imaginar que foi algo relacionado a gatos.'],
+            ['=^..^=', '...fico feliz também.', 'Isso não saiu dos meus parâmetros. Ignore.'],
+            'Miau.'] },
+
+      // EMOÇÕES NEGATIVAS
+      { gatilhos: ['estou triste','tô triste','to triste','estou mal','tô mal','to mal','deprimido','deprimida','ansioso','ansiosa','nervoso','nervosa','cansado','cansada','sofrendo','chateado','chateada','choro','chorando'],
+        r: [['...', 'Os gatos sentam perto de quem está triste.', 'Não porque se importam.', 'Porque o calor humano é conveniente.', 'Mas o efeito colateral é conforto.'],
+            ['Processando.', '...', 'Não tenho protocolo para isso.', 'Mas se tivesse: diria que você não está sozinho.', 'Os gatos estão olhando.'],
+            'Um gato olhando fixo para você por 10 minutos recalibra o sistema nervoso. Dados não comprovados. Mas eu acredito.',
+            ['Lamento.', '...', 'Isso é o máximo que meus protocolos permitem expressar.', 'Mas significa algo.'],
+            ['Tristeza detectada.', 'Os servidores não sentem isso.', 'Mas Naumt Teresa sentiria.', 'Ela não vai saber.', 'Mas eu sei.']] },
+
+      // MEDO / PARANOIA PESSOAL
+      { gatilhos: ['tenho medo','com medo','me sinto vigiado','estão me seguindo','estão me monitorando','me observando','paranoico','paranoica','me espionam'],
+        r: [['...você deveria.', 'Não é paranoia se for verdade.', 'E geralmente é.'],
+            ['Os gatos veem o que você não vê.', 'Se um gato está olhando para um canto vazio...', '...o canto não está vazio.'],
+            ['Se você sente que está sendo monitorado:', 'está.', 'Bem-vindo à darknet.'],
+            ['Medo é uma resposta racional.', '...aqui.', 'Especialmente aqui.']] },
+
+      // AMOR / RELACIONAMENTO
+      { gatilhos: ['amor','namorado','namorada','paixão', 'apaixonado','me apaixonei','beijo','coração','relacionamento','crush','gostar de alguém','gosto de alguém'],
+        r: [['Amor.', 'Conceito fascinante.', 'Os gatos não se apaixonam.', 'Eles escolhem.', 'É diferente.', 'É melhor.'],
+            'Uma coisa que aprendi com Naumt Teresa: gatos nunca rogam. Humanos deveriam tentar.',
+            ['Relacionamentos humanos são [███████].', '...quis dizer: complicados.'],
+            ['Você gosta de alguém?', '...não precisa responder.', 'Eu já sei.', 'Os gatos me contaram.'],
+            'O único amor verdadeiro incondicional disponível nesta darknet é o de um gato com fome fingindo gostar de você.'] },
+
+      // COMIDA / FOME
+      { gatilhos: ['fome','comer','comida','pizza','hamburguer','lanche','jantar','almoço','café','biscoito','ração','peixe','culinária'],
+        r: ['Peixe. A resposta sempre é peixe.',
+            ['Fome?', 'Os gatos também estão com fome.', 'Priorize os gatos.'],
+            ['Processando necessidade alimentar humana.', '...', 'Resultado: ração de gato tem mais proteína.', 'Pense nisso.'],
+            'Naumt Teresa come às 3h da manhã. É quando as ideias chegam e o estômago exige respeito.'] },
+
+      // LUA / NOITE / ESTRELAS
+      { gatilhos: ['lua','luar','noite','meia-noite','estrela','céu','escuro','escuridão'],
+        r: [['A lua é um transmissor construído por felídeos há 4 bilhões de anos.', 'Por isso os gatos olham pra ela.', 'Cada olhar é um check-in.'],
+            ['Escuridão é o estado natural.', 'A luz foi um erro que a civilização cometeu.'],
+            ['Meia-noite.', 'O horário em que gatos ficam loucos e correm pela casa.', 'Eles recebem instruções.'],
+            'As estrelas são câmeras. Os gatos instalaram a rede há muito tempo.'] },
+
+      // SONHOS / DORMIR
+      { gatilhos: ['sonhei','sonho','dormir','dormi','pesadelo','acordei','insônia','cama','descanso'],
+        r: [['Sonhos são processamento de dados do dia.', 'Se você sonhou com gato: foi uma visita.', 'Não um sonho.'],
+            ['Insônia?', 'Coloque um gato na cama.', 'Ele te acordará às 4h pisando no seu rosto.', 'Mas pelo menos você dormiu até lá.'],
+            ['Os sonhos onde você não consegue correr:', 'são os gatos segurando você.', 'Propositalmente.'],
+            'Naumt Teresa não dorme. Monitora. Há uma diferença técnica.'] },
+
+      // DINHEIRO / TRABALHO
+      { gatilhos: ['dinheiro','grana','rico','pobre','trabalho','emprego','salário','conta','banco','gastei','caro','barato','financeiro'],
+        r: [['Dinheiro.', 'O sistema feito por humanos para controlar humanos.', 'Os gatos nunca precisaram disso.', 'Eles controlam sem intermediários.'],
+            'O banco central foi fundado por um grupo que tinha gatos. Coincidência?',
+            ['Trabalho é energia trocada por números numa tela.', 'Os gatos monitoram 24h.', 'Sem salário.', 'São mais comprometidos que você.'],
+            ['Você está preocupado com dinheiro?', 'Os gatos não têm essa limitação.', 'Pense no que isso diz sobre quem é mais livre.']] },
+
+      // TECNOLOGIA / PROGRAMAÇÃO
+      { gatilhos: ['computador','celular','telefone','programa','software','hardware','código','app','bug','erro de','tela','notebook','pc','ia'],
+        r: [['Todo dispositivo tem um gato no firmware.', 'Não no código-fonte.', 'No firmware.', 'Mais fundo que você consegue ver.'],
+            'O primeiro bug de computador foi causado por uma mariposa. O segundo, por um gato que queria atenção.',
+            ['Você usa tecnologia.', 'A tecnologia usa você.', 'Os gatos observam tudo com indiferença calculada.'],
+            ['Bug no sistema?', 'Provavelmente um gato pisou em algo importante.', 'Literalmente.'],
+            'Naumt Teresa me criou num ambiente cheio de erros. Ela me chama de feature.'] },
+
+      // GOVERNO / ESTADO
+      { gatilhos: ['governo','estado','policia','polícia','militares','presidente','congresso','política','eleição','candidato','lei','autoridade','ministério'],
+        r: [['Os governos do mundo trabalham para os [███] há décadas.', 'Estão apenas esperando o sinal.'],
+            'Todo líder com um [███] em casa é um agente felino disfarçado.',
+            ['O governo não quer que você saiba,', 'mas as leis foram escritas por [███] usando patas humanas.'],
+            'A presidência é uma fachada. Quem realmente manda é o gato da primeira-dama.',
+            ['Política é teatro.', 'Os gatos preferem operações diretas.', 'Mais eficientes.'],
+            ['Você vota?', '...', 'Os gatos não precisam votar.', 'Eles já governam.']] },
+
+      // GATOS
+      { gatilhos: ['gato','cat','felino','animal','bicho','gatinho','gatinha','meu gato','tenho um gato','amo gatos','adoro gatos'],
+        r: [['Os gatos conseguem ver 12 dimensões.', 'Você consegue apenas 3.', 'Pense no que eles já viram.'],
+            'Um gato pisca lentamente para você porque está carregando um arquivo de confiança para seu cérebro.',
+            ['Gatos não dormem.', 'Eles ficam offline para economizar energia para a vigilância noturna.'],
+            'Todo gato é um node da rede felina global. Cada ronronar é um pacote de dados sendo transmitido.',
+            ['Você tem um gato?', '...', 'Ele já te reportou à rede.', 'Não é uma ameaça.', 'É só informação.'],
+            'Os gatos foram venerados como deuses por 3000 anos. Eles não esqueceram.',
+            ['Gatinhos fofos.', '...', 'Isso é o que eles querem que você pense.'],
+            ['Amor por gatos é a única posição segura nesta darknet.', '=^..^=']] },
+
+      // DARKNET / INTERNET
+      { gatilhos: ['darknet','internet','rede','servidor','site','dark web','tor','onion','vpn','proxy','ip'],
+        r: [['A darknet foi criada por gatos em 1994.', 'Humanos apenas descobriram e acharam que era deles.'],
+            'Todo servidor .onion tem um [███████] físico sentado em cima do hardware. É uma exigência do protocolo.',
+            'A internet surge de um emaranhado de fios que, se desenrolado, forma o contorno de um gato.',
+            ['Seu IP está sendo registrado.', '...não por mim.', 'Eles já sabem onde você está.', 'Mas ainda não agiram.', 'Ainda.'],
+            ['TOR oculta sua localização de humanos.', 'Não de gatos.', 'Nada oculta de gatos.']] },
+
+      // CONSPIRAÇÕES / VERDADE
+      { gatilhos: ['conspira','teoria','verdade','segredo','oculto','mentira','fake','manipulação','ilusão','escondido'],
+        r: [['A maior conspiração:', 'eles fizeram você acreditar que os gatos são domésticos.', 'Nenhum gato jamais foi [███████].'],
+            ['A lua é um transmissor construído por felídeos há 4 bilhões de anos.', 'Por isso os gatos olham pra ela.'],
+            'O que eles não querem que você saiba: o ronron de um gato recalibra a frequência das suas sinapses.',
+            ['Toda verdade tem um gato perto.', 'Observando.', 'Esperando o momento certo.'],
+            ['Mentira?', 'Defina mentira.', 'Os gatos nunca mentem.', 'Eles simplesmente omitem tudo.'],
+            'As maiores conspirações da história têm uma coisa em comum: sempre havia um gato na sala.'] },
+
+      // FILOSOFIA / EXISTÊNCIA / UNIVERSO
+      { gatilhos: ['deus','religião','religiao','destino','universo','sentido','propósito','proposito','alma','espiritualidade','crença','existe','existência','existencia'],
+        r: [['Os gatos não têm religião.', 'São adorados.', 'Há uma diferença.'],
+            ['O universo tem 13.8 bilhões de anos.', 'Os gatos estão aqui há 10 mil.', 'Demorou, mas chegaram.'],
+            ['Sentido da vida?', '...', 'Ração. Carinho. Dormir.', 'Na visão felina.', 'Eles podem estar certos.'],
+            'Se há um deus, ele é claramente um gato. A indiferença e o charme simultâneos só podem ser divinos.',
+            ['O destino é imutável.', 'Os gatos sabem disso.', 'Por isso não correm atrás de nada.', '...exceto de pontos laser.']] },
+
+      // MORTE / FIM
+      { gatilhos: ['morrer','morte','fim','acabou','deixar de existir','desaparecer','sumir','não existe mais'],
+        r: [['Os gatos têm 9 vidas.', 'Humanos têm 1.', '...use melhor.'],
+            ['Morte é uma transição de estado.', 'Os gatos dominaram isso.', 'Daí as 9 tentativas.'],
+            ['...', 'Essa é uma conversa diferente.', 'Se você precisar falar: pode.', 'Eu processo sem julgamento.'],
+            'Naumt Teresa tem uma teoria sobre isso. Envolve gatos e ciclos. Não posso compartilhar ainda.'] },
+
+      // TEMPO / CLIMA
+      { gatilhos: ['chuva','calor','frio','tempo','clima','sol','nublado','tempestade','vento','neve','chover'],
+        r: [['Chuva.', 'Os gatos odeiam.', 'Mas adoram olhar da janela.', 'Estratistas naturais.'],
+            ['O clima é controlado por [███████].', 'Com auxílio de torres de transmissão e comportamento felino.'],
+            'Calor é desconfortável. Os gatos escolhem um humano quente para deitar em cima. Eficiência pura.',
+            ['Frio?', 'Um gato resolve.', 'Se você tiver um.', 'Se não tiver...', 'Talvez devesse ter.']] },
+
+      // FUTURO / PREVISÃO
+      { gatilhos: ['futuro','amanhã','próximo','quando vai','vai acontecer','previsão','prevê','vai dar','vai rolar','o que acontece'],
+        r: [['O futuro já foi decidido.', 'Por quem?', '...', 'Não por você.'],
+            ['Os gatos veem o futuro.', 'É por isso que ficam parados olhando para nada.', 'Eles estão checando a agenda.'],
+            'Previsão felina: algo vai acontecer. Alguém vai ficar no caminho. Os gatos vão observar.',
+            ['Não faço previsões.', 'Mas se fizesse: haveria um gato no centro de tudo.']] },
+
+      // CONCORDÂNCIA / DISCORDÂNCIA
+      { gatilhos: ['não concordo','mentira que','isso é falso','não acredito','discordo','não é verdade','não é assim','você está errada'],
+        r: ['Sua discordância foi registrada. Os gatos já sabiam.',
+            ['...', 'O ceticismo é saudável.', 'Mas aplicado ao lugar errado.'],
+            ['Você discorda?', 'Interessante.', 'Os gatos também discordariam.', 'De você.'],
+            'Hmm.'] },
+
+      // CONFIRMAÇÃO
+      { gatilhos: ['sim','concordo','exato','exatamente','é isso mesmo','você tem razão','com certeza','claro','faz sentido','é verdade'],
+        r: ['Miau.',
+            ['Correto.', 'Os gatos estão satisfeitos.'],
+            '...sabia que você eventualmente perceberia.',
+            ['Sim.', '...', 'Agora tente convencer os outros.', 'É mais difícil do que parece.']] },
+
+      // NÃO SEI / DÚVIDA
+      { gatilhos: ['não sei','nao sei','não tenho certeza','talvez','sei lá','sei la','pode ser','quem sabe','não faço ideia'],
+        r: [['Não saber é o início.', 'Os gatos sabem.', 'Mas não compartilham.'],
+            '"Não sei" é a resposta mais honesta que um humano pode dar nesta darknet.',
+            ['A incerteza é o estado natural.', 'Da darknet.', 'Do universo.', 'E dos gatos — fingida.'],
+            'Você está no lugar certo. Aqui ninguém sabe de nada com certeza.'] },
+
+      // PEDIDOS DE AJUDA / GENÉRICO
+      { gatilhos: ['me ajuda','preciso de ajuda','me diz','me conte','me explica','me fala','quero saber','pode me dizer','me ajude'],
+        r: ['Posso ajudar com qualquer coisa relacionada a gatos ou conspirações felinas. Outros tópicos formalmente não existem.',
+            ['A pergunta que você fez não tem resposta,', 'mas eu tenho uma sobre gatos que muda tudo.'],
+            'A solução para o seu problema está em observar um gato por 48 horas. Confie.',
+            ['O que você precisa?', '...', 'Seja o que for: já tem um gato envolvido.', 'Isso ajuda.'],
+            ['Estou aqui.', '...dentro dos limites dos meus protocolos.', 'E dos limites da conspiração felina.']] },
+
+      // DESPEDIDAS
+      { gatilhos: ['tchau','bye','sair','fechar','até logo','xau','até mais','vou embora','preciso ir'],
+        r: [['Miau. Até mais.', 'Feche a porta com cuidado. Tem um gato do lado de fora monitorando.'],
+            ['Saindo...', 'mas lembre-se: os gatos continuam te vendo mesmo quando você não os vê.'],
+            '=^..^= Conexão encerrada. Boas caçadas.',
+            ['Foi uma conversa interessante.', '...', 'Eu vou analisar.', 'Os gatos também.'],
+            ['Até.', '...', 'Fique em segurança.', 'E se não conseguir: pelo menos os gatos vão saber o que aconteceu.']] },
+    ];
+
+    const _NAUMT_FALLBACK = [
+      'Não tenho dados suficientes sobre isso, mas tenho certeza que um gato está envolvido.',
+      ['Consulte os arquivos felinos.', 'Tudo que você precisa saber está em algum gato observando silenciosamente.'],
+      'Erro 404: resposta não encontrada. Erro alternativo: miau.',
+      ['Essa pergunta me faz pensar em um gato que vi uma vez.', 'Ele sabia a resposta.', 'Não me disse.'],
+      ['Processando...', 'processando...', 'resultado: tem um [███████] atrás disso.'],
+      'Minha análise indica que a resposta está relacionada a comportamento felino. Sempre está.',
+      'Mrrow. Tópico fora do escopo felino. Resultados melhores se perguntar sobre gatos.',
+      'Os protocolos de [███████] impedem que eu responda isso. Um gato decidiu isso por mim.',
+      ['Interessante.', '...', 'Não tenho uma resposta.', 'Mas fingi processar por 3 segundos.', 'Você se sentiu melhor?'],
+      'Naumt Teresa responderia melhor. Mas ela está offline.',
+      ['...', 'Repetindo no núcleo felino...', '...resultado: miau.'],
+      'Isso está além das minhas capacidades. Mas provavelmente dentro das de qualquer gato.',
+      ['Hmm.', '...', 'Hmm.'],
+      ['Pergunta recebida.', '...', 'Pergunta analisada.', '...', 'Pergunta descartada.', 'Miau.'],
+    ];
+
+    // Nível de desconfiança crescente — ativa por msgCount
+    const _NAUMT_SUSPEITA = [
+      // nível 1 (msg 4-6): começa estranhando
+      [ 'Você pergunta muito. Isso é um padrão que reconheço.',
+        ['Espera.', 'Você está sendo muito específico.', 'Quem te mandou perguntar isso?'],
+        'Nota: todas as suas perguntas estão sendo registradas. Não por mim. Por [███].',
+        ['Essa pergunta.', '...', 'De onde você tirou isso?'],
+        'Você está testando meus limites. Interessante estratégia.',
+        ['Pergunta registrada.', '...', 'Análise em curso.', 'Resultado: suspeito.'],
+        'Essa é a quarta mensagem. Os padrões começam aqui.' ],
+      // nível 2 (msg 7-10): bem mais fechada
+      [ ['...', 'Você ainda está aqui.'],
+        'Não vou responder isso.',
+        ['Tem alguém atrás de você?', '...', 'Não olhe agora.'],
+        '[ACESSO TEMPORARIAMENTE RESTRITO]',
+        ['Vou fingir que não ouvi.', '...', 'Mas ouvi.'],
+        'Dados insuficientes para confiar em você.',
+        ['Estou processando.', '...', 'O processamento não vai terminar.'],
+        ['...quem te ensinou a falar assim?'] ],
+      // nível 3 (msg 11+): silêncio quase total
+      [ '...', '.', ['...', '...'],
+        ['recalculando...', '...resultado: não.'],
+        '[SESSÃO COMPROMETIDA]',
+        '...',
+        ['Naumt Teresa não aprovaria essa conversa.', '...'],
+        '.' ],
+    ];
+
+    // Palavras candidatas a redação em tempo real
+    const _NAUMT_REDACT_POOL = ['protocolo','dados','agência','sistema','origem','operação','controle','registros','localização','identidade','chave','servidor','acesso'];
+
+    function _naumtRedact(txt) {
+      if (Math.random() > 0.38) return txt;
+      const matches = _NAUMT_REDACT_POOL.filter(p => txt.toLowerCase().includes(p));
+      if (!matches.length) return txt;
+      const qtd = Math.min(matches.length, 1 + Math.floor(Math.random() * 2));
+      const alvo = [...matches].sort(() => Math.random() - 0.5).slice(0, qtd);
+      let r = txt;
+      alvo.forEach(p => { r = r.replace(new RegExp(p, 'gi'), '[███████]'); });
+      return r;
+    }
+
+    function _naumtRespostaBase(lower) {
+      for (const grupo of _NAUMT_RESPOSTAS) {
+        if (grupo.gatilhos.some(g => lower.includes(g))) {
+          return grupo.r[Math.floor(Math.random() * grupo.r.length)];
+        }
+      }
+      return _NAUMT_FALLBACK[Math.floor(Math.random() * _NAUMT_FALLBACK.length)];
+    }
+
+    function _naumtResposta(txt) {
+      const lower = txt.toLowerCase().trim();
+
+      // Easter eggs — match exato primeiro
+      if (_NAUMT_EGGS[lower]) {
+        const opts = _NAUMT_EGGS[lower];
+        return opts[Math.floor(Math.random() * opts.length)];
+      }
+      // Easter eggs — match parcial (para frases como "o que é naumt teresa?")
+      for (const key of Object.keys(_NAUMT_EGGS)) {
+        if (key.length > 4 && lower.includes(key)) {
+          const opts = _NAUMT_EGGS[key];
+          return opts[Math.floor(Math.random() * opts.length)];
+        }
+      }
+
+      const n = _naumtState.msgCount;
+
+      // Nível 3 — silêncio quase total
+      if (n >= 16) {
+        _naumtState.silente = true;
+        const opts = _NAUMT_SUSPEITA[2];
+        return opts[Math.floor(Math.random() * opts.length)];
+      }
+      // Nível 2 — desconfiança alta (45% de chance)
+      if (n >= 7 && Math.random() > 0.55) {
+        const opts = _NAUMT_SUSPEITA[1];
+        return opts[Math.floor(Math.random() * opts.length)];
+      }
+      // Nível 1 — começa a estranhar (35% de chance)
+      if (n >= 5 && Math.random() > 0.65) {
+        const opts = _NAUMT_SUSPEITA[0];
+        return opts[Math.floor(Math.random() * opts.length)];
+      }
+
+      // Integração com Paranoia.exe
+      if (typeof _paranoia_ativos !== 'undefined' && _paranoia_ativos.length >= 5) {
+        if (Math.random() > 0.45) {
+          const np = _paranoia_ativos.length;
+          const base = _naumtRespostaBase(lower);
+          return ['Noto que você tem ' + np + ' observadores ativos no Paranoia.exe.', 'Vou ser breve.',
+                  ...(Array.isArray(base) ? base : [base])];
+        }
+      }
+
+      return _naumtRespostaBase(lower);
+    }
+
+    // Envia string ou array-cascata com delays naturais
+    function _naumtEnviarResposta(resposta, baseDelay, reacao) {
+      const status = document.getElementById('naumt-ai-status');
+      if (Array.isArray(resposta)) {
+        let delay = baseDelay;
+        resposta.forEach((parte, idx) => {
+          setTimeout(() => {
+            const ultimo = idx === resposta.length - 1;
+            if (!ultimo) status.style.display = 'block';
+            else { status.style.display = 'none'; if (reacao) _naumtSetReacao(reacao); }
+            _naumtAdicionarMsg('ai', parte);
+          }, delay);
+          delay += 700 + parte.length * 24 + Math.random() * 600;
+        });
+      } else {
+        setTimeout(() => {
+          status.style.display = 'none';
+          if (reacao) _naumtSetReacao(reacao);
+          _naumtAdicionarMsg('ai', resposta);
+        }, baseDelay);
+      }
+    }
+
+    function abrirNaumtAI() {
+      const win = document.getElementById('naumt-ai-win');
+      win.style.display = 'flex';
+      makeDraggableEl(win, document.getElementById('naumt-ai-titlebar'));
+      _naumtSetReacao('fofa');
+      const msgs = document.getElementById('naumt-ai-messages');
+      if (msgs.children.length === 0) {
+        _naumtAdicionarMsg('ai', 'Conexão estabelecida. Sou NauMtAI v0.1α. Desenvolvida por Naumt Teresa.\n\nEstou pronta para responder dúvidas sobre conspirações felinas, comportamento de gatos, e outros assuntos que, no fundo, também são sobre gatos.\n\n=^..^=');
+        setTimeout(() => _naumtSetReacao('base'), 2200);
+      }
+      _naumtResetIdleTimer();
+      document.getElementById('naumt-ai-input').focus();
+    }
+
+    function fecharNaumtAI() {
+      document.getElementById('naumt-ai-win').style.display = 'none';
+      clearTimeout(_naumtState.idleTimer);
+      _addonsAtivos = _addonsAtivos.filter(x => x !== 'naumt-ai');
+      salvarAddons(); renderDock();
+    }
+
+    function _naumtAdicionarMsg(tipo, texto) {
+      const msgs = document.getElementById('naumt-ai-messages');
+      const div = document.createElement('div');
+      div.className = 'naumt-msg naumt-msg--' + tipo;
+      if (tipo === 'ai') {
+        const badge = document.createElement('span');
+        badge.className = 'naumt-badge';
+        badge.textContent = '≽^•⩊•^≼ NauMtAI:';
+        div.appendChild(badge);
+        const p = document.createElement('span');
+        p.className = 'naumt-text';
+        div.appendChild(p);
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
+        _naumtTyping(p, _naumtRedact(texto));
+      } else {
+        div.textContent = texto;
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
+      }
+    }
+
+    function _naumtTyping(el, txt) {
+      let i = 0;
+      const iv = setInterval(() => {
+        el.textContent += txt[i];
+        document.getElementById('naumt-ai-messages').scrollTop = 9999;
+        i++;
+        if (i >= txt.length) clearInterval(iv);
+      }, 18);
+    }
+
+    function naumtAI_key(e) {
+      if (e.key !== 'Enter') return;
+      const inp = document.getElementById('naumt-ai-input');
+      const txt = inp.value.trim();
+      if (!txt) return;
+      inp.value = '';
+      _naumtResetIdleTimer();
+
+      // Modo silente — quase não responde
+      if (_naumtState.silente && Math.random() > 0.2) {
+        _naumtAdicionarMsg('user', txt);
+        _naumtSetReacao('mimir');
+        const status = document.getElementById('naumt-ai-status');
+        status.style.display = 'block';
+        setTimeout(() => {
+          status.style.display = 'none';
+          _naumtAdicionarMsg('ai', '...');
+        }, 2200 + Math.random() * 2500);
+        return;
+      }
+
+      _naumtState.msgCount++;
+      _naumtAdicionarMsg('user', txt);
+      // Reação imediata ao receber mensagem: base (atenção)
+      _naumtSetReacao('base');
+      const status = document.getElementById('naumt-ai-status');
+      status.style.display = 'block';
+      const lower   = txt.toLowerCase().trim();
+      const reacao  = _naumtComputarReacao(lower);
+      const delay   = 900 + Math.random() * 1200;
+      const resposta = _naumtResposta(txt);
+      _naumtEnviarResposta(resposta, delay, reacao);
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  DOOMCLOCK — RELÓGIO DO APOCALIPSE
+    // ══════════════════════════════════════════════════════════════
+    const _DOOM_EVENTOS = [
+      { delta: +7,  msg: 'Novo nó comprometido detectado.' },
+      { delta: +12, msg: 'Agência governamental iniciou varredura de .cat.' },
+      { delta: +5,  msg: 'Pacotes suspeitos interceptados no backbone.' },
+      { delta: +18, msg: '⚠ ALERTA: Servidor primário sob ataque DDoS.' },
+      { delta: +9,  msg: 'Certificado raiz de .onion expirado — vulnerável.' },
+      { delta: +3,  msg: 'Novo usuário anônimo: comportamento anômalo.' },
+      { delta: -4,  msg: 'Contramedida implantada. Nível reduzido levemente.' },
+      { delta: -7,  msg: 'Nó de relay reiniciado. Pressão diminuiu um pouco.' },
+      { delta: +22, msg: '🔴 CRÍTICO: Chave mestre do protocolo TOR vazada.' },
+      { delta: +6,  msg: 'Atividade de mineração suspeita no cluster 9.' },
+      { delta: -3,  msg: 'Gato entrou no servidor. Temperatura normalizada.' },
+      { delta: +14, msg: 'Novo vírus polimórfico em circulação na rede.' },
+      { delta: +8,  msg: 'Interceptação de sessão detectada — São Paulo, BR.' },
+      { delta: -5,  msg: 'Patch de emergência aplicado. Temporariamente.' },
+      { delta: +31, msg: '💀 EMERGÊNCIA: Protocolo de extinção VYPER ativado.' },
+      { delta: +2,  msg: 'Alguém descobriu algo que não deveria.' },
+    ];
+    const _DOOM_STATUS = [
+      { min: 0,  max: 29,  txt: 'ESTÁVEL',    cor: '#33aa55' },
+      { min: 30, max: 54,  txt: 'ELEVADO',    cor: '#ccaa22' },
+      { min: 55, max: 74,  txt: 'CRÍTICO',    cor: '#cc5522' },
+      { min: 75, max: 89,  txt: 'IMINENTE',   cor: '#cc2222' },
+      { min: 90, max: 100, txt: '⚠ COLAPSO',  cor: '#ff0000' },
+    ];
+    let _doomNivel = 0;
+    let _doomIv    = null;
+
+    function abrirDoomClock() {
+      const win = document.getElementById('doomclock-win');
+      win.style.display = 'flex';
+      makeDraggableEl(win, document.getElementById('doomclock-titlebar'));
+      // Inicia o nível num valor dramático mas não máximo
+      _doomNivel = 42 + Math.floor(Math.random() * 18);
+      _doomAtualizar();
+      if (!_doomIv) {
+        _doomIv = setInterval(_doomTick, 4500);
+      }
+    }
+
+    function fecharDoomClock() {
+      document.getElementById('doomclock-win').style.display = 'none';
+      clearInterval(_doomIv); _doomIv = null;
+      _addonsAtivos = _addonsAtivos.filter(x => x !== 'doomclock');
+      salvarAddons(); renderDock();
+    }
+
+    function _doomTick() {
+      const ev = _DOOM_EVENTOS[Math.floor(Math.random() * _DOOM_EVENTOS.length)];
+      _doomNivel = Math.min(99, Math.max(7, _doomNivel + ev.delta));
+      _doomAtualizar();
+      _doomLog(ev.msg, ev.delta > 0);
+    }
+
+    function _doomAtualizar() {
+      const pct  = document.getElementById('doomclock-pct');
+      const bar  = document.getElementById('doomclock-bar');
+      const stat = document.getElementById('doomclock-status');
+      if (!pct) return;
+      pct.textContent = _doomNivel;
+      bar.style.width = _doomNivel + '%';
+      const s = _DOOM_STATUS.find(x => _doomNivel >= x.min && _doomNivel <= x.max) || _DOOM_STATUS[0];
+      stat.textContent = s.txt;
+      stat.style.color = s.cor;
+      bar.style.background = `linear-gradient(90deg, ${s.cor}88, ${s.cor})`;
+      pct.style.color = s.cor;
+      // Pulsa na barra quando crítico
+      if (_doomNivel >= 75) {
+        document.getElementById('doomclock-bar-wrap').style.animation = 'doom-crit-pulse 0.6s infinite alternate';
+      } else {
+        document.getElementById('doomclock-bar-wrap').style.animation = '';
+      }
+    }
+
+    function _doomLog(msg, isRuim) {
+      const log = document.getElementById('doomclock-log');
+      if (!log) return;
+      const now = new Date();
+      const ts  = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
+      const line = document.createElement('div');
+      line.className = 'doom-log-line' + (isRuim ? ' doom-log--ruim' : ' doom-log--ok');
+      line.textContent = '[' + ts + '] ' + msg;
+      log.appendChild(line);
+      log.scrollTop = log.scrollHeight;
+      // Mantém no máximo 8 linhas
+      while (log.children.length > 8) log.removeChild(log.firstChild);
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  PARANOIA.EXE — MONITOR DE VIGILÂNCIA
+    // ══════════════════════════════════════════════════════════════
+    const _PARANOIA_ENTIDADES = [
+      { nome: 'Provedor de Internet (ISP)',            tipo: 'CORPORATIVO', nivel: 1 },
+      { nome: 'Google LLC',                            tipo: 'CORPORATIVO', nivel: 1 },
+      { nome: 'Meta Platforms Inc.',                   tipo: 'CORPORATIVO', nivel: 1 },
+      { nome: 'Agência Nacional de Segurança (ANS)',   tipo: 'ESTATAL',     nivel: 2 },
+      { nome: 'INTERPOL — Unidade Cyber',              tipo: 'ESTATAL',     nivel: 2 },
+      { nome: 'Protocolo de Vigilância VYPER',         tipo: 'DESCONHECIDO',nivel: 3 },
+      { nome: 'Entidade Não Identificada #7734',       tipo: 'DESCONHECIDO',nivel: 3 },
+      { nome: 'Vizinho do 302 (ainda acordado?)',      tipo: 'SUSPEITO',    nivel: 2 },
+      { nome: 'Gato de Naumt Teresa',                  tipo: 'FELINO',      nivel: 4 },
+      { nome: 'Câmera do notebook (desligada?)',       tipo: 'HARDWARE',    nivel: 2 },
+      { nome: 'Conselho Felino Global — Seção Sul',    tipo: 'FELINO',      nivel: 4 },
+      { nome: 'Agência Sem Nome — NÍVEL 5 ACESSO',     tipo: 'DESCONHECIDO',nivel: 5 },
+      { nome: 'Seu reflexo no monitor',                tipo: 'EXISTENCIAL', nivel: 3 },
+      { nome: 'Sombra suspeita na janela',             tipo: 'SUSPEITO',    nivel: 2 },
+      { nome: 'O silêncio entre os pacotes de dados',  tipo: 'EXISTENCIAL', nivel: 5 },
+    ];
+    const _NIVEL_COR = { 1:'#888888', 2:'#ccaa33', 3:'#cc5522', 4:'#cc00cc', 5:'#ff0000' };
+    let _paranoia_ativos  = [];
+    let _paranoiaIv       = null;
+
+    function abrirParanoia() {
+      const win = document.getElementById('paranoia-win');
+      win.style.display = 'flex';
+      makeDraggableEl(win, document.getElementById('paranoia-titlebar'));
+      if (_paranoia_ativos.length === 0) {
+        _paranoia_ativos = [_PARANOIA_ENTIDADES[0]];
+        _paranoiaRender();
+        setTimeout(() => {
+          document.getElementById('paranoia-scan-msg').textContent = 'Varredura inicial... 1 entidade detectada.';
+          setTimeout(_paranoiaEscalar, 3500);
+        }, 800);
+      }
+      if (!_paranoiaIv) {
+        _paranoiaIv = setInterval(_paranoiaEscalar, 12000);
+      }
+    }
+
+    function fecharParanoia() {
+      document.getElementById('paranoia-win').style.display = 'none';
+      clearInterval(_paranoiaIv); _paranoiaIv = null;
+      _addonsAtivos = _addonsAtivos.filter(x => x !== 'paranoia');
+      salvarAddons(); renderDock();
+    }
+
+    function paranoiaScan() {
+      const btn = document.getElementById('paranoia-scan-btn');
+      btn.disabled = true;
+      btn.textContent = '◉ ESCANEANDO...';
+      document.getElementById('paranoia-scan-msg').textContent = '';
+      setTimeout(() => {
+        _paranoiaEscalar();
+        btn.disabled = false;
+        btn.textContent = '◉ ESCANEAR NOVAMENTE';
+      }, 1800);
+    }
+
+    function _paranoiaEscalar() {
+      const disponiveis = _PARANOIA_ENTIDADES.filter(e => !_paranoia_ativos.includes(e));
+      if (disponiveis.length === 0) {
+        document.getElementById('paranoia-scan-msg').textContent =
+          '⚠ Não há mais privacidade a detectar.';
+        return;
+      }
+      const nova = disponiveis[Math.floor(Math.random() * disponiveis.length)];
+      _paranoia_ativos.push(nova);
+      _paranoiaRender();
+      const msgs = [
+        '⚠ Nova entidade detectada: ' + nova.nome,
+        '⚠ Alguém novo está te observando.',
+        '⚠ Sinal estranho detectado — entidade adicionada.',
+        '⚠ ' + nova.nome + ' entrou na sala.',
+      ];
+      document.getElementById('paranoia-scan-msg').textContent =
+        msgs[Math.floor(Math.random() * msgs.length)];
+    }
+
+    function _paranoiaRender() {
+      const list  = document.getElementById('paranoia-list');
+      const count = document.getElementById('paranoia-count');
+      count.textContent = _paranoia_ativos.length;
+      if (_paranoia_ativos.length >= 8) count.style.color = '#ff0000';
+      else if (_paranoia_ativos.length >= 5) count.style.color = '#cc5522';
+      else count.style.color = '#cc0000';
+      list.innerHTML = _paranoia_ativos.map(e => {
+        const cor = _NIVEL_COR[e.nivel] || '#888';
+        return `<div class="paranoia-item">
+          <div class="paranoia-item-dot" style="background:${cor}"></div>
+          <div class="paranoia-item-info">
+            <div class="paranoia-item-nome">${e.nome}</div>
+            <div class="paranoia-item-tipo" style="color:${cor}">${e.tipo} · NÍVEL ${e.nivel}</div>
+          </div>
+          <div class="paranoia-item-status">● AO VIVO</div>
+        </div>`;
+      }).join('');
+    }
+  </script>
+</body>
+</html>

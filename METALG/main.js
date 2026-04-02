@@ -97,6 +97,7 @@ const DEFAULT_CHAR = () => ({
   integrity:  5,
   patente:    1,
   armas:      [null, null],
+  armaUnica:  null,
   bolsa:        { items: [], staged: [] },
   camuflagem:   null,
   attrs: {
@@ -185,6 +186,10 @@ const ARMA_TIPOS = {
   alarme_campo:     { label: 'ALARME DE CAMPO',  img: '', consumivel: true, ico: '◯' },
   mina_atordoante:  { label: 'MINA ATORDOANTE',  img: '', consumivel: true, ico: '◻' },
   distracao:        { label: 'DISTRACAO',          img: '', consumivel: true, ico: '♀' },
+  // ── Armas Únicas ──
+  lancachamas: { label: 'LANÇA-CHAMAS', img: 'icones/armas_unicas/lancachamas.svg', unica: true },
+  motosserra:  { label: 'MOTOSSERRA',   img: 'icones/armas_unicas/motoserra.svg',   unica: true },
+  bazuca:      { label: 'BAZUCA',       img: 'icones/armas_unicas/bazuca.svg',       unica: true },
 };
 
 // Inventory sizes (cols × rows) for each weapon / consumable type
@@ -278,6 +283,45 @@ const CONSUMIVEL_COR = {
 const BOLSA_COLS  = 7;
 const BOLSA_ROWS  = 5;
 const BOLSA_STEP  = 47; // cell px (46) + gap (1)
+
+// ──────────────────────────────────────────────────────────
+//  ARMAS ÚNICAS — propriedades especiais
+// ──────────────────────────────────────────────────────────
+const ARMA_UNICA_PROPS = {
+  lancachamas: {
+    cor: '#ff6600',
+    tag: 'INCENDIÁRIO',
+    propriedades: [
+      { id: 'area',      label: 'ÁREA (CONE)',        desc: 'Atinge todos os alvos em um cone frontal de 2 hexágonos.' },
+      { id: 'incendio',  label: 'INCENDIÁRIO',        desc: 'Alvos atingidos continuam em chamas por 3 turnos. -1 integridade por turno.' },
+      { id: 'recarga',   label: 'RECARGA: TANQUE',    desc: 'Usa tanque de combustível. Não usa munição convencional. 6 cargas por tanque.' },
+      { id: 'barulho',   label: 'BARULHO MÁXIMO',     desc: 'Impossível usar furtivamente. Alerta todos inimigos no raio de 4 hexágonos.' },
+    ],
+    aviso: 'PERIGO DE FOGO AMIGO — não dispare em aliados próximos.',
+  },
+  motosserra: {
+    cor: '#ffaa00',
+    tag: 'BERSERKER',
+    propriedades: [
+      { id: 'cac',       label: 'CORPO-A-CORPO',      desc: 'Alcance 0. Requer contato direto. Ignora cobertura do alvo.' },
+      { id: 'blindagem', label: 'IGNORA BLINDAGEM',   desc: 'Perfura qualquer armadura ou escudo. Aplica dano integral.' },
+      { id: 'berserk',   label: 'MODO BERSERKER',     desc: 'Ao eliminar um alvo, pode atacar imediatamente um alvo adjacente sem custo de ação.' },
+      { id: 'ruido',     label: 'BARULHO: ALTO',      desc: 'Ativa alerta de área. -2 em testes de furtividade enquanto empunhada.' },
+    ],
+    aviso: 'AVISO: SANGUE PROJETADO EM 360°. USE PROTEÇÃO OCULAR.',
+  },
+  bazuca: {
+    cor: '#88cc44',
+    tag: 'EXPLOSIVO',
+    propriedades: [
+      { id: 'explosao',  label: 'EXPLOSÃO EM ÁREA',   desc: 'Raio de 2 hexágonos. Todos os alvos na zona recebem dano integral.' },
+      { id: 'antiblind', label: 'ANTI-BLINDAGEM',     desc: 'Projétil perfurante. Destrói cobertura dura e veículos levemente blindados.' },
+      { id: 'recarga',   label: 'RECARGA: 1 TURNO',   desc: 'Requer 1 turno completo de recarga após cada disparo. Sem ação de movimento.' },
+      { id: 'guiado',    label: 'PROJÉTIL GUIADO',    desc: 'Com 1 ação adicional de mira, o projétil segue o alvo mesmo se mover.' },
+    ],
+    aviso: 'ZONA DE PERIGO TRASEIRA: 3 HEXÁGONOS. NÃO DISPARE EM ESPAÇOS FECHADOS.',
+  },
+};
 // Available bolsa rows per patente level (Etapa 2 — capacity limit)
 const BOLSA_ROWS_BY_PATENTE = { 1: 3, 2: 4, 3: 5 };
 
@@ -604,12 +648,34 @@ let videoTransUnsub  = null;             // listener Firestore
 let _videoAlertId    = null;             // vId pendente no alerta
 let _videoSeenSet    = new Set();        // IDs já vistos por este jogador
 let _videoFirstLoad  = true;             // silencia alerta no carregamento inicial
+let evidenceBoardState = { items: [], connections: [] }; // quadro de evidências
+let evidenceBoardUnsub = null;           // listener Firestore
+let _ebConnectMode    = false;           // modo de criação de fio
+let _ebConnectFrom    = null;            // id do card selecionado
+let _ebSelectedColor  = 'red';           // cor do fio atual
+let _ebDragging       = null;            // estado de arrasto de card
+let _ebConnectPos     = null;            // posição do mouse para borracha viva
+let _ebSaveTimer      = null;            // debounce de save de posições
+let _ebPresenceUnsub  = null;            // listener de cursores
+let _ebPresenceState  = {};              // {codename: {x,y,ts}}
+let _ebLiveDragUnsub  = null;            // listener de drag ao vivo
+let _ebLiveDragState  = {};              // {itemId: {x,y,by,ts}}
+let _ebCursorThrottle = 0;               // timestamp último broadcast de cursor
+let _ebDragThrottle   = 0;               // timestamp último broadcast de drag
+let _ebZoom           = 1;               // fator de zoom atual
+let _ebPan            = { x: 0, y: 0 };  // deslocamento de pan em px
+let _ebPanning        = null;            // estado de pan (botao-meio ou space+drag)
+let _ebPastaState     = {};              // {itemId: {open,page}} — estado de flip das pastas
+let _ebCursorTargets  = {};              // {codename: {tx,ty,cx,cy,rafId,el}}
+let _gmPastaPages     = [{title:'PÁGINA 1', text:''}]; // páginas em edição no form de pasta
 let camoReleasedState = [];   // IDs de camuflagens liberadas pelo GM
 let camoUnsub = null;         // listener firestore de camos
 let docsReadSet   = new Set(); // IDs de docs já abertos pelo jogador
 let _newDocAlertId = null;     // docId pendente no alerta de novo arquivo
 let missaoText  = '';          // texto de missão atual (GM)
 let missaoUnsub = null;        // listener firestore de missão
+let maldicoesUnsub = null;     // listener firestore de maldições
+let _missaoBootDone = false;   // true após primeira exibição do boot da missão
 let _lootPool    = [];         // itens montados pelo GM para distribuição
 let _gmCharsList = [];         // cache de chars para ferramentas do GM
 let _gmDeleteArmed = null;     // codename aguardando confirmação de deleção
@@ -620,6 +686,7 @@ let _camoSelected     = null;  // id da camo expandida no painel
 let craftSlots = [null, null, null]; // ingredientes selecionados para fabricar
 let craftMode  = false;              // se o painel de craft esta ativo
 let _craftTutTab = 'medicamentos';   // aba ativa do tutorial
+let _playerPrefs  = {};              // preferências visuais locais do jogador (localStorage)
 
 // ──────────────────────────────────────────────────────────
 //  AUDIO
@@ -632,6 +699,7 @@ const SFX_SRCS = {
 const SFX_VOL = { open: 0.55, close: 0.55, select: 0.45 };
 
 function sfx(name) {
+  if (_playerPrefs.sfx === false) return;  // mudo
   const src = SFX_SRCS[name];
   if (!src) return;
   try {
@@ -785,6 +853,136 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 // ──────────────────────────────────────────────────────────
 //  ROLE SELECTION
 // ──────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────
+//  PERSONALIZAÇÃO DO JOGADOR (localStorage)
+// ──────────────────────────────────────────────────────────
+const _PREFS_CORES = [
+  { id: 'vermelho', color: '#cc0000' },
+  { id: 'azul',     color: '#1177dd' },
+  { id: 'verde',    color: '#00bb44' },
+  { id: 'roxo',     color: '#9944cc' },
+  { id: 'dourado',  color: '#cc9900' },
+  { id: 'ciano',    color: '#00aacc' },
+];
+
+function _loadPlayerPrefs() {
+  const key = 'vyper_ui_' + (state.codename || '').toUpperCase();
+  try {
+    const raw = localStorage.getItem(key);
+    _playerPrefs = raw ? JSON.parse(raw) : {};
+  } catch (_) { _playerPrefs = {}; }
+  // Sync color from character data (Firestore is the source of truth)
+  if (state.character?.aparencia?.cor) {
+    _playerPrefs.cor = state.character.aparencia.cor;
+  }
+  _applyPlayerPrefs();
+}
+
+function _savePlayerPrefs() {
+  const key = 'vyper_ui_' + (state.codename || '').toUpperCase();
+  try { localStorage.setItem(key, JSON.stringify(_playerPrefs)); } catch (_) {}
+}
+
+function _applyPlayerPrefs() {
+  const p = _playerPrefs;
+  const body = document.body;
+
+  // Accent color: body class, CSS handles :not([class*="theme-"]) so GM overrides
+  _PREFS_CORES.forEach(c => body.classList.remove('player-theme-' + c.id));
+  const cor = p.cor || 'vermelho';
+  body.classList.add('player-theme-' + cor);
+
+  // Scanlines
+  body.classList.toggle('prefs-no-scanlines', p.scanlines === false);
+
+  // Vinheta
+  body.classList.toggle('prefs-no-vinheta', p.vinheta === false);
+
+  // Brilho
+  body.classList.toggle('prefs-brilho-escuro',    p.brilho === 'escuro');
+  body.classList.toggle('prefs-brilho-brilhante', p.brilho === 'brilhante');
+}
+
+function openPlayerPrefs() {
+  const panel = $('player-prefs-panel');
+  if (!panel) return;
+  _renderPlayerPrefsPanel();
+  panel.classList.remove('hidden');
+  sfx('open');
+}
+
+function closePlayerPrefs() {
+  const panel = $('player-prefs-panel');
+  if (panel) panel.classList.add('hidden');
+  sfx('close');
+}
+
+function _renderPlayerPrefsPanel() {
+  const p = _playerPrefs;
+  // Source of truth for accent color is the character's aparencia.cor (Firestore)
+  const corAtual = state.character?.aparencia?.cor || p.cor || 'vermelho';
+
+  // Color swatches
+  const grid = $('prefs-cor-grid');
+  if (grid) {
+    grid.innerHTML = _PREFS_CORES.map(c =>
+      `<button class="prefs-cor-btn${corAtual === c.id ? ' active' : ''}"
+              style="background:${c.color}"
+              onclick="App.setPlayerPref('cor','${c.id}')"
+              title="${c.id.toUpperCase()}"></button>`
+    ).join('');
+  }
+
+  // Hide override notice (player now controls their own color directly)
+  const overrideEl = $('prefs-gm-override');
+  if (overrideEl) overrideEl.classList.add('hidden');
+
+  // Toggles
+  _syncPrefToggle('prefs-scanlines-btn', p.scanlines !== false);
+  _syncPrefToggle('prefs-vinheta-btn',   p.vinheta   !== false);
+  _syncPrefToggle('prefs-sfx-btn',       p.sfx       !== false);
+
+  // Brilho
+  ['escuro', 'normal', 'brilhante'].forEach(b => {
+    const btn = $('prefs-brilho-' + b);
+    if (btn) btn.classList.toggle('active', (p.brilho || 'normal') === b);
+  });
+}
+
+function _syncPrefToggle(id, active) {
+  const btn = $(id);
+  if (!btn) return;
+  btn.classList.toggle('active', active);
+  btn.textContent = active ? 'ATIVO' : 'DESLIGADO';
+}
+
+function setPlayerPref(key, value) {
+  _playerPrefs[key] = value;
+  _savePlayerPrefs();
+
+  if (key === 'cor' && state.character) {
+    // Persist accent color to Firestore so it applies on any device
+    if (!state.character.aparencia) state.character.aparencia = {};
+    state.character.aparencia.cor = value;
+    applyAparencia(state.character);
+    _applyPlayerPrefs(); // clear any stale body.player-theme-* class (important for vermelho)
+    persistChar({ 'aparencia.cor': value }).catch(() => {});
+  } else {
+    _applyPlayerPrefs();
+  }
+
+  _renderPlayerPrefsPanel();
+}
+
+function togglePlayerPref(key) {
+  if (key === 'scanlines') _playerPrefs.scanlines = !(_playerPrefs.scanlines !== false);
+  else if (key === 'vinheta') _playerPrefs.vinheta = !(_playerPrefs.vinheta !== false);
+  else if (key === 'sfx')  _playerPrefs.sfx  = !(_playerPrefs.sfx  !== false);
+  _savePlayerPrefs();
+  _applyPlayerPrefs();
+  _renderPlayerPrefsPanel();
+}
+
 function selectRole(role) {
   // Visual selection
   $('btn-player').classList.toggle('selected', role === 'player');
@@ -891,6 +1089,7 @@ async function loginPlayer() {
       updateIntegrityDisplay(data.integrity);
       updateStatusAtivoDisplay(data.statusAtivo);
       updateArmaDisplay(data.armas);
+      updateArmaUnicaDisplay(data.armaUnica);
       applyAparencia(data);
 
       // Notify player if status changed
@@ -979,6 +1178,13 @@ async function loginPlayer() {
     missaoUnsub = onSnapshot(doc(db, 'gameState', 'mission'), (snap) => {
       missaoText = snap.exists() ? (snap.data().text || '') : '';
       if (state.currentTab === 'equip') renderMissaoAtualText();
+    });
+
+    // Realtime listener — maldicoes (atualiza em tempo real quando GM adiciona novas)
+    if (maldicoesUnsub) maldicoesUnsub();
+    maldicoesUnsub = onSnapshot(doc(db, 'meta', 'maldicoes'), (snap) => {
+      maldicoesData = snap.exists() ? (snap.data().maldicoes || []) : [];
+      if (state.currentTab === 'mald') renderMaldicoesTab();
     });
   }
 }
@@ -1127,6 +1333,7 @@ function renderSheet(data) {
 
   // Armas
   updateArmaDisplay(data.armas);
+  updateArmaUnicaDisplay(data.armaUnica);
 
   // Security
   updateSecurityDisplay(data.security || 'seguro');
@@ -1140,11 +1347,16 @@ function renderSheet(data) {
   // Paranormal radar (on initial load)
   applyParanormalRadar(data.paranormal?.nivel ?? 0);
 
+  // Perícias
+  renderPericias(data.pericias || {});
+
   // Ensure bolsa field exists on character
   if (!state.character.bolsa) state.character.bolsa = { items: [], staged: [] };
 
   // Reset to main tab
   switchTab('main');
+  // Apply player prefs (stored locally per codename)
+  _loadPlayerPrefs();
 }
 
 function setDisplayValue(field, val) {
@@ -1177,6 +1389,8 @@ function updateIntegrityDisplay(integrity) {
   const bars     = document.querySelectorAll('#integrity-bars .integrity-bar');
   const countEl  = $('integrity-count');
   const section  = document.getElementById('integrity-bars');
+  const wrap     = section?.closest('.integ-wrap');
+  const tagEl    = $('integ-status-tag');
 
   bars.forEach((bar, i) => {
     if (i >= maxBars) {
@@ -1190,10 +1404,21 @@ function updateIntegrityDisplay(integrity) {
   if (countEl) countEl.textContent = val + '/' + maxBars;
 
   // Visual warning levels
+  const warnLow  = val <= 2 && val > 1;
+  const warnCrit = val <= 1;
   if (section) {
-    section.classList.remove('warn-low', 'warn-crit');
-    if (val <= 1) section.classList.add('warn-crit');
-    else if (val <= 2) section.classList.add('warn-low');
+    section.classList.toggle('warn-low',  warnLow);
+    section.classList.toggle('warn-crit', warnCrit);
+  }
+  if (wrap) {
+    wrap.classList.toggle('warn-low',  warnLow);
+    wrap.classList.toggle('warn-crit', warnCrit);
+  }
+  if (tagEl) {
+    if (warnCrit) tagEl.textContent = 'CRÍTICO';
+    else if (warnLow) tagEl.textContent = 'BAIXA';
+    else if (val === maxBars) tagEl.textContent = 'ESTÁVEL';
+    else tagEl.textContent = 'REDUZIDA';
   }
 }
 
@@ -1352,6 +1577,117 @@ function fecharArmaInspect() {
   sfx('close');
 }
 
+// ──────────────────────────────────────────────────────────
+//  ARMAS ÚNICAS — display & inspect
+// ──────────────────────────────────────────────────────────
+function updateArmaUnicaDisplay(armaUnica) {
+  const slot   = $('arma-unica-slot');
+  const ico    = $('arma-unica-ico-img');
+  const empt   = $('arma-unica-empty');
+  const nome   = $('arma-unica-nome');
+  const badge  = $('arma-unica-badge');
+  const stats  = $('arma-unica-stats');
+  const props  = $('arma-unica-props');
+  const inspB  = $('arma-unica-insp-btn');
+  if (!slot) return;
+
+  if (armaUnica && armaUnica.tipo && ARMA_TIPOS[armaUnica.tipo]?.unica) {
+    const tipo  = ARMA_TIPOS[armaUnica.tipo];
+    const uData = ARMA_UNICA_PROPS[armaUnica.tipo];
+    // Icon
+    ico.src = tipo.img;
+    ico.classList.remove('hidden');
+    empt.style.display = 'none';
+    // Name & badge
+    nome.textContent = armaUnica.nome || tipo.label;
+    if (badge) { badge.style.display = ''; badge.style.setProperty('--unica-cor', uData?.cor || '#ff8800'); }
+    // Stats line
+    const parts = [];
+    if (armaUnica.dano) parts.push('DMG: ' + armaUnica.dano);
+    stats.textContent = parts.join(' · ');
+    // Property chips
+    if (props && uData) {
+      props.innerHTML = uData.propriedades.map(p =>
+        `<span class="arma-unica-prop-chip" style="--chip-cor:${uData.cor}">${p.label}</span>`
+      ).join('');
+    }
+    if (inspB) inspB.classList.remove('hidden');
+    slot.classList.add('arma-unica-equipada');
+    slot.style.setProperty('--unica-cor', uData?.cor || '#ff8800');
+  } else {
+    ico.classList.add('hidden');
+    empt.style.display = '';
+    nome.textContent = 'NENHUMA';
+    if (badge) badge.style.display = 'none';
+    stats.textContent = '';
+    if (props) props.innerHTML = '';
+    if (inspB) inspB.classList.add('hidden');
+    slot.classList.remove('arma-unica-equipada');
+    slot.style.removeProperty('--unica-cor');
+  }
+  const section = $('armas-unicas-section');
+  if (section) section.classList.toggle('arma-unica-ativa', !!(armaUnica && armaUnica.tipo && ARMA_TIPOS[armaUnica.tipo]?.unica));
+}
+
+function inspecionarArmaUnica() {
+  const armaUnica = state.character?.armaUnica;
+  if (!armaUnica || !armaUnica.tipo || !ARMA_TIPOS[armaUnica.tipo]?.unica) return;
+  const tipo  = ARMA_TIPOS[armaUnica.tipo];
+  const uData = ARMA_UNICA_PROPS[armaUnica.tipo];
+  const popup = $('arma-unica-inspect-popup');
+  if (!popup) return;
+
+  $('arma-unica-inspect-nome').textContent = armaUnica.nome || tipo.label;
+  const img = $('arma-unica-inspect-img');
+  if (tipo.img) { img.src = tipo.img; img.style.display = ''; }
+  else          { img.style.display = 'none'; }
+
+  // Set color theme
+  popup.style.setProperty('--unica-cor', uData?.cor || '#ff8800');
+
+  // Stats
+  $('arma-unica-inspect-stats').innerHTML = [
+    ['CLASSIFICAÇÃO', 'ARMAMENTO ÚNICO'],
+    ['DANO',          armaUnica.dano    || '—'],
+    ['ALCANCE',       armaUnica.alcance || '—'],
+  ].map(([k, v]) =>
+    `<div class="arma-stat-row"><span class="arma-stat-key">${k}</span><span class="arma-stat-val arma-unica-val">${escHtml(String(v))}</span></div>`
+  ).join('');
+
+  // Special properties
+  const propsEl = $('arma-unica-inspect-props');
+  if (propsEl && uData) {
+    propsEl.innerHTML = uData.propriedades.map(p =>
+      `<div class="arma-unica-prop-entry">
+        <div class="arma-unica-prop-head"><span class="arma-unica-prop-ico">◈</span><span class="arma-unica-prop-name">${p.label}</span></div>
+        <div class="arma-unica-prop-desc">${escHtml(p.desc)}</div>
+      </div>`
+    ).join('');
+  }
+
+  // Aviso / warning
+  const avisoEl = $('arma-unica-inspect-aviso');
+  if (avisoEl && uData?.aviso) {
+    avisoEl.textContent = uData.aviso;
+    avisoEl.style.display = '';
+  } else if (avisoEl) avisoEl.style.display = 'none';
+
+  // Description
+  const descEl = $('arma-unica-inspect-descricao');
+  if (descEl) {
+    descEl.textContent = armaUnica.descricao || '';
+    descEl.style.display = armaUnica.descricao ? '' : 'none';
+  }
+
+  popup.classList.remove('hidden');
+  sfx('open');
+}
+
+function fecharArmaUnicaInspect() {
+  $('arma-unica-inspect-popup').classList.add('hidden');
+  sfx('close');
+}
+
 function updateStatusAtivoDisplay(status) {
   const el   = $('display-status-ativo');
   const labels = { ativo: 'ATIVO', inativo: 'INATIVO', morto: 'K.I.A.' };
@@ -1476,6 +1812,48 @@ async function toggleIntegrity(index) {
   updateIntegrityDisplay(newVal);
 
   await persistChar({ integrity: newVal });
+}
+
+// ──────────────────────────────────────────────────────────
+//  PERÍCIAS
+// ──────────────────────────────────────────────────────────
+const PERICIAS_LIST = [
+  'acrobacia','adestramento','artes','atletismo','atualidades',
+  'ciencias','crime','diplomacia','enganacao','fortitude',
+  'furtividade','iniciativa','intimidacao','intuicao','investigacao',
+  'luta','medicina','ocultismo','percepcao','pilotagem',
+  'pontaria','profissao','reflexos','religiao','sobrevivencia',
+  'tatica','tecnologia','vontade'
+];
+
+function _applyPericiaEl(el, num) {
+  el.value = num > 0 ? '+' + num : String(num);
+  el.classList.toggle('pb-pos',  num > 0);
+  el.classList.toggle('pb-neg',  num < 0);
+  el.classList.toggle('pb-zero', num === 0);
+}
+
+function renderPericias(pericias) {
+  PERICIAS_LIST.forEach(key => {
+    const el = document.getElementById('pb-' + key);
+    if (!el) return;
+    const num = (pericias && typeof pericias[key] === 'number') ? pericias[key] : 0;
+    _applyPericiaEl(el, num);
+  });
+}
+
+async function savePericiaBonus(key, inputEl) {
+  if (!inputEl) inputEl = document.getElementById('pb-' + key);
+  if (!inputEl) return;
+  let raw = inputEl.value.trim().replace(/^\+/, '');
+  let num = parseInt(raw, 10);
+  if (isNaN(num)) num = 0;
+  num = Math.max(-20, Math.min(20, num));
+  _applyPericiaEl(inputEl, num);
+  if (!state.character) return;
+  if (!state.character.pericias) state.character.pericias = {};
+  state.character.pericias[key] = num;
+  await persistChar({ [`pericias.${key}`]: num });
 }
 
 // ──────────────────────────────────────────────────────────
@@ -2797,6 +3175,13 @@ function handlePhotoUpload(event) {
 //  TAB NAVIGATION
 // ──────────────────────────────────────────────────────────
 function switchTab(tab) {
+  // Quadro agora é sub-aba de docs
+  if (tab === 'quadro') {
+    switchTab('docs');
+    docsSubtab('quadro');
+    return;
+  }
+
   state.currentTab = tab;
 
   // Update nav indicators
@@ -2816,10 +3201,13 @@ function switchTab(tab) {
     document.querySelectorAll('.tab-panel').forEach(p => {
       p.classList.toggle('hidden', p.id !== 'tab-panel-' + tab);
     });
+    // Ao sair da bolsa: limpa seleção e estado de discard para evitar acidentes
+    if (tab !== 'bolsa') { bolsaSelected = null; bolsaDiscardArmed = false; }
+
     if (tab === 'fitas') renderFitasTab();
     if (tab === 'radio') renderRadioTab();
     if (tab === 'radar') renderParanormalRadar(state.character?.paranormal?.nivel ?? 0);
-    if (tab === 'mald')  { loadMaldicoes().then(renderMaldicoesTab); }
+    if (tab === 'mald')  { if (maldicoesUnsub) renderMaldicoesTab(); else loadMaldicoes().then(renderMaldicoesTab); }
     if (tab === 'docs')  renderDocsTab();
     if (tab === 'equip') enterMissaoTab();
     if (tab === 'bolsa') {
@@ -2844,6 +3232,36 @@ function switchTab(tab) {
       if (panel) panel.classList.remove('mdp-open', 'mdp-out');
     }
   }
+}
+
+function switchCenterTab(name) {
+  ['stats', 'combate'].forEach(t => {
+    const btn   = document.getElementById('ctab-' + t);
+    const panel = document.getElementById('cpanel-' + t);
+    if (btn)   btn.classList.toggle('active', t === name);
+    if (panel) panel.classList.toggle('active', t === name);
+  });
+}
+
+// ──────────────────────────────────────────────────────────
+//  FEED DE NOTÍCIAS
+// ──────────────────────────────────────────────────────────
+function toggleFeedBar() {
+  const bar = $('feed-url-bar');
+  const inp = $('feed-url-input');
+  if (!bar) return;
+  const opening = !bar.classList.contains('feed-open');
+  bar.classList.toggle('feed-open', opening);
+  if (opening) setTimeout(() => inp?.focus(), 30);
+  else if (inp) inp.value = '';
+}
+
+function openFeedUrl() {
+  const inp = $('feed-url-input');
+  if (!inp) return;
+  const slug = inp.value.trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '').toLowerCase();
+  if (!slug) return;
+  window.open('feed.html?s=' + encodeURIComponent(slug), '_blank');
 }
 
 // ──────────────────────────────────────────────────────────
@@ -3310,15 +3728,14 @@ function fitaSeek(event) {
 function buildGMArmasHtml(char) {
   const armas = char.armas || [null, null];
   const labels = ['PRIM\u00c1RIA I', 'PRIM\u00c1RIA II'];
-  return [0, 1].map(i => {
+  const slotsHtml = [0, 1].map(i => {
     const arma = armas[i] || {};
-    const tipoOpts = Object.entries(ARMA_TIPOS).filter(([,v]) => !v.consumivel).map(([k, v]) =>
+    const tipoOpts = Object.entries(ARMA_TIPOS).filter(([,v]) => !v.consumivel && !v.unica).map(([k, v]) =>
       `<option value="${k}" ${arma.tipo === k ? 'selected' : ''}>${v.label}</option>`
     ).join('');
     const tipoDanoOpts = ['mortal','neutralizador'].map(t =>
       `<option value="${t}" ${(arma.tipoDano || 'mortal') === t ? 'selected' : ''}>${t.toUpperCase()}</option>`
     ).join('');
-    const modsVal = (arma.modificadores || []).join(', ');
     const hasArma = !!arma.tipo;
     const title = hasArma
       ? `${labels[i]} \u2014 ${ARMA_TIPOS[arma.tipo]?.label || ''}${arma.nome ? ' ('+escHtml(arma.nome)+')' : ''}`
@@ -3347,6 +3764,37 @@ function buildGMArmasHtml(char) {
         </div>
       </div>`;
   }).join('');
+
+  // Unique weapon section
+  const u     = char.armaUnica || {};
+  const uTipoOpts = Object.entries(ARMA_TIPOS).filter(([,v]) => v.unica).map(([k, v]) =>
+    `<option value="${k}" ${u.tipo === k ? 'selected' : ''}>${v.label}</option>`
+  ).join('');
+  const uHasArma = !!(u.tipo && ARMA_TIPOS[u.tipo]?.unica);
+  const uTitle   = uHasArma
+    ? `ÚNICA \u2014 ${ARMA_TIPOS[u.tipo]?.label}${u.nome ? ' ('+escHtml(u.nome)+')' : ''}`
+    : 'ARMAMENTO ESPECIAL / ÚNICA';
+  const unicaHtml = `
+    <div class="gm-arma-form gm-arma-form-unica">
+      <div class="gm-arma-form-title gm-arma-unica-title">⬡ ${uTitle}</div>
+      <div class="gm-arma-row">
+        <select class="gm-select" id="gm-arma-unica-tipo-${char.codename}">
+          <option value="">— NENHUMA —</option>${uTipoOpts}
+        </select>
+        <input class="gm-text-input" id="gm-arma-unica-nome-${char.codename}" placeholder="apelido (opcional)" value="${escHtml(u.nome || '')}" maxlength="30" />
+      </div>
+      <div class="gm-arma-row">
+        <input class="gm-text-input" id="gm-arma-unica-dano-${char.codename}" placeholder="dano (ex: 4d8)" value="${escHtml(u.dano || '')}" maxlength="20" />
+        <input class="gm-text-input" id="gm-arma-unica-alcance-${char.codename}" placeholder="alcance" value="${escHtml(u.alcance || '')}" maxlength="20" />
+      </div>
+      <textarea class="gm-text-input gm-arma-desc" id="gm-arma-unica-desc-${char.codename}" placeholder="descri\u00e7\u00e3o adicional..." rows="2">${escHtml(u.descricao || '')}</textarea>
+      <div class="gm-arma-btns">
+        <button class="gm-toggle-btn active-ativo" onclick="App.gmSalvarArmaUnica('${char.codename}')">SALVAR</button>
+        <button class="gm-toggle-btn active-morto"  onclick="App.gmLimparArmaUnica('${char.codename}')">LIMPAR</button>
+      </div>
+    </div>`;
+
+  return slotsHtml + unicaHtml;
 }
 
 async function gmSalvarArma(codename, slot) {
@@ -3398,6 +3846,33 @@ async function gmLimparArma(codename, slot) {
   await gmUpdateChar(codename, { armas: newArmas });
   sfx('select');
   showToast(`Slot ${slot + 1} limpo.`, 'success', 1500);
+}
+
+async function gmSalvarArmaUnica(codename) {
+  const get  = id => document.getElementById(id);
+  const tipo = get(`gm-arma-unica-tipo-${codename}`)?.value;
+  if (!tipo || !ARMA_TIPOS[tipo]?.unica) {
+    await gmUpdateChar(codename, { armaUnica: null });
+    sfx('select');
+    showToast('Arma única removida.', 'success', 1500);
+    return;
+  }
+  const armaUnica = {
+    tipo,
+    nome:      get(`gm-arma-unica-nome-${codename}`)?.value.trim()    || '',
+    dano:      get(`gm-arma-unica-dano-${codename}`)?.value.trim()    || '',
+    alcance:   get(`gm-arma-unica-alcance-${codename}`)?.value.trim() || '',
+    descricao: get(`gm-arma-unica-desc-${codename}`)?.value.trim()    || '',
+  };
+  await gmUpdateChar(codename, { armaUnica });
+  sfx('select');
+  showToast(`${ARMA_TIPOS[tipo].label} atribuída.`, 'success', 1500);
+}
+
+async function gmLimparArmaUnica(codename) {
+  await gmUpdateChar(codename, { armaUnica: null });
+  sfx('select');
+  showToast('Arma única removida.', 'success', 1500);
 }
 
 // ──────────────────────────────────────────────────────────
@@ -4429,12 +4904,20 @@ function fecharMensagemCifrada() {
 
 async function gmDeleteOperador(codename) {
   if (_gmDeleteArmed !== codename) {
-    // Primeira clique — armar confirmação
+    // Primeira clique — armar confirmação com contagem regressiva
     _gmDeleteArmed = codename;
     const btn = document.getElementById('gm-delete-btn-' + codename);
+    let secsLeft = 4;
     if (btn) {
-      btn.textContent = '⚠ CONFIRMAR DELEÇÃO';
+      btn.textContent = `⚠ CONFIRMAR DELEÇÃO (${secsLeft}s)`;
       btn.classList.add('armed');
+      const countdown = setInterval(() => {
+        secsLeft--;
+        const b = document.getElementById('gm-delete-btn-' + codename);
+        if (!b || _gmDeleteArmed !== codename) { clearInterval(countdown); return; }
+        if (secsLeft <= 0) { clearInterval(countdown); return; }
+        b.textContent = `⚠ CONFIRMAR DELEÇÃO (${secsLeft}s)`;
+      }, 1000);
     }
     // Auto-desarmar após 4 segundos
     setTimeout(() => {
@@ -4500,8 +4983,8 @@ function gmToggleSection(sectionId) {
 
 function restoreGMSectionStates() {
   const states   = JSON.parse(localStorage.getItem('vyper_gm_sections') || '{}');
-  const defaults = { npc: true, mald: true, missao: true, loot: true, docs: true, camuflagens: true, agents: false };
-  ['npc','mald','missao','loot','docs','camuflagens','agents'].forEach(id => {
+  const defaults = { npc: true, mald: true, missao: true, loot: true, docs: true, camuflagens: true, videos: true, quadro: true, agents: false };
+  ['npc','mald','missao','loot','docs','camuflagens','videos','quadro','agents'].forEach(id => {
     const sec = document.getElementById('gmsec-' + id);
     if (!sec) return;
     const collapsed = id in states ? states[id] : defaults[id];
@@ -4875,6 +5358,7 @@ async function loadDocsState() {
   await loadDocInteractions();
   await loadDocCiphers();
   loadVideoTrans();
+  loadEvidenceBoard();
 }
 
 function markDocRead(docId) {
@@ -5276,10 +5760,12 @@ function docsSubtab(tab) {
   $('docs-panel-docs')?.classList.toggle('hidden', tab !== 'docs');
   $('docs-panel-fotos')?.classList.toggle('hidden', tab !== 'fotos');
   $('docs-panel-videos')?.classList.toggle('hidden', tab !== 'videos');
+  $('docs-panel-quadro')?.classList.toggle('hidden', tab !== 'quadro');
   document.querySelectorAll('.docs-subtab-btn').forEach(b =>
     b.classList.toggle('docs-subtab-active', b.dataset.subtab === tab));
   if (tab === 'fotos') renderFotosGrid();
   if (tab === 'videos') renderVideoTransTab();
+  if (tab === 'quadro') { _ebSetupBoardEvents(); setTimeout(renderEvidenceBoard, 60); }
 }
 
 // ── Fotos (localStorage) ──────────────────────────────────
@@ -5968,12 +6454,24 @@ function renderMissaoAtualText() {
 }
 
 function enterMissaoTab() {
-  // Reset animation state
   const content = $('missao-content');
   const boot    = $('missao-boot');
   if (!content || !boot) return;
 
-  // Hide content, reset objective visibility
+  // Após a primeira visita na sessão: pula a animação de boot
+  if (_missaoBootDone) {
+    content.classList.add('m-revealed');
+    document.querySelectorAll('.missao-obj-item').forEach(el => el.classList.add('m-obj-show'));
+    const frame = $('missao-target-frame');
+    if (frame) frame.classList.add('m-img-show');
+    const atual = $('missao-atual-wrap');
+    if (atual) atual.classList.add('m-atual-show');
+    renderMissaoAtualText();
+    return;
+  }
+  _missaoBootDone = true;
+
+  // Reset animation state
   content.classList.remove('m-revealed');
   document.querySelectorAll('.missao-obj-item').forEach(el => el.classList.remove('m-obj-show'));
   const frame = $('missao-target-frame');
@@ -6068,6 +6566,778 @@ async function gmToggleDocRelease(docId) {
   await saveDocsState();
   renderGMDocs();
   showToast(idx === -1 ? 'Documento liberado para os jogadores.' : 'Documento bloqueado.', 'success', 2000);
+}
+
+// ══════════════════════════════════════════════════════════
+//  QUADRO DE EVIDÊNCIAS
+// ══════════════════════════════════════════════════════════
+
+function loadEvidenceBoard() {
+  if (!firebaseOk) return;
+  if (evidenceBoardUnsub) evidenceBoardUnsub();
+  evidenceBoardUnsub = onSnapshot(doc(db, 'gameState', 'evidenceBoard'), (snap) => {
+    evidenceBoardState = snap.exists() ? snap.data() : { items: [], connections: [] };
+    if (!Array.isArray(evidenceBoardState.items))       evidenceBoardState.items = [];
+    if (!Array.isArray(evidenceBoardState.connections)) evidenceBoardState.connections = [];
+    if (_ebDragging) {
+      // não recria DOM durante arrasto local — apenas atualiza conexões
+      _ebRenderConnections();
+    } else {
+      renderEvidenceBoard();
+      if (state.role === 'gm') gmRenderEBList();
+    }
+  });
+  _ebLoadLiveDrag();
+  _ebLoadPresence();
+}
+
+function renderEvidenceBoard() {
+  const board    = $('evidence-board');
+  const svg      = $('evidence-svg');
+  const itemsEl  = $('evidence-items');
+  if (!board || !svg || !itemsEl) return;
+
+  // ensure content wrapper exists and transform is applied
+  let content = $('eb-content');
+  if (!content) {
+    content = document.createElement('div');
+    content.id = 'eb-content'; content.className = 'eb-content';
+    board.insertBefore(content, board.firstChild);
+    // move svg and items into content
+    content.appendChild(svg);
+    content.appendChild(itemsEl);
+  }
+  _ebApplyTransform();
+
+  _ebSetupBoardEvents();
+  itemsEl.innerHTML = '';
+
+  const PIN_COLORS = { document: '#993300', nota: '#cc9900', suspeito: '#2244aa', foto: '#cc2222' };
+
+  evidenceBoardState.items.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'eb-card eb-card-' + item.type;
+    el.id = 'eb-card-' + item.id;
+    el.style.left      = item.x + '%';
+    el.style.top       = item.y + '%';
+    el.style.transform = `rotate(${item.rotation || 0}deg)`;
+    el.dataset.id = item.id;
+    if (_ebConnectMode && _ebConnectFrom === item.id) el.classList.add('eb-card-source');
+
+    const pinColor = item.pinColor || PIN_COLORS[item.type] || '#cc3333';
+
+    if (item.type === 'foto' && item.imageUrl) {
+      el.innerHTML = `
+        <div class="eb-pin" style="background:${pinColor}"></div>
+        <img class="eb-card-img" src="${escHtml(item.imageUrl)}" alt="" draggable="false" />
+        <div class="eb-card-caption">${escHtml(item.title)}</div>`;
+    } else if (item.type === 'document') {
+      el.innerHTML = `
+        <div class="eb-pin" style="background:${pinColor}"></div>
+        <div class="eb-card-doc-stamp">DOC</div>
+        <div class="eb-card-title">${escHtml(item.title)}</div>
+        ${item.imageUrl ? `<img class="eb-card-doc-thumb" src="${escHtml(item.imageUrl)}" alt="" draggable="false" />` : ''}
+        ${item.docId ? `<button class="eb-card-open-btn" onclick="App.ebOpenDoc('${escHtml(item.docId)}')">ABRIR &#9658;</button>` : ''}`;
+    } else if (item.type === 'nota') {
+      el.innerHTML = `
+        <div class="eb-pin" style="background:${pinColor}"></div>
+        <div class="eb-nota-lines"></div>
+        <div class="eb-card-nota-title">${escHtml(item.title)}</div>
+        ${item.content ? `<div class="eb-card-nota-text">${escHtml(item.content)}</div>` : ''}`;
+    } else if (item.type === 'suspeito') {
+      el.innerHTML = `
+        <div class="eb-pin" style="background:${pinColor}"></div>
+        <div class="eb-card-suspect-header">SUSPEITO</div>
+        ${item.imageUrl
+          ? `<div class="eb-card-suspect-photo"><img src="${escHtml(item.imageUrl)}" alt="" draggable="false" /></div>`
+          : `<div class="eb-card-suspect-photo eb-suspect-no-photo">?</div>`}
+        <div class="eb-card-suspect-name">${escHtml(item.title)}</div>
+        ${item.content ? `<div class="eb-card-suspect-role">${escHtml(item.content)}</div>` : ''}`;
+    } else if (item.type === 'pasta') {
+      const ps = _ebPastaState[item.id] || { open: false, page: 0 };
+      const pages = Array.isArray(item.pages) && item.pages.length ? item.pages : [{title:'SEM CONTEÚDE', text:''}];
+      const curPage = pages[Math.min(ps.page, pages.length - 1)];
+      if (ps.open) el.classList.add('eb-pasta-open');
+      el.innerHTML = `
+        <div class="eb-pin" style="background:${pinColor}"></div>
+        <div class="eb-pasta-inner">
+          <div class="eb-pasta-front">
+            <div class="eb-pasta-classified">CLASSIFICADO</div>
+            <div class="eb-pasta-title">${escHtml(item.title)}</div>
+            <div class="eb-pasta-dots"></div>
+            ${item.content ? `<div class="eb-pasta-code">${escHtml(item.content)}</div><div class="eb-pasta-dots"></div>` : ''}
+            <div class="eb-pasta-hint">► abrir</div>
+          </div>
+          <div class="eb-pasta-back">
+            <div class="eb-pasta-back-header">${escHtml(curPage.title || '')}</div>
+            <div class="eb-pasta-back-text">${escHtml(curPage.text || '')}</div>
+            ${pages.length > 1 ? `
+            <div class="eb-pasta-nav">
+              <button class="eb-pasta-nav-btn" onmousedown="event.stopPropagation()" onclick="App.ebPastaPage('${escHtml(item.id)}',-1,event)">◄</button>
+              <span class="eb-pasta-page-num">${Math.min(ps.page, pages.length-1)+1} / ${pages.length}</span>
+              <button class="eb-pasta-nav-btn" onmousedown="event.stopPropagation()" onclick="App.ebPastaPage('${escHtml(item.id)}',1,event)">►</button>
+            </div>` : '<div class="eb-pasta-close-hint">▾ fechar</div>'}
+          </div>
+        </div>`;
+    }
+
+    el.addEventListener('mousedown', (e) => ebMouseDown(e, item.id));
+    itemsEl.appendChild(el);
+  });
+
+  _ebRenderConnections();
+  _ebApplyLiveDragPositions();
+  _ebRenderCursors();
+}
+
+function _ebApplyTransform() {
+  const content = $('eb-content');
+  if (!content) return;
+  content.style.transform = `translate(${_ebPan.x}px,${_ebPan.y}px) scale(${_ebZoom})`;
+  content.style.transformOrigin = '0 0';
+}
+
+function ebZoomIn()    { _ebChangeZoom( 0.15); }
+function ebZoomOut()   { _ebChangeZoom(-0.15); }
+function ebZoomReset() { _ebZoom = 1; _ebPan = {x:0,y:0}; _ebApplyTransform(); _ebUpdateZoomLabel(); }
+
+function _ebChangeZoom(delta) {
+  const MIN = 0.35, MAX = 2.2;
+  const board = $('evidence-board');
+  if (!board) return;
+  const br      = board.getBoundingClientRect();
+  const cx      = br.width  / 2;
+  const cy      = br.height / 2;
+  const newZoom = Math.min(MAX, Math.max(MIN, _ebZoom + delta));
+  // keep center point stable
+  _ebPan.x = cx - (cx - _ebPan.x) * (newZoom / _ebZoom);
+  _ebPan.y = cy - (cy - _ebPan.y) * (newZoom / _ebZoom);
+  _ebZoom  = newZoom;
+  _ebApplyTransform();
+  _ebUpdateZoomLabel();
+}
+
+function _ebUpdateZoomLabel() {
+  const el = $('eb-zoom-label');
+  if (el) el.textContent = Math.round(_ebZoom * 100) + '%';
+}
+
+function _ebScreenToBoard(sx, sy) {
+  const board = $('evidence-board');
+  if (!board) return {x:0, y:0};
+  const br = board.getBoundingClientRect();
+  return {
+    x: ((sx - br.left - _ebPan.x) / _ebZoom / br.width)  * 100,
+    y: ((sy - br.top  - _ebPan.y) / _ebZoom / br.height) * 100
+  };
+}
+
+function _ebApplyLiveDragPositions() {
+  const now = Date.now();
+  Object.values(_ebLiveDragState).forEach(entry => {
+    if (!entry || (now - (entry.ts || 0)) > 8000) return;
+    if (entry.by === state.codename) return;
+    const el = $('eb-card-' + entry.id);
+    if (!el) return;
+    el.style.left = entry.x + '%';
+    el.style.top  = entry.y + '%';
+    const item = evidenceBoardState.items.find(i => i.id === entry.id);
+    if (item) { item.x = entry.x; item.y = entry.y; }
+  });
+}
+
+function _ebRenderConnections() {
+  const svg   = $('evidence-svg');
+  const board = $('evidence-board');
+  if (!svg || !board) return;
+
+  svg.innerHTML = '';
+  const bw = board.offsetWidth;
+  const bh = board.offsetHeight;
+  if (!bw || !bh) return;
+
+  const COLOR = { red: '#cc2200', yellow: '#ddaa00', white: '#d8d8d0', green: '#226622', blue: '#2255aa' };
+
+  function cardCenter(item) {
+    const el = $('eb-card-' + item.id);
+    if (el) {
+      const fr = el.getBoundingClientRect();
+      const br = board.getBoundingClientRect();
+      // convert from screen-space (includes zoom+pan) back to content/SVG space
+      const sx = fr.left + fr.width  / 2 - br.left;
+      const sy = fr.top  + fr.height / 2 - br.top;
+      return { x: (sx - _ebPan.x) / _ebZoom, y: (sy - _ebPan.y) / _ebZoom };
+    }
+    return { x: item.x / 100 * bw, y: item.y / 100 * bh };
+  }
+
+  // Draw existing connections
+  evidenceBoardState.connections.forEach(conn => {
+    const fi = evidenceBoardState.items.find(i => i.id === conn.from);
+    const ti = evidenceBoardState.items.find(i => i.id === conn.to);
+    if (!fi || !ti) return;
+    const { x: x1, y: y1 } = cardCenter(fi);
+    const { x: x2, y: y2 } = cardCenter(ti);
+    const sag = Math.min(40, Math.hypot(x2 - x1, y2 - y1) * 0.09);
+    const mx  = (x1 + x2) / 2;
+    const my  = (y1 + y2) / 2 + sag;
+    const stroke = COLOR[conn.color] || '#cc2200';
+    // Shadow pass
+    const shadow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    shadow.setAttribute('d', `M${x1} ${y1} Q${mx} ${my} ${x2} ${y2}`);
+    shadow.setAttribute('stroke', 'rgba(0,0,0,0.45)'); shadow.setAttribute('stroke-width', '3');
+    shadow.setAttribute('fill', 'none'); shadow.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(shadow);
+    // Color stroke
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M${x1} ${y1} Q${mx} ${my} ${x2} ${y2}`);
+    path.setAttribute('stroke', stroke); path.setAttribute('stroke-width', '1.8');
+    path.setAttribute('fill', 'none'); path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('opacity', '0.88'); path.style.cursor = 'pointer';
+    path.title = 'Clique para remover';
+    path.addEventListener('click', () => ebRemoveConnection(conn.id));
+    svg.appendChild(path);
+    // Endpoint dots
+    [{ x: x1, y: y1 }, { x: x2, y: y2 }].forEach(pt => {
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', pt.x); c.setAttribute('cy', pt.y);
+      c.setAttribute('r', '2.8'); c.setAttribute('fill', stroke); c.setAttribute('opacity', '0.7');
+      svg.appendChild(c);
+    });
+  });
+
+  // Rubber-band line while connecting
+  if (_ebConnectMode && _ebConnectFrom && _ebConnectPos) {
+    const fi = evidenceBoardState.items.find(i => i.id === _ebConnectFrom);
+    if (fi) {
+      const { x: x1, y: y1 } = cardCenter(fi);
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+      line.setAttribute('x2', _ebConnectPos.x); line.setAttribute('y2', _ebConnectPos.y);
+      line.setAttribute('stroke', COLOR[_ebSelectedColor] || '#cc2200');
+      line.setAttribute('stroke-width', '1.5');
+      line.setAttribute('stroke-dasharray', '7 5');
+      line.setAttribute('opacity', '0.7');
+      svg.appendChild(line);
+    }
+  }
+}
+
+function _ebSetupBoardEvents() {
+  const board = $('evidence-board');
+  if (!board || board.dataset.ebReady) return;
+  board.dataset.ebReady = '1';
+
+  // ── Wheel zoom ────────────────────────────────────
+  board.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const MIN = 0.35, MAX = 2.2;
+    const br      = board.getBoundingClientRect();
+    const mx      = e.clientX - br.left;
+    const my      = e.clientY - br.top;
+    const delta   = e.deltaY < 0 ? 0.1 : -0.1;
+    const newZoom = Math.min(MAX, Math.max(MIN, _ebZoom + delta));
+    _ebPan.x = mx - (mx - _ebPan.x) * (newZoom / _ebZoom);
+    _ebPan.y = my - (my - _ebPan.y) * (newZoom / _ebZoom);
+    _ebZoom  = newZoom;
+    _ebApplyTransform();
+    _ebUpdateZoomLabel();
+  }, { passive: false });
+
+  // ── Middle-mouse / Space+drag pan ─────────────────
+  let _spaceDown = false;
+  document.addEventListener('keydown', (e) => { if (e.code === 'Space' && state.currentTab === 'quadro') { _spaceDown = true; board.style.cursor = 'grab'; } });
+  document.addEventListener('keyup',   (e) => { if (e.code === 'Space') { _spaceDown = false; board.style.cursor = ''; } });
+
+  board.addEventListener('mousedown', (e) => {
+    // middle mouse OR space+drag OR left click on board background (not on a card)
+    const onBackground = e.target === board || e.target.classList.contains('eb-content') ||
+                         e.target === $('evidence-items') || e.target === $('evidence-svg');
+    if (e.button === 1 || (e.button === 0 && (_spaceDown || onBackground))) {
+      e.preventDefault();
+      _ebPanning = { startX: e.clientX, startY: e.clientY, origX: _ebPan.x, origY: _ebPan.y };
+      board.style.cursor = 'grabbing';
+    }
+  });
+
+  // cursor presence: track mouse on the board element itself
+  board.addEventListener('mousemove', (e) => {
+    if (_ebPanning) {
+      _ebPan.x = _ebPanning.origX + (e.clientX - _ebPanning.startX);
+      _ebPan.y = _ebPanning.origY + (e.clientY - _ebPanning.startY);
+      _ebApplyTransform();
+      return;
+    }
+    // convert screen pos to board % for cursor broadcast
+    const br = board.getBoundingClientRect();
+    const bx = ((e.clientX - br.left - _ebPan.x) / _ebZoom / br.width)  * 100;
+    const by = ((e.clientY - br.top  - _ebPan.y) / _ebZoom / br.height) * 100;
+    _ebBroadcastCursor(bx, by);
+  });
+  board.addEventListener('mouseleave', () => { _ebClearCursor(); });
+
+  document.addEventListener('mousemove', (e) => {
+    // end pan if no button held
+    if (_ebPanning && !(e.buttons & 5) && !(e.buttons & 4)) {
+      _ebPanning = null; board.style.cursor = '';
+    }
+    if (_ebConnectMode && _ebConnectFrom) {
+      const br = board.getBoundingClientRect();
+      // rubber-band in SVG space (account for zoom/pan)
+      _ebConnectPos = {
+        x: (e.clientX - br.left - _ebPan.x) / _ebZoom,
+        y: (e.clientY - br.top  - _ebPan.y) / _ebZoom
+      };
+      _ebRenderConnections();
+      return;
+    }
+    if (!_ebDragging) return;
+    const br = board.getBoundingClientRect();
+    const { startX, startY, origX, origY } = _ebDragging;
+    // deltas in board % (account for zoom)
+    const dx = ((e.clientX - startX) / _ebZoom / br.width)  * 100;
+    const dy = ((e.clientY - startY) / _ebZoom / br.height) * 100;
+    const nx = Math.max(0, Math.min(96, origX + dx));
+    const ny = Math.max(0, Math.min(96, origY + dy));
+    const item = evidenceBoardState.items.find(i => i.id === _ebDragging.id);
+    if (item) { item.x = nx; item.y = ny; }
+    const el = $('eb-card-' + _ebDragging.id);
+    if (el) { el.style.left = nx + '%'; el.style.top = ny + '%'; }
+    _ebRenderConnections();
+    _ebBroadcastDrag(_ebDragging.id, nx, ny);
+  });
+
+  document.addEventListener('mouseup', (e) => {
+    if (_ebPanning && (e.button === 1 || e.button === 0)) {
+      _ebPanning = null; board.style.cursor = '';
+    }
+    if (!_ebDragging) return;
+    const { id: prevId, startX, startY } = _ebDragging;
+    const el = $('eb-card-' + _ebDragging.id);
+    if (el) el.classList.remove('eb-card-drag');
+    const movedFar = Math.abs(e.clientX - startX) > 4 || Math.abs(e.clientY - startY) > 4;
+    _ebDragging = null;
+    _ebSave();
+    setTimeout(() => _ebClearLiveDrag(prevId), 400);
+    // clique limpo numa pasta → flip
+    const clickedItem = evidenceBoardState.items.find(i => i.id === prevId);
+    if (!movedFar && !_ebConnectMode && clickedItem?.type === 'pasta') {
+      ebPastaToggle(prevId);
+    }
+  });
+}
+
+function _ebLoadLiveDrag() {
+  if (!firebaseOk) return;
+  if (_ebLiveDragUnsub) _ebLiveDragUnsub();
+  _ebLiveDragUnsub = onSnapshot(doc(db, 'gameState', 'ebLiveDrag'), (snap) => {
+    _ebLiveDragState = snap.exists() ? (snap.data() || {}) : {};
+    const now = Date.now();
+    Object.values(_ebLiveDragState).forEach(entry => {
+      if (!entry || entry.by === state.codename) return;
+      if ((now - (entry.ts || 0)) > 8000) return;
+      const el = $('eb-card-' + entry.id);
+      if (!el) return;
+      el.style.left = entry.x + '%';
+      el.style.top  = entry.y + '%';
+      const item = evidenceBoardState.items.find(i => i.id === entry.id);
+      if (item) { item.x = entry.x; item.y = entry.y; }
+    });
+    _ebRenderConnections();
+  });
+}
+
+function _ebLoadPresence() {
+  if (!firebaseOk) return;
+  if (_ebPresenceUnsub) _ebPresenceUnsub();
+  _ebPresenceUnsub = onSnapshot(doc(db, 'gameState', 'ebPresence'), (snap) => {
+    _ebPresenceState = snap.exists() ? (snap.data() || {}) : {};
+    _ebRenderCursors();
+  });
+}
+
+function _ebBroadcastDrag(id, x, y) {
+  if (!firebaseOk || !state.codename) return;
+  const now = Date.now();
+  if (now - _ebDragThrottle < 80) return;
+  _ebDragThrottle = now;
+  setDoc(doc(db, 'gameState', 'ebLiveDrag'),
+    { [id]: { id, x, y, by: state.codename, ts: now } },
+    { merge: true }
+  ).catch(() => {});
+}
+
+function _ebClearLiveDrag(id) {
+  if (!firebaseOk) return;
+  setDoc(doc(db, 'gameState', 'ebLiveDrag'),
+    { [id]: { id, x: 0, y: 0, by: state.codename, ts: 0 } },
+    { merge: true }
+  ).catch(() => {});
+}
+
+function _ebBroadcastCursor(bx, by) {
+  if (!firebaseOk || !state.codename) return;
+  const now = Date.now();
+  if (now - _ebCursorThrottle < 40) return; // 40ms ≈ 25fps de broadcast
+  _ebCursorThrottle = now;
+  setDoc(doc(db, 'gameState', 'ebPresence'),
+    { [state.codename]: { x: bx, y: by, ts: now, codename: state.codename } },
+    { merge: true }
+  ).catch(() => {});
+}
+
+function _ebClearCursor() {
+  if (!firebaseOk || !state.codename) return;
+  setDoc(doc(db, 'gameState', 'ebPresence'),
+    { [state.codename]: { x: -999, y: -999, ts: 0, codename: state.codename } },
+    { merge: true }
+  ).catch(() => {});
+}
+
+function _ebRenderCursors() {
+  const board   = $('evidence-board');
+  const content = $('eb-content');
+  if (!board) return;
+  const parent = content || board;
+  let container = $('eb-cursors');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'eb-cursors'; container.className = 'eb-cursors';
+    parent.appendChild(container);
+  } else if (content && container.parentElement !== content) {
+    content.appendChild(container);
+  }
+  const now = Date.now();
+
+  // sync targets from presence state
+  Object.values(_ebPresenceState).forEach(entry => {
+    if (!entry?.codename || entry.codename === state.codename) return;
+    const cn  = entry.codename;
+    const stale = (now - (entry.ts || 0)) > 5000;
+    const offBoard = entry.x < 0 || entry.x > 100 || entry.y < 0 || entry.y > 100;
+
+    if (stale || offBoard) {
+      // fade out e remove do DOM após a transição
+      const el = document.getElementById('eb-cursor-' + cn);
+      if (el) {
+        el.style.opacity = '0';
+        setTimeout(() => { if (el.parentElement) el.remove(); }, 400);
+      }
+      const tgt = _ebCursorTargets[cn];
+      if (tgt?.rafId) { cancelAnimationFrame(tgt.rafId); tgt.rafId = null; }
+      delete _ebCursorTargets[cn];
+      return;
+    }
+
+    // get or create DOM element
+    let el = document.getElementById('eb-cursor-' + cn);
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'eb-cursor-' + cn; el.className = 'eb-cursor';
+      el.innerHTML = `
+        <svg class="eb-cursor-arrow" viewBox="0 0 12 18" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1 1 L11 8 L6 9.5 L3.5 17 Z" fill="white" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/>
+        </svg>
+        <div class="eb-cursor-label">${escHtml(cn)}</div>`;
+      container.appendChild(el);
+      // teleport to initial position (no lerp on first appearance)
+      el.style.left = entry.x + '%'; el.style.top = entry.y + '%'; el.style.opacity = '1';
+      _ebCursorTargets[cn] = { tx: entry.x, ty: entry.y, cx: entry.x, cy: entry.y, rafId: null, el };
+      return;
+    }
+
+    // update target
+    const tgt = _ebCursorTargets[cn];
+    if (!tgt) {
+      el.style.left = entry.x + '%'; el.style.top = entry.y + '%'; el.style.opacity = '1';
+      _ebCursorTargets[cn] = { tx: entry.x, ty: entry.y, cx: entry.x, cy: entry.y, rafId: null, el };
+      return;
+    }
+    tgt.tx = entry.x; tgt.ty = entry.y; tgt.el = el;
+    el.style.opacity = '1';
+    if (!tgt.rafId) _ebAnimateCursor(cn);
+  });
+}
+
+function _ebAnimateCursor(cn) {
+  const tgt = _ebCursorTargets[cn];
+  if (!tgt) return;
+  const LERP = 0.22; // smoothing factor — higher = snappier, lower = more lag
+  function step() {
+    const t = _ebCursorTargets[cn];
+    if (!t || !t.el) return;
+    const dx = t.tx - t.cx;
+    const dy = t.ty - t.cy;
+    if (Math.abs(dx) < 0.004 && Math.abs(dy) < 0.004) {
+      t.cx = t.tx; t.cy = t.ty;
+      t.el.style.left = t.cx + '%';
+      t.el.style.top  = t.cy + '%';
+      t.rafId = null;
+      return;
+    }
+    t.cx += dx * LERP;
+    t.cy += dy * LERP;
+    t.el.style.left = t.cx + '%';
+    t.el.style.top  = t.cy + '%';
+    t.rafId = requestAnimationFrame(step);
+  }
+  tgt.rafId = requestAnimationFrame(step);
+}
+
+function ebMouseDown(e, itemId) {
+  if (e.button !== 0) return;
+  if (_ebConnectMode) { ebItemClick(itemId); return; }
+  e.preventDefault();
+  const board = $('evidence-board');
+  if (!board) return;
+  const br   = board.getBoundingClientRect();
+  const item = evidenceBoardState.items.find(i => i.id === itemId);
+  if (!item) return;
+  _ebDragging = { id: itemId, startX: e.clientX, startY: e.clientY,
+                  origX: item.x, origY: item.y };
+  const el = $('eb-card-' + itemId);
+  if (el) el.classList.add('eb-card-drag');
+}
+
+function ebItemClick(itemId) {
+  if (!_ebConnectMode) return;
+  if (!_ebConnectFrom) {
+    _ebConnectFrom = itemId;
+    _ebConnectPos  = null;
+    renderEvidenceBoard();
+    _ebUpdateToolbarHint('Agora clique no segundo card para conectar. ESC para cancelar.');
+    return;
+  }
+  if (_ebConnectFrom === itemId) { ebCancelConnect(); return; }
+  ebAddConnection(_ebConnectFrom, itemId);
+  _ebConnectFrom = null; _ebConnectPos = null;
+  _ebUpdateToolbarHint('Selecione o primeiro card.');
+}
+
+function ebToggleConnectMode() {
+  _ebConnectMode = !_ebConnectMode;
+  _ebConnectFrom = null; _ebConnectPos = null;
+  const btn = $('eb-connect-btn');
+  if (btn) btn.classList.toggle('eb-btn-active', _ebConnectMode);
+  const board = $('evidence-board');
+  if (board) board.classList.toggle('eb-connect-cursor', _ebConnectMode);
+  _ebUpdateToolbarHint(_ebConnectMode ? 'Selecione o primeiro card.' : '');
+  renderEvidenceBoard();
+}
+
+function ebCancelConnect() {
+  _ebConnectMode = false; _ebConnectFrom = null; _ebConnectPos = null;
+  const btn = $('eb-connect-btn');
+  if (btn) btn.classList.remove('eb-btn-active');
+  const board = $('evidence-board');
+  if (board) board.classList.remove('eb-connect-cursor');
+  _ebUpdateToolbarHint('');
+  renderEvidenceBoard();
+}
+
+function ebSetColor(color) {
+  _ebSelectedColor = color;
+  document.querySelectorAll('.eb-color-swatch').forEach(s =>
+    s.classList.toggle('eb-swatch-active', s.dataset.color === color));
+}
+
+function _ebUpdateToolbarHint(msg) {
+  const el = $('eb-toolbar-hint');
+  if (el) { el.textContent = msg; el.style.opacity = msg ? '1' : '0'; }
+}
+
+async function ebAddConnection(fromId, toId) {
+  const exists = evidenceBoardState.connections.some(
+    c => (c.from === fromId && c.to === toId) || (c.from === toId && c.to === fromId)
+  );
+  if (exists) { renderEvidenceBoard(); return; }
+  evidenceBoardState.connections.push({
+    id: 'conn_' + Date.now(), from: fromId, to: toId, color: _ebSelectedColor
+  });
+  renderEvidenceBoard();
+  await _ebSave();
+}
+
+async function ebRemoveConnection(connId) {
+  evidenceBoardState.connections = evidenceBoardState.connections.filter(c => c.id !== connId);
+  renderEvidenceBoard();
+  await _ebSave();
+}
+
+function ebPastaToggle(itemId) {
+  if (!_ebPastaState[itemId]) _ebPastaState[itemId] = { open: false, page: 0 };
+  _ebPastaState[itemId].open = !_ebPastaState[itemId].open;
+  const el = $('eb-card-' + itemId);
+  if (el) el.classList.toggle('eb-pasta-open', _ebPastaState[itemId].open);
+}
+
+function ebPastaPage(itemId, dir, e) {
+  if (e) e.stopPropagation();
+  const item = evidenceBoardState.items.find(i => i.id === itemId);
+  if (!item) return;
+  const pages = Array.isArray(item.pages) && item.pages.length ? item.pages : [{title:'', text:''}];
+  if (!_ebPastaState[itemId]) _ebPastaState[itemId] = { open: true, page: 0 };
+  const s = _ebPastaState[itemId];
+  s.page = Math.max(0, Math.min(pages.length - 1, s.page + dir));
+  const card = $('eb-card-' + itemId);
+  if (!card) return;
+  const curPage = pages[s.page];
+  const headerEl  = card.querySelector('.eb-pasta-back-header');
+  const textEl    = card.querySelector('.eb-pasta-back-text');
+  const numEl     = card.querySelector('.eb-pasta-page-num');
+  if (headerEl) headerEl.textContent = curPage.title || '';
+  if (textEl)   textEl.textContent   = curPage.text  || '';
+  if (numEl)    numEl.textContent    = (s.page + 1) + ' / ' + pages.length;
+}
+
+function ebOpenDoc(docId) {
+  switchTab('docs');
+  setTimeout(() => openDocViewer(docId), 100);
+}
+
+async function _ebSave() {
+  if (!firebaseOk) return;
+  try {
+    await setDoc(doc(db, 'gameState', 'evidenceBoard'),
+      { items: evidenceBoardState.items, connections: evidenceBoardState.connections });
+  } catch(e) { console.error('_ebSave:', e); }
+}
+
+// ─ GM ────────────────────────────────────────────────────────────
+function gmRenderEBList() {
+  const container = $('gm-eb-list');
+  if (!container) return;
+  const items = evidenceBoardState.items || [];
+  if (!items.length) {
+    container.innerHTML = '<div class="gm-fitas-empty">Quadro vazio.</div>';
+    return;
+  }
+  const PIN = { document: '#993300', nota: '#cc9900', suspeito: '#2244aa', foto: '#cc2222', pasta: '#556644' };
+  container.innerHTML = items.map(item => `
+    <div class="gm-eb-item">
+      <div class="gm-eb-pin" style="background:${PIN[item.type]||'#cc3333'}"></div>
+      <div class="gm-eb-info">
+        <div class="gm-eb-type">${item.type.toUpperCase()}</div>
+        <div class="gm-eb-title">${escHtml(item.title)}</div>
+      </div>
+      <button class="gm-eb-remove" onclick="App.gmRemoveEBItem('${escHtml(item.id)}')">&#10005;</button>
+    </div>`).join('');
+}
+
+function gmEBTypeChange() {
+  const typeEl    = $('gm-eb-add-type');
+  const docWrap   = $('gm-eb-doc-wrap');
+  const imgWrap   = $('gm-eb-img-wrap');
+  const pastaWrap = $('gm-eb-pasta-wrap');
+  const contentEl = $('gm-eb-add-content');
+  if (!typeEl) return;
+  const t = typeEl.value;
+  if (docWrap)   docWrap.classList.toggle('hidden',   t !== 'document');
+  if (imgWrap)   imgWrap.classList.toggle('hidden',   t !== 'suspeito');
+  if (pastaWrap) pastaWrap.classList.toggle('hidden', t !== 'pasta');
+  if (contentEl) {
+    contentEl.placeholder = t === 'pasta'
+      ? 'Código / número (ex: LP 554301)...'
+      : 'Conteúdo / cargo / relação com o caso...';
+  }
+  if (t === 'pasta') _renderGMPastaPages();
+  // Populate document select
+  if (t === 'document') {
+    const docEl = $('gm-eb-add-doc');
+    if (docEl && DOCUMENTS.length) {
+      docEl.innerHTML = DOCUMENTS.map(d => `<option value="${d.id}">${escHtml(d.title)}</option>`).join('');
+    }
+  }
+}
+
+function gmEBAddPastaPage() {
+  if (_gmPastaPages.length >= 4) { showToast('Máximo 4 páginas.', 'error'); return; }
+  _gmPastaPages.push({ title: 'PÁGINA ' + (_gmPastaPages.length + 1), text: '' });
+  _renderGMPastaPages();
+}
+
+function gmEBRemovePastaPage(i) {
+  if (_gmPastaPages.length <= 1) return;
+  _gmPastaPages.splice(i, 1);
+  _renderGMPastaPages();
+}
+
+function gmEBUpdatePastaPage(i, field, value) {
+  if (_gmPastaPages[i]) _gmPastaPages[i][field] = value;
+}
+
+function _renderGMPastaPages() {
+  const el = $('gm-eb-pasta-pages-list');
+  if (!el) return;
+  el.innerHTML = _gmPastaPages.map((p, i) => `
+    <div class="gm-pasta-page-entry">
+      <div class="gm-pasta-page-num">PÁGINA ${i + 1}
+        ${_gmPastaPages.length > 1 ? `<button class="gm-eb-remove" style="float:right" onclick="App.gmEBRemovePastaPage(${i})">&#10005;</button>` : ''}
+      </div>
+      <input class="gm-text-input" placeholder="Título da página..." maxlength="50"
+             value="${escHtml(p.title)}" oninput="App.gmEBUpdatePastaPage(${i},'title',this.value)" />
+      <textarea class="gm-text-input" rows="2" placeholder="Conteúdo da página..."
+             oninput="App.gmEBUpdatePastaPage(${i},'text',this.value)">${escHtml(p.text)}</textarea>
+    </div>`).join('');
+}
+
+let _gmEBSuspectImg = '';
+function gmEBPreviewSuspect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    _gmEBSuspectImg = e.target.result;
+    const prev = $('gm-eb-suspect-prev');
+    if (prev) { prev.src = _gmEBSuspectImg; prev.classList.remove('hidden'); }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function gmAddEBItem() {
+  const typeEl    = $('gm-eb-add-type');
+  const titleEl   = $('gm-eb-add-title');
+  const contentEl = $('gm-eb-add-content');
+  const docEl     = $('gm-eb-add-doc');
+  if (!typeEl || !titleEl) return;
+  const type    = typeEl.value;
+  const title   = titleEl.value.trim();
+  const content = contentEl ? contentEl.value.trim() : '';
+  if (!title) { showToast('Insira um título.', 'error'); return; }
+
+  const PIN_COLORS = { document: '#993300', nota: '#cc9900', suspeito: '#2244aa', foto: '#cc2222', pasta: '#556644' };
+  const newItem = {
+    id: 'eb_' + Date.now(), type, title, content,
+    docId: (type === 'document' && docEl) ? docEl.value : null,
+    imageUrl: type === 'suspeito' ? _gmEBSuspectImg : '',
+    pages: type === 'pasta' ? _gmPastaPages.map(p => ({title: p.title, text: p.text})) : null,
+    x: 8 + Math.random() * 55, y: 8 + Math.random() * 55,
+    rotation: parseFloat(((Math.random() - 0.5) * 9).toFixed(2)),
+    pinColor: PIN_COLORS[type] || '#cc3333'
+  };
+  if (type === 'document' && newItem.docId) {
+    const d = DOCUMENTS.find(dd => dd.id === newItem.docId);
+    if (d) { newItem.imageUrl = d.image; if (!newItem.title) newItem.title = d.title; }
+  }
+  _gmEBSuspectImg = '';
+  const prev = $('gm-eb-suspect-prev');
+  if (prev) { prev.src = ''; prev.classList.add('hidden'); }
+  if (type === 'pasta') {
+    _gmPastaPages = [{title: 'PÁGINA 1', text: ''}];
+    _renderGMPastaPages();
+  }
+  evidenceBoardState.items.push(newItem);
+  await _ebSave();
+  titleEl.value = ''; if (contentEl) contentEl.value = '';
+  showToast('Item fixado no quadro.', 'success', 1800);
+}
+
+async function gmRemoveEBItem(itemId) {
+  evidenceBoardState.items = evidenceBoardState.items.filter(i => i.id !== itemId);
+  evidenceBoardState.connections = evidenceBoardState.connections.filter(
+    c => c.from !== itemId && c.to !== itemId);
+  await _ebSave();
+  showToast('Item removido.', 'ok', 1600);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -6294,6 +7564,42 @@ async function _gmSaveVideoTrans() {
 }
 
 // ──────────────────────────────────────────────────────────
+//  UX HELPERS
+// ──────────────────────────────────────────────────────────
+function toggleAtributos() {
+  const box = $('attr-box');
+  if (!box) return;
+  box.classList.toggle('collapsed');
+  try { localStorage.setItem('vyper_attr_collapsed', box.classList.contains('collapsed') ? '1' : '0'); } catch (_) {}
+}
+
+function togglePericias() {
+  const wrap = $('pericias-wrap');
+  if (!wrap) return;
+  wrap.classList.toggle('collapsed');
+  try { localStorage.setItem('vyper_pericias_collapsed', wrap.classList.contains('collapsed') ? '1' : '0'); } catch (_) {}
+}
+
+function initPopupBackdrops() {
+  // Click on the dark overlay area (outside the inner panel) closes the popup
+  [
+    ['arma-inspect-popup',       fecharArmaInspect],
+    ['arma-unica-inspect-popup', fecharArmaUnicaInspect],
+    ['dica-popup',               closeDicaPopup],
+  ].forEach(([id, fn]) => {
+    const el = $(id);
+    if (el) el.addEventListener('click', e => { if (e.target === el) fn(); });
+  });
+
+  // Restore collapsed state
+  try {
+    if (localStorage.getItem('vyper_attr_collapsed') === '1') {
+      $('attr-box')?.classList.add('collapsed');
+    }
+  } catch (_) {}
+}
+
+// ──────────────────────────────────────────────────────────
 //  PUBLIC API (called from HTML onclick)
 // ──────────────────────────────────────────────────────────
 window.App = {
@@ -6311,6 +7617,9 @@ window.App = {
   closeGradeModal,
   toggleIntegrity,
   switchTab,
+  switchCenterTab,
+  savePericiaBonus,
+  togglePericias,
   gmToggleCard,
   gmSetSecurity,
   gmSetIntegrity,
@@ -6355,14 +7664,33 @@ window.App = {
   openVideoPlayer, closeVideoPlayer,
   renderVideoTransTab, dismissVideoAlert,
   gmRenderVideoTrans, gmAddVideoTrans, gmRemoveVideoTrans, gmToggleVideoRelease,
+  // ── QUADRO DE EVIDÊNCIAS ──
+  renderEvidenceBoard, ebToggleConnectMode, ebCancelConnect, ebSetColor,
+  ebRemoveConnection, ebOpenDoc, ebMouseDown,
+  ebZoomIn, ebZoomOut, ebZoomReset,
+  ebPastaPage,
+  gmRenderEBList, gmAddEBItem, gmRemoveEBItem, gmEBTypeChange, gmEBPreviewSuspect,
+  gmEBAddPastaPage, gmEBRemovePastaPage, gmEBUpdatePastaPage,
+  _ebRenderCursors,
+  // ── OTHER ──
   gmSaveMissaoText,
+  openPlayerPrefs,
+  closePlayerPrefs,
+  setPlayerPref,
+  togglePlayerPref,
+  openFeedUrl,
+  toggleFeedBar,
   openMissaoDetail,
   closeMissaoDetail,
   setPatente,
   inspecionarArma,
   fecharArmaInspect,
+  inspecionarArmaUnica,
+  fecharArmaUnicaInspect,
   gmSalvarArma,
   gmLimparArma,
+  gmSalvarArmaUnica,
+  gmLimparArmaUnica,
   gmEnviarDica,
   closeDicaPopup,
   gmSetAparencia,
@@ -6397,6 +7725,7 @@ window.App = {
   bolsaCamoSelect,
   equiparCamuflagem,
   gmToggleCamoRelease,
+  toggleAtributos,
 };
 
 // ──────────────────────────────────────────────────────────
@@ -6430,7 +7759,16 @@ document.addEventListener('keydown', (e) => {
     }
     // Close any open modal or editing
     if (!$('grade-modal').classList.contains('hidden')) {
-      $('grade-modal').classList.add('hidden');
+      $('grade-modal').classList.add('hidden'); return;
+    }
+    if (!$('arma-inspect-popup').classList.contains('hidden')) {
+      fecharArmaInspect(); return;
+    }
+    if (!$('arma-unica-inspect-popup').classList.contains('hidden')) {
+      fecharArmaUnicaInspect(); return;
+    }
+    if (!$('dica-popup').classList.contains('hidden')) {
+      closeDicaPopup(); return;
     }
   }
   // Enter on login inputs
@@ -6444,4 +7782,5 @@ document.addEventListener('keydown', (e) => {
 //  START
 // ──────────────────────────────────────────────────────────
 initDocViewerEvents();
+initPopupBackdrops();
 runBoot(); 

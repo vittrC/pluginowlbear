@@ -75,7 +75,51 @@
   <div class="s-header">
     <img src="icones/logo.png" class="s-header-logo" onerror="this.style.display='none'" />
     <span class="s-header-title">Vyper Pessoal Agent System</span>
+    <button class="s-header-settings" onclick="App.openPlayerPrefs()" title="Personalizar">&#9881;</button>
     <button class="s-header-back" onclick="App.logout()">&#9167;</button>
+  </div>
+
+  <!-- Player prefs panel -->
+  <div id="player-prefs-panel" class="player-prefs-panel hidden">
+    <div class="prefs-backdrop" onclick="App.closePlayerPrefs()"></div>
+    <div class="prefs-box">
+      <div class="prefs-title">&#9658; PERSONALIZA&#199;&#195;O DA INTERFACE</div>
+
+      <div class="prefs-section">
+        <div class="prefs-label">COR DE ACENTO</div>
+        <div id="prefs-cor-grid" class="prefs-cor-grid"></div>
+        <div id="prefs-gm-override" class="prefs-gm-override hidden">cor controlada pelo mestre</div>
+      </div>
+
+      <div class="prefs-section">
+        <div class="prefs-label">INTERFACE</div>
+        <div class="prefs-toggle-row">
+          <div class="prefs-toggle-item">
+            <div class="prefs-label">SCANLINES</div>
+            <button id="prefs-scanlines-btn" class="prefs-toggle-btn active" onclick="App.togglePlayerPref('scanlines')">ATIVO</button>
+          </div>
+          <div class="prefs-toggle-item">
+            <div class="prefs-label">VINHETA CRT</div>
+            <button id="prefs-vinheta-btn" class="prefs-toggle-btn active" onclick="App.togglePlayerPref('vinheta')">ATIVO</button>
+          </div>
+          <div class="prefs-toggle-item">
+            <div class="prefs-label">SOM (SFX)</div>
+            <button id="prefs-sfx-btn" class="prefs-toggle-btn active" onclick="App.togglePlayerPref('sfx')">ATIVO</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="prefs-section">
+        <div class="prefs-label">BRILHO</div>
+        <div class="prefs-brilho-row">
+          <button id="prefs-brilho-escuro"     class="prefs-brilho-btn" onclick="App.setPlayerPref('brilho','escuro')">ESCURO</button>
+          <button id="prefs-brilho-normal"     class="prefs-brilho-btn active" onclick="App.setPlayerPref('brilho','normal')">NORMAL</button>
+          <button id="prefs-brilho-brilhante"  class="prefs-brilho-btn" onclick="App.setPlayerPref('brilho','brilhante')">BRILHANTE</button>
+        </div>
+      </div>
+
+      <button class="prefs-close-btn" onclick="App.closePlayerPrefs()">&#10005; FECHAR</button>
+    </div>
   </div>
 
   <!-- BODY: 3 columns -->
@@ -153,14 +197,39 @@
         <div class="patente-desc" id="patente-desc">Recruta de campo. Preparado para missões de alta periculosidade.</div>
       </div>
 
+      <!-- BROWSER BAR -->
+      <div class="feed-url-bar" id="feed-url-bar">
+        <button class="feed-url-toggle" id="feed-url-toggle" onclick="App.toggleFeedBar()" title="Acessar rede">
+          <span class="feed-url-toggle-ico">&#9728;</span>
+          <span class="feed-url-toggle-lbl">NET</span>
+        </button>
+        <div class="feed-url-expand" id="feed-url-expand">
+          <span class="feed-url-prefix">https://</span>
+          <input id="feed-url-input" class="feed-url-input" type="text"
+                 placeholder="site.ext" maxlength="80"
+                 autocomplete="off" autocapitalize="off" spellcheck="false"
+                 onkeydown="if(event.key==='Enter')App.openFeedUrl()" />
+          <button class="feed-url-go" onclick="App.openFeedUrl()" title="Acessar">&#9654;</button>
+        </div>
+      </div>
+
     </div><!-- /s-left -->
 
     <!-- CENTER -->
     <div class="s-center">
 
+      <!-- center sub-tabs -->
+      <div class="center-tabs">
+        <button class="center-tab active" id="ctab-combate" onclick="App.switchCenterTab('combate')">&#9658; COMBATE</button>
+        <button class="center-tab" id="ctab-stats" onclick="App.switchCenterTab('stats')">&#9655; STATS</button>
+      </div>
+
+      <!-- STATS panel -->
+      <div class="center-panel" id="cpanel-stats">
+
       <!-- atributos box -->
-      <div class="attr-box">
-        <div class="attr-box-header">&#9658; ATRIBUTOS</div>
+      <div class="attr-box" id="attr-box">
+        <div class="attr-box-header" id="attr-box-header" onclick="App.toggleAtributos()"><span class="attr-box-header-tri">&#9658;</span> ATRIBUTOS</div>
         <div class="attr-grid">
 
           <div class="attr-card" onclick="App.cycleAttr('fisico')">
@@ -206,8 +275,161 @@
         </div>
       </div><!-- /attr-box -->
 
-      <!-- integrity -->
+      <!-- PERÍCIAS -->
+      <div class="pericias-wrap" id="pericias-wrap">
+        <div class="pericias-header" onclick="App.togglePericias()"><span class="pericias-tri" id="pericias-tri">&#9658;</span> PERÍCIAS</div>
+        <div class="pericias-grid">
+          <div class="pericia-row">
+            <span class="pericia-name">ACROBACIA</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-acrobacia" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('acrobacia',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">ADESTRAMENTO</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-adestramento" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('adestramento',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">ARTES</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-artes" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('artes',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">ATLETISMO</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-atletismo" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('atletismo',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">ATUALIDADES</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-atualidades" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('atualidades',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">CIÊNCIAS</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-ciencias" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('ciencias',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">CRIME</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-crime" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('crime',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">DIPLOMACIA</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-diplomacia" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('diplomacia',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">ENGANAÇÃO</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-enganacao" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('enganacao',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">FORTITUDE</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-fortitude" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('fortitude',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">FURTIVIDADE</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-furtividade" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('furtividade',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">INICIATIVA</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-iniciativa" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('iniciativa',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">INTIMIDAÇÃO</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-intimidacao" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('intimidacao',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">INTUIÇÃO</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-intuicao" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('intuicao',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">INVESTIGAÇÃO</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-investigacao" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('investigacao',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">LUTA</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-luta" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('luta',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">MEDICINA</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-medicina" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('medicina',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">OCULTISMO</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-ocultismo" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('ocultismo',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">PERCEPÇÃO</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-percepcao" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('percepcao',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">PILOTAGEM</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-pilotagem" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('pilotagem',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">PONTARIA</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-pontaria" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('pontaria',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">PROFISSÃO</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-profissao" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('profissao',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">REFLEXOS</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-reflexos" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('reflexos',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">RELIGIÃO</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-religiao" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('religiao',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">SOBREVIVÊNCIA</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-sobrevivencia" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('sobrevivencia',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">TÁTICA</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-tatica" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('tatica',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">TECNOLOGIA</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-tecnologia" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('tecnologia',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+          <div class="pericia-row">
+            <span class="pericia-name">VONTADE</span>
+            <span class="pericia-dots"></span>
+            <input class="pericia-bonus pb-zero" id="pb-vontade" type="text" inputmode="numeric" value="0" maxlength="4" autocomplete="off" onfocus="this.select()" onblur="App.savePericiaBonus('vontade',this)" onkeydown="if(event.key==='Enter')this.blur()" />
+          </div>
+        </div>
+      </div><!-- /pericias-wrap -->
+
+      <!-- integrity (in STATS) -->
       <div class="integ-wrap">
+        <div class="integ-header">
+          <span class="integ-header-tri">&#9658;</span>
+          <span class="integ-header-title">INTEGRIDADE</span>
+          <span class="integ-count" id="integrity-count">5/5</span>
+          <span class="integ-status-tag" id="integ-status-tag">ESTÁVEL</span>
+        </div>
         <div class="integrity-bars" id="integrity-bars">
           <div class="integrity-bar active" data-index="0" onclick="App.toggleIntegrity(0)"></div>
           <div class="integrity-bar active" data-index="1" onclick="App.toggleIntegrity(1)"></div>
@@ -217,10 +439,15 @@
           <div class="integrity-bar bar-hidden" data-index="5" onclick="App.toggleIntegrity(5)"></div>
           <div class="integrity-bar bar-hidden" data-index="6" onclick="App.toggleIntegrity(6)"></div>
         </div>
-        <span class="integ-count hidden" id="integrity-count">5/5</span>
       </div>
 
+      </div><!-- /cpanel-stats -->
+
+      <!-- COMBATE panel -->
+      <div class="center-panel active" id="cpanel-combate">
+
       <!-- weapons -->
+      <div class="armas-scroll-zone">
       <div class="armas-wrap" id="armas-wrap">
         <div class="arma-slot" id="arma-slot-0" onclick="App.inspecionarArma(0)">
           <div class="arma-slot-ico">
@@ -256,6 +483,30 @@
         </div>
       </div>
 
+      <!-- unique weapons -->
+      <div class="armas-unicas-section" id="armas-unicas-section">
+        <div class="armas-unicas-header">
+          <span class="armas-unicas-label">&#9670; ARMAMENTO ESPECIAL</span>
+          <span class="armas-unicas-tag">&#9650; ÚNICA</span>
+        </div>
+        <div class="arma-unica-slot" id="arma-unica-slot" onclick="App.inspecionarArmaUnica()">
+          <div class="arma-unica-ico">
+            <img id="arma-unica-ico-img" src="" class="arma-img hidden arma-unica-img" alt="" />
+            <span class="arma-unica-empty" id="arma-unica-empty">—</span>
+          </div>
+          <div class="arma-unica-info">
+            <div class="arma-unica-nome-row">
+              <div class="arma-unica-nome" id="arma-unica-nome">NENHUMA</div>
+              <span class="arma-unica-badge" id="arma-unica-badge" style="display:none">ÚNICA</span>
+            </div>
+            <div class="arma-unica-stats" id="arma-unica-stats"></div>
+            <div class="arma-unica-props" id="arma-unica-props"></div>
+          </div>
+          <div class="arma-unica-inspect hidden" id="arma-unica-insp-btn">&#9658; VER</div>
+        </div>
+      </div>
+      </div><!-- /armas-scroll-zone -->
+
       <!-- security -->
       <div class="sec-wrap">
         <div id="security-display" class="sec-badge seguro">
@@ -266,41 +517,43 @@
       <!-- status negativos strip -->
       <div id="status-neg-strip" class="status-neg-strip"></div>
 
+      </div><!-- /cpanel-combate -->
+
     </div><!-- /s-center -->
 
-    <!-- RIGHT: NAV -->
-    <div class="s-nav">
-      <div class="nav-tab" id="nav-mald" onclick="App.switchTab('mald')">
-        <div class="nav-ico-box"><img src="icones/6.png" class="nav-ico" /></div>
-        <span class="nav-lbl">/MALD</span>
-      </div>
-      <div class="nav-tab" id="nav-radio" onclick="App.switchTab('radio')">
-        <div class="nav-ico-box"><img src="icones/7.png" class="nav-ico" /></div>
-        <span class="nav-lbl">/RADIO</span>
-      </div>
-      <div class="nav-tab" id="nav-radar" onclick="App.switchTab('radar')">
-        <div class="nav-ico-box"><span class="nav-ico-char">&#x29ED;</span></div>
-        <span class="nav-lbl">/RADAR</span>
-      </div>
-      <div class="nav-tab" id="nav-docs" onclick="App.switchTab('docs')">
-        <div class="nav-ico-box"><img src="icones/8.png" class="nav-ico" /></div>
-        <span class="nav-lbl">/DOCS</span>
-      </div>
-      <div class="nav-tab" id="nav-fitas" onclick="App.switchTab('fitas')">
-        <div class="nav-ico-box"><img src="icones/9.png" class="nav-ico" /></div>
-        <span class="nav-lbl">/FITAS</span>
-      </div>
-      <div class="nav-tab" id="nav-equip" onclick="App.switchTab('equip')">
-        <div class="nav-ico-box nav-red"><img src="icones/10.png" class="nav-ico" /></div>
-        <span class="nav-lbl">/MISS&#xC3;O</span>
-      </div>
-      <div class="nav-tab" id="nav-bolsa" onclick="App.switchTab('bolsa')">
-        <div class="nav-ico-box nav-bolsa-ico"><span class="nav-ico-char">&#x229E;</span></div>
-        <span class="nav-lbl">/BOLSA</span>
-      </div>
-    </div><!-- /s-nav -->
-
   </div><!-- /s-body -->
+
+  <!-- BOTTOM NAV -->
+  <div class="s-nav">
+    <div class="nav-tab" id="nav-mald" onclick="App.switchTab('mald')">
+      <div class="nav-ico-box"><img src="icones/6.png" class="nav-ico" /></div>
+      <span class="nav-lbl">/MALD</span>
+    </div>
+    <div class="nav-tab" id="nav-radio" onclick="App.switchTab('radio')">
+      <div class="nav-ico-box"><img src="icones/7.png" class="nav-ico" /></div>
+      <span class="nav-lbl">/RADIO</span>
+    </div>
+    <div class="nav-tab" id="nav-radar" onclick="App.switchTab('radar')">
+      <div class="nav-ico-box"><span class="nav-ico-char">&#x29ED;</span></div>
+      <span class="nav-lbl">/RADAR</span>
+    </div>
+    <div class="nav-tab" id="nav-docs" onclick="App.switchTab('docs')">
+      <div class="nav-ico-box"><img src="icones/8.png" class="nav-ico" /></div>
+      <span class="nav-lbl">/DOCS</span>
+    </div>
+    <div class="nav-tab" id="nav-fitas" onclick="App.switchTab('fitas')">
+      <div class="nav-ico-box"><img src="icones/9.png" class="nav-ico" /></div>
+      <span class="nav-lbl">/FITAS</span>
+    </div>
+    <div class="nav-tab" id="nav-equip" onclick="App.switchTab('equip')">
+      <div class="nav-ico-box"><img src="icones/10.png" class="nav-ico" /></div>
+      <span class="nav-lbl">/MISS&#xC3;O</span>
+    </div>
+    <div class="nav-tab" id="nav-bolsa" onclick="App.switchTab('bolsa')">
+      <div class="nav-ico-box"><span class="nav-ico-char">&#x229E;</span></div>
+      <span class="nav-lbl">/BOLSA</span>
+    </div>
+  </div><!-- /s-nav -->
 
   <!-- TAB OVERLAY -->
   <div id="tab-content" class="tab-overlay hidden">
@@ -427,6 +680,7 @@
           <button class="docs-subtab-btn docs-subtab-active" data-subtab="docs" onclick="App.docsSubtab('docs')">&#9658; DOCUMENTOS</button>
           <button class="docs-subtab-btn" data-subtab="fotos" onclick="App.docsSubtab('fotos')">&#9658; FOTOS</button>
           <button class="docs-subtab-btn" data-subtab="videos" onclick="App.docsSubtab('videos')">&#9658; V&#205;DEOS</button>
+          <button class="docs-subtab-btn" data-subtab="quadro" onclick="App.docsSubtab('quadro')">&#9658; QUADRO</button>
         </div>
         <div id="docs-panel-docs">
           <div id="docs-list" class="docs-list">
@@ -441,6 +695,34 @@
         <div id="docs-panel-videos" class="hidden">
           <div id="video-trans-list" class="video-trans-list">
             <div class="docs-empty">Nenhuma transmiss&#227;o dispon&#237;vel.</div>
+          </div>
+        </div>
+        <div id="docs-panel-quadro" class="hidden eb-tab-panel">
+          <div class="eb-wrap">
+            <div id="eb-toolbar" class="eb-toolbar">
+              <button id="eb-connect-btn" class="eb-btn" onclick="App.ebToggleConnectMode()">&#10022; CONECTAR FIOS</button>
+              <div class="eb-colors">
+                <div class="eb-color-swatch eb-swatch-active" data-color="red"   title="Vermelho" onclick="App.ebSetColor('red')"></div>
+                <div class="eb-color-swatch" data-color="yellow" title="Amarelo" onclick="App.ebSetColor('yellow')"></div>
+                <div class="eb-color-swatch" data-color="white"  title="Branco"  onclick="App.ebSetColor('white')"></div>
+                <div class="eb-color-swatch" data-color="green"  title="Verde"   onclick="App.ebSetColor('green')"></div>
+                <div class="eb-color-swatch" data-color="blue"   title="Azul"    onclick="App.ebSetColor('blue')"></div>
+              </div>
+              <div id="eb-toolbar-hint" class="eb-toolbar-hint"></div>
+              <button class="eb-cancel-btn hidden" id="eb-cancel-btn" onclick="App.ebCancelConnect()">&#10005;</button>
+              <div class="eb-zoom-controls">
+                <button class="eb-btn eb-zoom-btn" title="Diminuir zoom" onclick="App.ebZoomOut()">&#8722;</button>
+                <span id="eb-zoom-label" class="eb-zoom-label">100%</span>
+                <button class="eb-btn eb-zoom-btn" title="Aumentar zoom" onclick="App.ebZoomIn()">&#43;</button>
+                <button class="eb-btn eb-zoom-btn eb-zoom-reset-btn" title="Resetar zoom" onclick="App.ebZoomReset()">&#8634;</button>
+              </div>
+            </div>
+            <div id="evidence-board" class="evidence-board">
+              <div class="eb-light-overlay"><div class="eb-light-cone"></div></div>
+              <svg id="evidence-svg" class="evidence-svg"></svg>
+              <div id="evidence-items" class="evidence-items"></div>
+              <div class="eb-board-empty" id="eb-board-empty">Nenhuma evid&#234;ncia fixada ainda.</div>
+            </div>
           </div>
         </div>
       </div>
@@ -768,6 +1050,7 @@
     </div>
   </div>
 
+
 </div><!-- /screen-sheet -->
 
 <!-- GM -->
@@ -920,6 +1203,49 @@
       </div>
     </div>
 
+    <!-- ── Quadro de Evidências ─────────────────────────── -->
+    <div class="gm-section gm-section-collapsed" id="gmsec-quadro">
+      <div class="gm-sec-title gm-sec-toggle" onclick="App.gmToggleSection('quadro')">
+        <span>&#9658; QUADRO DE EVID&#202;NCIAS</span>
+        <span class="gm-sec-chevron">&#9660;</span>
+      </div>
+      <div class="gm-section-body">
+        <div id="gm-eb-list" class="gm-eb-list">
+          <div class="gm-fitas-empty">Quadro vazio.</div>
+        </div>
+        <div class="gm-eb-form">
+          <div class="gm-bolsa-form-row">
+            <select id="gm-eb-add-type" class="gm-select" onchange="App.gmEBTypeChange()">
+              <option value="nota">NOTA</option>
+              <option value="suspeito">SUSPEITO</option>
+              <option value="document">DOCUMENTO</option>
+              <option value="pasta">PASTA CLASSIFICADA</option>
+            </select>
+          </div>
+          <input id="gm-eb-add-title" class="gm-text-input" type="text"
+                 placeholder="Título / nome..." maxlength="60" />
+          <textarea id="gm-eb-add-content" class="gm-text-input" rows="2"
+                    placeholder="Conteúdo / cargo / relação com o caso..."></textarea>
+          <div id="gm-eb-doc-wrap" class="hidden">
+            <select id="gm-eb-add-doc" class="gm-select">
+              <option value="">-- selecione documento --</option>
+            </select>
+          </div>
+          <div id="gm-eb-img-wrap" class="hidden" style="display:flex;gap:7px;align-items:center">
+            <label class="gm-fita-upload-btn" style="font-size:9px">+ FOTO
+              <input type="file" accept="image/*" class="hidden" onchange="App.gmEBPreviewSuspect(this)" />
+            </label>
+            <img id="gm-eb-suspect-prev" src="" alt="" class="hidden"
+                 style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border2)" />
+          </div>
+          <div id="gm-eb-pasta-wrap" class="hidden">
+            <div id="gm-eb-pasta-pages-list"></div>
+            <button class="gm-fita-upload-btn" style="margin-top:4px" onclick="App.gmEBAddPastaPage()">+ ADICIONAR P&#193;GINA</button>
+          </div>
+          <button class="gm-fita-upload-btn" style="margin-top:4px" onclick="App.gmAddEBItem()">&#x1F4CC; FIXAR NO QUADRO</button>
+        </div>
+      </div>
+    </div>
     <!-- ── Transmissões de Vídeo ────────────────────────────────── -->
     <div class="gm-section gm-section-collapsed" id="gmsec-videos">
       <div class="gm-sec-title gm-sec-toggle" onclick="App.gmToggleSection('videos')">
@@ -974,6 +1300,28 @@
       <img id="arma-inspect-img" src="" alt="" />
       <div class="arma-inspect-stats-grid" id="arma-inspect-stats"></div>
       <div class="arma-inspect-descricao" id="arma-inspect-descricao"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ARMA UNICA INSPECIONAR POPUP -->
+<div id="arma-unica-inspect-popup" class="arma-unica-inspect-popup hidden">
+  <div class="arma-unica-inspect-inner">
+    <div class="arma-unica-inspect-header">
+      <span class="arma-unica-inspect-tag">&#9658; ARMAMENTO ESPECIAL</span>
+      <span class="arma-unica-inspect-badge">&#9650; ÚNICA</span>
+      <span class="arma-unica-inspect-nome" id="arma-unica-inspect-nome"></span>
+      <button class="dica-popup-close" onclick="App.fecharArmaUnicaInspect()">&#10005;</button>
+    </div>
+    <div class="arma-unica-inspect-body">
+      <img id="arma-unica-inspect-img" src="" alt="" class="arma-unica-inspect-img" />
+      <div class="arma-inspect-stats-grid" id="arma-unica-inspect-stats"></div>
+      <div class="arma-unica-props-section">
+        <div class="arma-unica-props-heading">&#9826; PROPRIEDADES ESPECIAIS</div>
+        <div class="arma-unica-inspect-props-list" id="arma-unica-inspect-props"></div>
+      </div>
+      <div class="arma-unica-inspect-aviso" id="arma-unica-inspect-aviso"></div>
+      <div class="arma-inspect-descricao" id="arma-unica-inspect-descricao"></div>
     </div>
   </div>
 </div>
