@@ -76,14 +76,14 @@ const DOCUMENTS = [
   {
     id:      'doc_placeholder',
     title:   'Papel Estranho',
-    image:   'documentos/documento01.jpg',
-    uvImage: 'documentos/documento01_uv.jpg'   // versão UV real — null = usa filtro CSS apenas
+    image:   'imagens/documentos/documento01.jpg',
+    uvImage: 'imagens/documentos/documento01_uv.jpg'   // versão UV real — null = usa filtro CSS apenas
   },
   {
     id:      'doc_02',             
     title:   'Estátua de Bailarina',
-    image:   'documentos/estatua1.png',
-    uvImage: 'documentos/estatua2.png'  // ou null se não tiver versão UV
+    image:   'imagens/documentos/estatua1.png',
+    uvImage: 'imagens/documentos/estatua2.png'  // ou null se não tiver versão UV
   }
 ];
 
@@ -135,21 +135,21 @@ const DICAS_PRESETS = [
     id:     'campo_visao',
     titulo: 'CAMPO DE VIS\u00c3O / ALERTA',
     texto:  'Quando um inimigo entra em ALERTA.',
-    imagem: 'dicas/campo_visao_alerta.png'
+    imagem: 'imagens/dicas/campo_visao_alerta.png'
   },
   {
     id:     'campo_visao1',
     titulo: 'CAMPO DE VIS\u00c3O / NORMAL',
     texto:  'Quando um inimigo não suspeita de nada.',
-    imagem: 'dicas/campo_visao_normal.png'
+    imagem: 'imagens/dicas/campo_visao_normal.png'
   }
 ];
 
 const ARMA_TIPOS = {
-  pistola:    { label: 'PISTOLA',    img: 'icones/pistola.png' },
-  espingarda: { label: 'ESPINGARDA', img: 'icones/espingarda.png' },
-  sniper:     { label: 'SNIPER',     img: 'icones/sniper.png' },
-  revolver:   { label: 'REVOLVER',   img: 'icones/revolver.png' },
+  pistola:    { label: 'PISTOLA',    img: 'icones/armas/pistola.png' },
+  espingarda: { label: 'ESPINGARDA', img: 'icones/armas/espingarda.png' },
+  sniper:     { label: 'SNIPER',     img: 'icones/armas/sniper.png' },
+  revolver:   { label: 'REVOLVER',   img: 'icones/armas/revolver.png' },
   outro:      { label: 'OUTRO',      img: '' },
   // Consumíveis
   kit_medico:  { label: 'KIT MÉDICO',     img: 'icones/itens/kit.png',            consumivel: true, ico: '✚' },
@@ -188,9 +188,9 @@ const ARMA_TIPOS = {
   mina_atordoante:  { label: 'MINA ATORDOANTE',  img: '', consumivel: true, ico: '◻' },
   distracao:        { label: 'DISTRACAO',          img: '', consumivel: true, ico: '♀' },
   // ── Armas Únicas ──
-  lancachamas: { label: 'LANÇA-CHAMAS', img: 'icones/armas_unicas/lancachamas.svg', unica: true },
-  motosserra:  { label: 'MOTOSSERRA',   img: 'icones/armas_unicas/motoserra.svg',   unica: true },
-  bazuca:      { label: 'BAZUCA',       img: 'icones/armas_unicas/bazuca.svg',       unica: true },
+  lancachamas: { label: 'LANÇA-CHAMAS', img: 'icones/armas/lancachamas.svg', unica: true },
+  motosserra:  { label: 'MOTOSSERRA',   img: 'icones/armas/motoserra.svg',   unica: true },
+  bazuca:      { label: 'BAZUCA',       img: 'icones/armas/bazuca.svg',       unica: true },
 };
 
 // Inventory sizes (cols × rows) for each weapon / consumable type
@@ -718,9 +718,9 @@ let _playerPrefs  = {};              // preferências visuais locais do jogador 
 //  AUDIO
 // ──────────────────────────────────────────────────────────
 const SFX_SRCS = {
-  open:   'codecopen.wav',
-  close:  'codecover.wav',
-  select: 'select.wav',
+  open:   'audio/codecopen.wav',
+  close:  'audio/codecover.wav',
+  select: 'audio/select.wav',
 };
 const SFX_VOL = { open: 0.55, close: 0.55, select: 0.45 };
 
@@ -3789,7 +3789,7 @@ function radioChangeFreq(dir) {
   persistChar({ 'radio.frequencia': freq });
 }
 
-const radioCodecAudio = new Audio('codec.mp3');
+const radioCodecAudio = new Audio('audio/codec.mp3');
 
 async function radioSolicitar() {
   const char = state.character;
@@ -5105,9 +5105,9 @@ let _morteAudio   = null;
 
 function _playElemSfx(gatilhoId) {
   const _sfxMap = {
-    elem_sangue:       'elementos/sangue.m4a',
-    elem_energia:      'elementos/energia.mp3',
-    elem_conhecimento: 'elementos/conhecimento.mp3',
+    elem_sangue:       'imagens/elementos/sangue.m4a',
+    elem_energia:      'imagens/elementos/energia.mp3',
+    elem_conhecimento: 'imagens/elementos/conhecimento.mp3',
   };
   const src = _sfxMap[gatilhoId];
   if (!src) return;
@@ -5117,7 +5117,7 @@ function _playElemSfx(gatilhoId) {
 function startMorteAudio() {
   stopMorteAudio();
   try {
-    _morteAudio = new Audio('elementos/morte.mp3');
+    _morteAudio = new Audio('imagens/elementos/morte.mp3');
     _morteAudio.loop = true;
     _morteAudio.volume = 0.5;
     _morteAudio.play().catch(() => {});
@@ -5137,7 +5137,7 @@ function startMorteSpiral() {
   if (!ov) return;
   const el = document.createElement('img');
   el.className = 'psych-morte-espirais';
-  el.src = 'elementos/espiraismorte.jpg';
+  el.src = 'imagens/elementos/espiraismorte.jpg';
   el.alt = '';
   ov.appendChild(el);
   _morteSpiral = el;
@@ -5160,7 +5160,7 @@ function startSangueOlho() {
     if (!ov || !ov.classList.contains('psych-g-elem_sangue')) { stopSangueOlho(); return; }
     const el = document.createElement('img');
     el.className = 'psych-sangue-olho';
-    el.src = 'elementos/olhosangue.png';
+    el.src = 'imagens/elementos/olhosangue.png';
     el.alt = '';
     el.style.left = (5 + Math.random() * 80) + '%';
     el.style.top  = (5 + Math.random() * 80) + '%';
