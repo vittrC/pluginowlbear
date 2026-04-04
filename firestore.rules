@@ -49,6 +49,12 @@ service cloud.firestore {
       // Player atualiza qualquer campo EXCETO os exclusivos do GM
       // Auth anônimo muda a cada sessão — não usamos ownerUid como barreira
       allow update: if isAuthenticated() && !touchesGMFields();
+
+      // Fotos de documentos — salvas por qualquer jogador autenticado
+      match /fotos/{fotoId} {
+        allow read:  if true;
+        allow write: if isAuthenticated();
+      }
     }
 
     // ── gameState/{document} (docs, mission) ─────────────────

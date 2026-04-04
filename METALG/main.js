@@ -96,9 +96,10 @@ const DEFAULT_CHAR = () => ({
   security:   "seguro",   // seguro | alerta | perigo | comprometido
   integrity:  5,
   patente:    1,
+  xp:         0,
   armas:      [null, null],
   armaUnica:  null,
-  bolsa:        { items: [], staged: [] },
+  bolsa:        { items: [], staged: [], unlockedRows: 2 },
   camuflagem:   null,
   attrs: {
     fisico:      "D",
@@ -323,7 +324,7 @@ const ARMA_UNICA_PROPS = {
   },
 };
 // Available bolsa rows per patente level (Etapa 2 — capacity limit)
-const BOLSA_ROWS_BY_PATENTE = { 1: 3, 2: 4, 3: 5 };
+const BOLSA_ROWS_BY_PATENTE = { 1: 3, 2: 4, 3: 5, 4: 6 };
 
 // ──────────────────────────────────────────────────────────
 //  CRAFT — Efeitos ao usar + receitas de combinacao
@@ -462,10 +463,34 @@ const CRAFT_RECIPES = [
 ];
 
 const PATENTES = {
-  1: { nome: 'VENOM', desc: 'Recruta de campo. Preparado para missões de alta periculosidade.' },
-  2: { nome: 'SNAKE', desc: 'Operador especializado. Seu nome é mais conhecido.' },
-  3: { nome: 'VYPER', desc: 'Um Vyper de verdade. Identidade apagada. Existe apenas a missão. Seu nome causa medo' },
+  1: { nome: 'VENOM',   corDest: '#00dd88', desc: 'Recruta de campo. Preparado para missões de alta periculosidade. INT máx: 5 · Bolsa: 3 linhas.' },
+  2: { nome: 'SNAKE',   corDest: '#00ffaa', desc: 'Operador especializado. Seu nome circula nas redes de campo. INT máx: 6 · Bolsa: 4 linhas.' },
+  3: { nome: 'VYPER',   corDest: '#ffcc00', desc: 'Um Vyper de verdade. Identidade apagada. Existe apenas a missão. INT máx: 7 · Bolsa: 5 linhas.' },
+  4: { nome: 'BOSS', corDest: '#ffe566', desc: 'O ápice. Lenda de campo. Você é o The Boss. INT máx: 8 · Bolsa: 6 linhas.' },
 };
+
+// ── XP / MARCO SYSTEM ────────────────────────────────────────────────────────
+const XP_MARCOS = [
+  // ── VENOM ──────────────────────────────────────────────────────────────────
+  { patente: 1, marco: 1, xpReq: 15,  titulo: 'MARCO I',   beneficios: ['+1 ponto de atributo', 'Escolha de inventário inicial'] },
+  { patente: 1, marco: 2, xpReq: 30,  titulo: 'MARCO II',  beneficios: ['+4 pontos para perícias', 'Acesso a armas de categoria I'] },
+  { patente: 1, marco: 3, xpReq: 50,  titulo: 'MARCO III', beneficios: ['Novas camuflagens desbloqueadas', '-1 componente necessário em rituais'], evolution: true },
+  // ── SNAKE ──────────────────────────────────────────────────────────────────
+  { patente: 2, marco: 1, xpReq: 70,  titulo: 'MARCO I',   beneficios: ['+2 pontos de atributo', 'Missões secundárias liberadas'] },
+  { patente: 2, marco: 2, xpReq: 90,  titulo: 'MARCO II',  beneficios: ['Armas de categoria II e operacionais I', 'Armamento especial liberado'] },
+  { patente: 2, marco: 3, xpReq: 120, titulo: 'MARCO III', beneficios: ['Novas camuflagens desbloqueadas', '+3 pontos para perícias'], evolution: true },
+  // ── VYPER ──────────────────────────────────────────────────────────────────
+  { patente: 3, marco: 1, xpReq: 140, titulo: 'MARCO I',   beneficios: ['+3 pontos de atributo', '-20 de visibilidade base'] },
+  { patente: 3, marco: 2, xpReq: 180, titulo: 'MARCO II',  beneficios: ['Armas de categoria III e operacionais II', '-1 componente necessário em rituais'] },
+  { patente: 3, marco: 3, xpReq: 200, titulo: 'MARCO III',      beneficios: ['[CLASSIFICADO — FIM DO CAMINHO]'], evolution: true },
+];
+
+function getPatenteFromXp(xp) {
+  if (xp >= 200) return 4;
+  if (xp >= 120) return 3;
+  if (xp >= 50)  return 2;
+  return 1;
+}
 
 const CAMUFLAGENS = [
   {
@@ -678,6 +703,7 @@ let maldicoesUnsub = null;     // listener firestore de maldições
 let _missaoBootDone = false;   // true após primeira exibição do boot da missão
 let _lootPool    = [];         // itens montados pelo GM para distribuição
 let _gmCharsList = [];         // cache de chars para ferramentas do GM
+let _fitasLibrary = [];        // cache de fitas da biblioteca compartilhada
 let _gmDeleteArmed = null;     // codename aguardando confirmação de deleção
 let bolsaSelected    = null;   // index into bolsa.items currently selected
 let bolsaDiscardArmed = false; // true after first discard click (confirm step)
@@ -1097,6 +1123,22 @@ async function loginPlayer() {
         triggerStatusChangeEffect(data.security);
       }
 
+      // Detect XP changes and update patente
+      const oldXp = old?.xp ?? 0;
+      const newXp = data.xp ?? 0;
+      if (newXp !== oldXp || data.patente !== old?.patente) {
+        const newPatente = getPatenteFromXp(newXp);
+        if (state.character) state.character.patente = newPatente;
+        updatePatenteDisplay(newPatente, newXp);
+        if (old && getPatenteFromXp(oldXp) < newPatente) {
+          showPatenteUnlockAnim(newPatente, getPatenteFromXp(oldXp));
+        }
+        // Refresh caminho overlay if open
+        if ($('caminho-overlay') && !$('caminho-overlay').classList.contains('hidden')) {
+          renderCaminhoOverlay();
+        }
+      }
+
       // Detect new dica sent by GM
       const oldDicaTs = old?.radio?.dicaAtual?.ts;
       const newDicaTs = data.radio?.dicaAtual?.ts;
@@ -1326,8 +1368,8 @@ function renderSheet(data) {
     setAttrGrade(a, grade);
   });
 
-  // Patente
-  updatePatenteDisplay(data.patente ?? 1);
+  // Patente / XP
+  updatePatenteDisplay(data.patente ?? 1, data.xp ?? 0);
 
   // Integrity (called inside updatePatenteDisplay)
 
@@ -1383,8 +1425,9 @@ function updateSecurityDisplay(security) {
 }
 
 function updateIntegrityDisplay(integrity) {
-  const patente  = state.character?.patente ?? 1;
-  const maxBars  = 4 + patente; // Venom=5, Snake=6, Vyper=7
+  const xp       = state.character?.xp ?? 0;
+  const patente  = getPatenteFromXp(xp);
+  const maxBars  = 4 + patente; // Venom=5, Snake=6, Vyper=7, Boss=8
   const val      = typeof integrity === 'number' ? Math.min(integrity, maxBars) : maxBars;
   const bars     = document.querySelectorAll('#integrity-bars .integrity-bar');
   const countEl  = $('integrity-count');
@@ -1443,31 +1486,306 @@ function closeDicaPopup() {
   const popup = $('dica-popup');
   if (popup) popup.classList.add('hidden');
   sfx('close');
+  // Limpa dicaAtual do Firestore para não acumular estado stale
+  if (firebaseOk && state.codename) {
+    updateDoc(doc(db, 'characters', state.codename), { 'radio.dicaAtual': null }).catch(() => {});
+  }
 }
 
-function updatePatenteDisplay(patente) {
-  const p = Math.max(1, Math.min(3, patente || 1));
-  for (let i = 1; i <= 3; i++) {
+function updatePatenteDisplay(patente, xp) {
+  xp = (xp !== undefined) ? xp : (state.character?.xp ?? 0);
+  const p = getPatenteFromXp(xp);
+  // Sync stored patente to XP-derived value
+  if (state.character && state.character.patente !== p) state.character.patente = p;
+
+  for (let i = 1; i <= 4; i++) {
     const item = $('patente-item-' + i);
     if (!item) continue;
-    item.classList.toggle('patente-active', i === p);
-    item.classList.toggle('patente-locked', i !== p);
+    item.classList.toggle('patente-active',    i === p);
+    item.classList.toggle('patente-completed', i < p);
+    item.classList.toggle('patente-locked',    i > p);
   }
   const descEl = $('patente-desc');
   if (descEl) descEl.textContent = PATENTES[p]?.desc || '';
+  // Show/hide patente 4 identity
+  const name4el = document.querySelector('#patente-item-4 .patente-name');
+  if (name4el) name4el.textContent = (p >= 4) ? 'BOSS' : '???';
+  const star4el = document.querySelector('#patente-item-4 .patente-gold-star');
+  if (star4el) star4el.innerHTML = (p >= 4) ? '\u2605' : '?';
+
+  // Update XP bar in the patente section
+  _updatePatenteXpBar(xp, p);
 
   // Update integrity display with new max
   const currentIntegrity = state.character?.integrity ?? (4 + p);
   updateIntegrityDisplay(currentIntegrity);
 }
 
+function _updatePatenteXpBar(xp, currentPatente) {
+  const labelEl = $('patente-xp-label');
+  const fillEl  = $('patente-xp-fill');
+  const nextEl  = $('patente-xp-next');
+  if (!labelEl) return;
+  labelEl.textContent = xp + ' XP';
+  const nextMarco = XP_MARCOS.find(m => m.xpReq > xp);
+  if (!nextMarco) {
+    if (fillEl) fillEl.style.width = '100%';
+    if (nextEl) nextEl.textContent = '\u25b2 ÁPICE ATINGIDO';
+    return;
+  }
+  const prevMarcos = XP_MARCOS.filter(m => m.xpReq <= xp);
+  const prevXp = prevMarcos.length > 0 ? prevMarcos[prevMarcos.length - 1].xpReq : 0;
+  const pct = Math.min(100, Math.round(((xp - prevXp) / (nextMarco.xpReq - prevXp)) * 100));
+  if (fillEl) fillEl.style.width = pct + '%';
+  const remaining = nextMarco.xpReq - xp;
+  const pName = (nextMarco.patente === 4 && currentPatente < 4) ? '???' : (PATENTES[nextMarco.patente]?.nome || '');
+  if (nextEl) nextEl.textContent = `${nextMarco.titulo} \u00b7 ${pName} \u00b7 faltam ${remaining} XP`;
+}
+
 async function setPatente(level) {
+  // Patente is now auto-derived from XP — manual setting disabled for players
   if (state.role !== 'player' || !state.character) return;
-  const p = Math.max(1, Math.min(3, level));
-  state.character.patente = p;
-  updatePatenteDisplay(p);
+  // No-op: use XP system via GM dashboard
+}
+
+// ──────────────────────────────────────────────────────────
+//  PATENTE UNLOCK ANIMATION
+// ──────────────────────────────────────────────────────────
+
+function showPatenteUnlockAnim(newPatente, oldPatente) {
+  const pat    = PATENTES[newPatente];
+  const oldPat = PATENTES[oldPatente];
+  const color  = pat?.corDest || '#00ff88';
+  // Keep identity of patente 4 hidden until animation reveals it dramatically
+  const name   = pat?.nome || '';
+
+  const existing = document.getElementById('patente-unlock-anim');
+  if (existing) existing.remove();
+
+  const shards = Array.from({length: 16}, (_, i) =>
+    `<div class="pu-shard" style="--angle:${i * 22.5}deg;--delay:${(i % 4) * 0.05}s"></div>`
+  ).join('');
+  const sparks = Array.from({length: 8}, (_, i) =>
+    `<div class="pu-spark" style="--a:${i * 45}deg;--d:${80 + i * 15}px"></div>`
+  ).join('');
+
+  const div = document.createElement('div');
+  div.className = 'pu-overlay';
+  div.id = 'patente-unlock-anim';
+  div.style.setProperty('--pu-color', color);
+  div.innerHTML = `
+    <div class="pu-backdrop"></div>
+    <div class="pu-shards">${shards}</div>
+    <div class="pu-sparks">${sparks}</div>
+    <div class="pu-card">
+      <div class="pu-scan"></div>
+      <div class="pu-ring pu-ring-1"></div>
+      <div class="pu-ring pu-ring-2"></div>
+      <div class="pu-eyeline"></div>
+      <div class="pu-label">\u25b2 PATENTE DESBLOQUEADA</div>
+      <div class="pu-rank-icon">${newPatente === 4 ? '\u2605' : newPatente === 3 ? '\u25c6' : '\u25a0'}</div>
+      <div class="pu-rank-name">${name}</div>
+      <div class="pu-divider"></div>
+      <div class="pu-sub">${oldPat?.nome || ''} \u2192 ${name}</div>
+      <div class="pu-close-hint">[ clique para fechar ]</div>
+    </div>`;
+  div.addEventListener('click', () => {
+    div.style.animation = 'pu-dismiss 0.3s ease forwards';
+    setTimeout(() => div.remove(), 300);
+  });
+  document.body.appendChild(div);
+  setTimeout(() => {
+    if (div.parentNode) {
+      div.style.animation = 'pu-dismiss 0.5s ease forwards';
+      setTimeout(() => div.remove(), 500);
+    }
+  }, 5500);
+  sfx('open');
+}
+
+// ──────────────────────────────────────────────────────────
+//  CAMINHO DE PROGRESSO — overlay
+// ──────────────────────────────────────────────────────────
+function openCaminhoOverlay() {
+  const overlay = $('caminho-overlay');
+  if (!overlay) return;
+  renderCaminhoOverlay();
+  overlay.classList.remove('hidden');
+  sfx('open');
+}
+
+function closeCaminhoOverlay() {
+  const overlay = $('caminho-overlay');
+  if (overlay) overlay.classList.add('hidden');
+  sfx('close');
+}
+
+function renderCaminhoOverlay() {
+  const xp = state.character?.xp ?? 0;
+  const currentPatente = getPatenteFromXp(xp);
+
+  // Header XP value
+  const xpBigEl = $('caminho-xp-big');
+  if (xpBigEl) xpBigEl.textContent = xp;
+
+  // Global bar
+  const barFillEl  = $('caminho-global-bar-fill');
+  const barLabelEl = $('caminho-global-bar-label');
+  if (barFillEl) barFillEl.style.width = Math.min(100, Math.round((xp / 200) * 100)) + '%';
+  if (barLabelEl) barLabelEl.textContent = `${xp} / 200 XP`;
+
+  // GM controls
+  const gmCtrl = $('caminho-gm-ctrl');
+  if (gmCtrl) gmCtrl.style.display = (state.role === 'gm') ? 'flex' : 'none';
+
+  // Render path
+  const pathEl = $('caminho-path');
+  if (!pathEl) return;
+
+  const isApex = xp >= 200;
+  let html = '';
+
+  // Apex card (top of path)
+  html += `<div class="cp-apex ${isApex ? 'cp-apex-reached' : 'cp-apex-locked'}">
+    <div class="cp-apex-inner">
+      <div class="cp-apex-sparkles">${isApex ? '▓▓▓▓▓▓▓▓▓▓' : ''}</div>
+      <div class="cp-apex-icon">${isApex ? '\u2605' : '\u25c7'}</div>
+      <div class="cp-apex-name">${isApex ? 'BOSS' : '???'}</div>
+      <div class="cp-apex-req">200 XP \u2014 \u00c1PICE</div>
+      <div class="cp-apex-sub">${isApex ? '\u25b2 LENDA DE CAMPO CONFIRMADA' : 'INT m\u00e1x: 8 \u00b7 Bolsa: 6 linhas'}</div>
+    </div>
+  </div>`;
+
+  // Rank cards: render 3 → 1 (CSS column-reverse will show bottom-up visually)
+  for (let pi = 3; pi >= 1; pi--) {
+    const pat         = PATENTES[pi];
+    const rankMarcos  = XP_MARCOS.filter(m => m.patente === pi);
+    const rankXpMin   = pi === 1 ? 0   : pi === 2 ? 50  : 120;
+    const rankXpMax   = pi === 1 ? 50  : pi === 2 ? 120 : 200;
+    const isCurrentRank   = (currentPatente === pi);
+    const isCompletedRank = (currentPatente > pi);
+    const isLockedRank    = (currentPatente < pi);
+
+    let rankPct = 0;
+    if (isCompletedRank) rankPct = 100;
+    else if (isCurrentRank) rankPct = Math.min(100, Math.round(((xp - rankXpMin) / (rankXpMax - rankXpMin)) * 100));
+
+    const marcosHtml = rankMarcos.map((marco, idx) => {
+      const globalIdx = XP_MARCOS.indexOf(marco);
+      const unlocked = xp >= marco.xpReq;
+      const prevReq  = idx === 0 ? rankXpMin : rankMarcos[idx - 1].xpReq;
+      const isNext   = !unlocked && xp >= prevReq;
+      const cls = unlocked ? 'cp-marco-done' : isNext ? 'cp-marco-next' : 'cp-marco-locked';
+      const dot = unlocked ? '\u25cf' : isNext ? '\u25ce' : '\u25cb';
+      return `<button class="cp-marco ${cls}" onclick="App.showMarcoDetail(${globalIdx})" title="${marco.titulo}">
+        <div class="cp-marco-node"><span class="cp-marco-dot">${dot}</span><div class="cp-marco-ring"></div></div>
+        <div class="cp-marco-info"><div class="cp-marco-num">M${marco.marco}</div><div class="cp-marco-xp">${marco.xpReq}</div></div>
+      </button>${idx < rankMarcos.length - 1 ? `<div class="cp-connector ${unlocked ? 'cp-conn-done' : ''}"></div>` : ''}`;
+    }).join('');
+
+    const evLabel   = pi === 3 ? '\u25b2 ÁPICE' : '\u25b2 EVOLUÇÃO';
+    const imgNum    = Math.min(pi, 3);
+    const rankStateClass = isCurrentRank ? 'cp-rank-current' : isCompletedRank ? 'cp-rank-completed' : 'cp-rank-locked';
+
+    html += `<div class="cp-evolution-link ${isLockedRank ? 'ev-locked' : 'ev-active'}">
+      <div class="ev-pipe"></div>
+      <div class="ev-arrow-label">${evLabel}</div>
+    </div>
+    <div class="cp-rank ${rankStateClass}">
+      <div class="cp-rank-header">
+        <div class="cp-rank-id">
+          <img src="icones/patente${imgNum}.png" class="cp-rank-img" onerror="this.style.display='none'" />
+          <span class="cp-rank-name" style="color:${pat.corDest}">${pat.nome}</span>
+        </div>
+        <div class="cp-rank-badges">
+          ${isCurrentRank   ? '<span class="cp-badge cp-badge-current">ATUAL</span>' : ''}
+          ${isCompletedRank ? '<span class="cp-badge cp-badge-done">\u2713 COMPLETO</span>' : ''}
+          ${isLockedRank    ? '<span class="cp-badge cp-badge-locked">BLOQUEADO</span>' : ''}
+        </div>
+      </div>
+      <div class="cp-rank-pills">
+        <span class="cp-pill">\u26a1 INT: ${4 + pi}</span>
+        <span class="cp-pill">\ud83c\udf92 BOLSA: ${BOLSA_ROWS_BY_PATENTE[pi]} linhas</span>
+        <span class="cp-pill">\ud83d\udccd ${rankXpMin}\u2013${rankXpMax} XP</span>
+      </div>
+      <div class="cp-rank-bar-track"><div class="cp-rank-bar-fill" style="width:${rankPct}%"></div></div>
+      <div class="cp-marcos-row">${marcosHtml}</div>
+    </div>`;
+  }
+
+  pathEl.innerHTML = html;
+
+  // Restore selected marco detail if any
+  const detail = $('caminho-detail');
+  if (detail && detail.dataset.lastIdx !== undefined) {
+    showMarcoDetail(parseInt(detail.dataset.lastIdx));
+  }
+}
+
+function showMarcoDetail(globalIdx) {
+  const marco = XP_MARCOS[globalIdx];
+  if (!marco) return;
+  const xp       = state.character?.xp ?? 0;
+  const unlocked = xp >= marco.xpReq;
+  const pat      = PATENTES[marco.patente];
+  const detail   = $('caminho-detail');
+  if (!detail) return;
+  detail.dataset.lastIdx = globalIdx;
+
+  // Highlight selected node
+  document.querySelectorAll('.cp-marco').forEach(el => el.classList.remove('cp-marco-selected'));
+  const nodes = document.querySelectorAll('.cp-marco');
+  if (nodes[globalIdx]) nodes[globalIdx].classList.add('cp-marco-selected');
+
+  const prevReq  = globalIdx === 0 ? 0 : (XP_MARCOS[globalIdx - 1]?.xpReq ?? 0);
+  const isNext   = !unlocked && xp >= prevReq && getPatenteFromXp(xp) === marco.patente;
+  const statusHtml = unlocked
+    ? `<span class="cp-det-badge cp-det-badge-done">\u25cf OBTIDO</span>`
+    : isNext
+      ? `<span class="cp-det-badge cp-det-badge-next">\u25ce PR\u00d3XIMO</span>`
+      : `<span class="cp-det-badge cp-det-badge-locked">\u25cb BLOQUEADO</span>`;
+
+  detail.innerHTML = `
+    <div class="cp-detail-card ${unlocked ? 'det-done' : 'det-locked'}">
+      <div class="cp-det-header">
+        <div class="cp-det-title">${marco.titulo} <span class="cp-det-rank" style="color:${pat.corDest}">${pat.nome}</span></div>
+        <div class="cp-det-req">${marco.xpReq} XP necess\u00e1rios</div>
+        <div class="cp-det-status">${statusHtml}</div>
+      </div>
+      <div class="cp-det-benefits">
+        ${marco.beneficios.map(b => `<div class="cp-det-benefit"><span class="cp-det-ico">\u25b8</span>${b}</div>`).join('')}
+        ${marco.evolution ? `<div class="cp-det-benefit cp-det-evolution"><span class="cp-det-ico">\u2605</span>Evolução de patente desbloqueada</div>` : ''}
+      </div>
+      ${!unlocked ? `<div class="cp-det-xp-needed"><span class="cp-det-xp-remain">${marco.xpReq - xp}</span> XP para desbloquear</div>` : ''}
+    </div>`;
   sfx('select');
-  await persistChar({ patente: p });
+}
+
+// GM: ajusta XP do personagem sendo visualizado no overlay (sheet do player aberta com login GM)
+async function caminhoGmAjustar(delta) {
+  if (!state.character) return;
+  const newXp = Math.max(0, (state.character.xp ?? 0) + delta);
+  const newPatente = getPatenteFromXp(newXp);
+  state.character.xp = newXp;
+  state.character.patente = newPatente;
+  updatePatenteDisplay(newPatente, newXp);
+  renderCaminhoOverlay();
+  await persistChar({ xp: newXp, patente: newPatente });
+  showToast(`XP: ${newXp} (${delta >= 0 ? '+' : ''}${delta})`, 'success', 2000);
+}
+
+async function caminhoGmSetExato() {
+  const inputEl = $('caminho-gm-xp-input');
+  if (!inputEl) return;
+  const val = parseInt(inputEl.value);
+  if (isNaN(val) || val < 0) { showToast('Valor inv\u00e1lido.', 'error'); return; }
+  const newPatente = getPatenteFromXp(val);
+  if (state.character) { state.character.xp = val; state.character.patente = newPatente; }
+  updatePatenteDisplay(newPatente, val);
+  renderCaminhoOverlay();
+  await persistChar({ xp: val, patente: newPatente });
+  inputEl.value = '';
+  showToast(`XP definido: ${val}`, 'success', 2000);
 }
 
 // ──────────────────────────────────────────────────────────
@@ -1794,7 +2112,8 @@ function closeGradeModal(event) {
 async function toggleIntegrity(index) {
   if (!state.character && state.role !== 'player') return;
 
-  const patente  = state.character?.patente ?? 1;
+  const xp       = state.character?.xp ?? 0;
+  const patente  = getPatenteFromXp(xp);
   const maxBars  = 4 + patente;
   const current  = state.character?.integrity ?? maxBars;
   // Clicking a bar sets integrity to index+1 if it was off, or index if it was on (last active)
@@ -1864,7 +2183,8 @@ function isConsumivel(tipo) {
 }
 
 function bolsaGetMaxRows() {
-  const p = state.character?.patente ?? 1;
+  const xp = state.character?.xp ?? 0;
+  const p  = getPatenteFromXp(xp);
   return BOLSA_ROWS_BY_PATENTE[p] ?? BOLSA_ROWS;
 }
 
@@ -2828,6 +3148,7 @@ function gmLootAddItem() {
     ...(usos !== undefined ? { usos, usoMax: usos } : {})
   });
   renderGMLootList();
+  _saveLootState();
   ['nome','dano','alcance','desc'].forEach(k => { const el = g('gm-loot-' + k); if (el) el.value = ''; });
   if (g('gm-loot-usos')) g('gm-loot-usos').value = '';
 }
@@ -2835,6 +3156,20 @@ function gmLootAddItem() {
 function gmLootRemoveItem(idx) {
   _lootPool.splice(idx, 1);
   renderGMLootList();
+  _saveLootState();
+}
+
+async function loadLootState() {
+  if (!firebaseOk) return;
+  try {
+    const snap = await getDoc(doc(db, 'gameState', 'loot'));
+    if (snap.exists()) { _lootPool = snap.data().items || []; renderGMLootList(); }
+  } catch (e) { console.error('loot load:', e); }
+}
+
+function _saveLootState() {
+  if (!firebaseOk) return;
+  setDoc(doc(db, 'gameState', 'loot'), { items: _lootPool }).catch(e => console.error('loot save:', e));
 }
 
 async function gmLootDistribuir() {
@@ -2871,6 +3206,7 @@ async function gmLootDistribuir() {
   }
   _lootPool = [];
   renderGMLootList();
+  _saveLootState();
   sfx('select');
   showToast(`Loot distribuído — ${sent} envio(s).`, 'success', 2500);
 }
@@ -3927,7 +4263,7 @@ function buildGMFitasListHtml(codename, tapes) {
     `<div class="gm-fita-item">
       <span class="gm-fita-cat-tag">${ico[t.categoria] || '&#9672;'}</span>
       <span class="gm-fita-name">${escHtml(t.nome)}</span>
-      <button class="gm-fita-del" onclick="App.gmRemoveFita('${codename}','${t.id}')">&#10005;</button>
+      <button class="gm-fita-del" onclick="App.gmDesalocarFita('${codename}','${t.id}')" title="Desalocar fita">&#10005;</button>
     </div>`
   ).join('');
 }
@@ -3944,7 +4280,7 @@ async function gmUploadFita(codename, fileInput) {
   const categoria = catFld?.value || 'musica';
   if (!nome) { showToast('Digite o nome da fita.', 'error'); fileInput.value = ''; return; }
 
-  const id = 'fita_' + codename + '_' + Date.now();
+  const id = 'fita_' + Date.now();
 
   showToast('Lendo arquivo...', 'info');
   const reader = new FileReader();
@@ -3962,14 +4298,17 @@ async function gmUploadFita(codename, fileInput) {
         await Promise.all(parts.map((chunk, i) =>
           setDoc(doc(db, 'tapes', `${id}_chunk_${i}`), { chunk, index: i })
         ));
-        await setDoc(doc(db, 'tapes', id), { id, nome, categoria, assignedTo: codename, chunks: parts.length });
+        await setDoc(doc(db, 'tapes', id), { id, nome, categoria, chunks: parts.length });
         const charRef  = doc(db, 'characters', codename);
         const charSnap = await getDoc(charRef);
         const tapes    = [...(charSnap.data()?.tapes || []), { id, nome, categoria }];
         await updateDoc(charRef, { tapes });
+        const cached = _gmCharsList.find(c => c.codename === codename);
+        if (cached) cached.tapes = tapes;
         nomeFld.value = ''; fileInput.value = '';
         document.getElementById('gm-fitas-list-' + codename).innerHTML = buildGMFitasListHtml(codename, tapes);
-        showToast(`"${nome}" alocada com sucesso.`, 'success');
+        await renderGMFitaLibrary();
+        showToast(`"${nome}" enviada e alocada.`, 'success');
       } catch (err) { console.error(err); showToast('Erro ao enviar fita: ' + err.message, 'error'); }
     } else {
       // Modo local — base64 direto no localStorage
@@ -3985,31 +4324,144 @@ async function gmUploadFita(codename, fileInput) {
   reader.readAsDataURL(file);
 }
 
-async function gmRemoveFita(codename, tapeId) {
+// Remove apenas a alocação da fita de um operador (não apaga os dados do Firestore)
+async function gmDesalocarFita(codename, tapeId) {
   if (firebaseOk) {
     try {
-      const metaSnap   = await getDoc(doc(db, 'tapes', tapeId));
-      const chunkCount = metaSnap.exists() ? (metaSnap.data().chunks || 0) : 0;
-      // Apaga todos os chunks em paralelo + o doc de metadados
-      await Promise.all([
-        ...Array.from({ length: chunkCount }, (_, i) => deleteDoc(doc(db, 'tapes', `${tapeId}_chunk_${i}`))),
-        deleteDoc(doc(db, 'tapes', tapeId))
-      ]);
       const charRef  = doc(db, 'characters', codename);
       const charSnap = await getDoc(charRef);
       const tapes    = (charSnap.data()?.tapes || []).filter(t => t.id !== tapeId);
       await updateDoc(charRef, { tapes });
+      const cached = _gmCharsList.find(c => c.codename === codename);
+      if (cached) cached.tapes = tapes;
       document.getElementById('gm-fitas-list-' + codename).innerHTML = buildGMFitasListHtml(codename, tapes);
-      showToast('Fita removida.', 'success');
-    } catch (e) { showToast('Erro ao remover fita.', 'error'); }
+      gmRefreshAssignDropdowns();
+      showToast('Fita desalocada.', 'success');
+    } catch (e) { showToast('Erro ao desalocar fita.', 'error'); }
   } else {
-    localStorage.removeItem('fita_data_' + tapeId);
     const char  = LocalDB.getChar(codename) || {};
     const tapes = (char.tapes || []).filter(t => t.id !== tapeId);
     char.tapes  = tapes; LocalDB.setChar(codename, char);
     document.getElementById('gm-fitas-list-' + codename).innerHTML = buildGMFitasListHtml(codename, tapes);
-    showToast('Fita removida.', 'success');
+    showToast('Fita desalocada (local).', 'success');
   }
+}
+
+// Exclui permanentemente a fita da biblioteca e desaloca de todos os operadores
+async function gmDeleteFitaFromLibrary(tapeId) {
+  if (!confirm('Excluir esta fita da biblioteca? Ela será removida de todos os operadores.')) return;
+  if (firebaseOk) {
+    try {
+      const metaSnap   = await getDoc(doc(db, 'tapes', tapeId));
+      const chunkCount = metaSnap.exists() ? (metaSnap.data().chunks || 0) : 0;
+      await Promise.all([
+        ...Array.from({ length: chunkCount }, (_, i) => deleteDoc(doc(db, 'tapes', `${tapeId}_chunk_${i}`))),
+        deleteDoc(doc(db, 'tapes', tapeId))
+      ]);
+      // Remove de todos os operadores no Firestore
+      const snap = await getDocs(collection(db, 'characters'));
+      await Promise.all(snap.docs.map(charDoc => {
+        const currentTapes = charDoc.data().tapes || [];
+        if (!currentTapes.some(t => t.id === tapeId)) return null;
+        return updateDoc(charDoc.ref, { tapes: currentTapes.filter(t => t.id !== tapeId) });
+      }).filter(Boolean));
+      // Atualiza cache e UI dos cards abertos
+      _gmCharsList.forEach(c => {
+        if (!(c.tapes || []).some(t => t.id === tapeId)) return;
+        c.tapes = (c.tapes || []).filter(t => t.id !== tapeId);
+        const el = document.getElementById('gm-fitas-list-' + c.codename);
+        if (el) el.innerHTML = buildGMFitasListHtml(c.codename, c.tapes);
+      });
+      await renderGMFitaLibrary();
+      showToast('Fita excluída da biblioteca.', 'success');
+    } catch (e) { console.error(e); showToast('Erro ao excluir fita.', 'error'); }
+  } else {
+    localStorage.removeItem('fita_data_' + tapeId);
+    showToast('Fita excluída (local).', 'success');
+  }
+}
+
+// Aloca uma fita já existente na biblioteca para um operador
+async function gmAssignFitaFromLibrary(codename) {
+  const sel    = document.getElementById('gm-fita-assign-sel-' + codename);
+  const tapeId = sel?.value;
+  if (!tapeId) { showToast('Selecione uma fita da biblioteca.', 'error'); return; }
+  const tape = _fitasLibrary.find(t => t.id === tapeId);
+  if (!tape)  { showToast('Fita não encontrada na biblioteca.', 'error'); return; }
+
+  if (firebaseOk) {
+    try {
+      const charRef      = doc(db, 'characters', codename);
+      const charSnap     = await getDoc(charRef);
+      const currentTapes = charSnap.data()?.tapes || [];
+      if (currentTapes.some(t => t.id === tapeId)) { showToast('Fita já alocada.', 'error'); return; }
+      const tapes = [...currentTapes, { id: tape.id, nome: tape.nome, categoria: tape.categoria }];
+      await updateDoc(charRef, { tapes });
+      const cached = _gmCharsList.find(c => c.codename === codename);
+      if (cached) cached.tapes = tapes;
+      sel.value = '';
+      document.getElementById('gm-fitas-list-' + codename).innerHTML = buildGMFitasListHtml(codename, tapes);
+      gmRefreshAssignDropdowns();
+      showToast(`"${tape.nome}" alocada para ${codename}.`, 'success');
+    } catch (e) { showToast('Erro ao alocar fita.', 'error'); }
+  } else {
+    const char         = LocalDB.getChar(codename) || {};
+    const currentTapes = char.tapes || [];
+    if (currentTapes.some(t => t.id === tapeId)) { showToast('Fita já alocada.', 'error'); return; }
+    const tapes = [...currentTapes, { id: tape.id, nome: tape.nome, categoria: tape.categoria }];
+    char.tapes = tapes; LocalDB.setChar(codename, char);
+    sel.value = '';
+    document.getElementById('gm-fitas-list-' + codename).innerHTML = buildGMFitasListHtml(codename, tapes);
+    showToast(`"${tape.nome}" alocada (local).`, 'success');
+  }
+}
+
+// Carrega todas as fitas da biblioteca e atualiza o painel do GM
+async function renderGMFitaLibrary() {
+  const el = document.getElementById('gm-fitas-library');
+  if (!el) return;
+  if (!firebaseOk) {
+    el.innerHTML = '<div class="gm-fitas-empty">Biblioteca indisponível no modo local.</div>';
+    return;
+  }
+  try {
+    const snap = await getDocs(collection(db, 'tapes'));
+    // Filtra apenas docs de metadados (têm campo 'nome'); docs de chunk não têm
+    _fitasLibrary = snap.docs
+      .filter(d => d.data().nome)
+      .map(d => ({ id: d.id, nome: d.data().nome, categoria: d.data().categoria || 'outro' }))
+      .sort((a, b) => a.nome.localeCompare(b.nome));
+
+    const ico = { musica: '&#9835;', historia: '&#9658;', outro: '&#9672;' };
+    if (!_fitasLibrary.length) {
+      el.innerHTML = '<div class="gm-fitas-empty">Nenhuma fita na biblioteca.</div>';
+    } else {
+      el.innerHTML = _fitasLibrary.map(t =>
+        `<div class="gm-fita-item">
+          <span class="gm-fita-cat-tag">${ico[t.categoria] || '&#9672;'}</span>
+          <span class="gm-fita-name">${escHtml(t.nome)}</span>
+          <button class="gm-fita-del" onclick="App.gmDeleteFitaFromLibrary('${t.id}')" title="Excluir da biblioteca">&#x1F5D1;</button>
+        </div>`
+      ).join('');
+    }
+    gmRefreshAssignDropdowns();
+  } catch (e) {
+    el.innerHTML = '<div class="gm-fitas-empty">Erro ao carregar biblioteca.</div>';
+  }
+}
+
+// Atualiza todos os dropdowns de alocação nos cards de operadores
+function gmRefreshAssignDropdowns() {
+  document.querySelectorAll('.gm-fita-assign-sel').forEach(sel => {
+    const codename  = sel.id.replace('gm-fita-assign-sel-', '');
+    const char      = _gmCharsList.find(c => c.codename === codename);
+    const assigned  = new Set((char?.tapes || []).map(t => t.id));
+    const available = _fitasLibrary.filter(t => !assigned.has(t.id));
+    const prev      = sel.value;
+    sel.innerHTML   = '<option value="">alocar da biblioteca...</option>' +
+      available.map(t => `<option value="${t.id}">${escHtml(t.nome)}</option>`).join('');
+    if (prev && available.some(t => t.id === prev)) sel.value = prev;
+  });
 }
 
 // ──────────────────────────────────────────────────────────
@@ -4082,6 +4534,8 @@ function loadGMDashboard() {
   loadDocsState().then(() => renderGMDocs());
   loadCamoState().then(() => renderGMCamuflagens());
   loadMissaoTextGM();
+  loadLootState();
+  renderGMFitaLibrary();
   restoreGMSectionStates();
 
   if (firebaseOk) {
@@ -4127,8 +4581,9 @@ function buildGMCard(char) {
 
   const statusLabel = { ativo: 'ATIVO', inativo: 'INATIVO', morto: 'K.I.A.' };
   const secLabel    = { seguro: 'SEGURO', alerta: 'ALERTA', perigo: 'PERIGO', comprometido: 'COMPROMETIDO' };
-  const patente     = char.patente ?? 1;
-  const maxBars     = 4 + patente; // Venom=5, Snake=6, Vyper=7
+  const xpChar      = char.xp ?? 0;
+  const patente     = getPatenteFromXp(xpChar);
+  const maxBars     = 4 + patente; // Venom=5, Snake=6, Vyper=7, Boss=8
   const integ       = Math.min(char.integrity ?? maxBars, maxBars);
 
   const photoHtml = char.photo
@@ -4206,12 +4661,25 @@ function buildGMCard(char) {
              onclick="App.gmSetAparencia('${char.codename}','carimbo','${s.id}')">${s.label}</button>`
   ).join('');
 
-  const patenteBtns = [1,2,3].map(lvl =>
-    `<button class="gm-toggle-btn ${patente === lvl ? 'active-ativo' : ''}"
-             onclick="App.gmSetPatente('${char.codename}',${lvl})">
-       ${PATENTES[lvl].nome}
-     </button>`
-  ).join('');
+  const xpHtml = `
+    <div class="gm-xp-row">
+      <div class="gm-xp-display">
+        <span class="gm-xp-val">${xpChar} XP</span>
+        <span class="gm-xp-patente-tag">${PATENTES[patente].nome}</span>
+      </div>
+      <div class="gm-xp-btns">
+        <button class="gm-xp-btn gm-xp-minus" onclick="App.gmAjustarXp('${char.codename}',-10)">−10</button>
+        <button class="gm-xp-btn gm-xp-minus" onclick="App.gmAjustarXp('${char.codename}',-5)">−5</button>
+        <button class="gm-xp-btn gm-xp-minus" onclick="App.gmAjustarXp('${char.codename}',-1)">−1</button>
+        <button class="gm-xp-btn gm-xp-plus" onclick="App.gmAjustarXp('${char.codename}',+1)">+1</button>
+        <button class="gm-xp-btn gm-xp-plus" onclick="App.gmAjustarXp('${char.codename}',+5)">+5</button>
+        <button class="gm-xp-btn gm-xp-plus" onclick="App.gmAjustarXp('${char.codename}',+10)">+10</button>
+      </div>
+      <div class="gm-xp-custom">
+        <input type="number" id="gm-xp-input-${char.codename}" min="0" max="999" placeholder="valor exato..." class="gm-xp-input" />
+        <button class="gm-xp-set" onclick="App.gmSetXpExact('${char.codename}')">DEFINIR</button>
+      </div>
+    </div>`;
 
   card.innerHTML = `
     <div class="gm-card-header" onclick="App.gmToggleCard('${char.codename}')">
@@ -4240,8 +4708,8 @@ function buildGMCard(char) {
         </div>
       </div>
       <div class="gm-ctrl-group">
-        <div class="gm-ctrl-label">⬡ PATENTE</div>
-        <div class="gm-active-toggle">${patenteBtns}</div>
+        <div class="gm-ctrl-label">&#x29E1; PATENTE / XP</div>
+        ${xpHtml}
       </div>
       <div class="gm-ctrl-group">
         <div class="gm-ctrl-label">⬡ STATUS DE SEGURANÇA</div>
@@ -4262,7 +4730,13 @@ function buildGMCard(char) {
       <div class="gm-ctrl-group">
         <div class="gm-ctrl-label">⬡ FITAS ALOCADAS</div>
         <div class="gm-fitas-list" id="gm-fitas-list-${char.codename}">${buildGMFitasListHtml(char.codename, char.tapes || [])}</div>
-        <div class="gm-fitas-add">
+        <div class="gm-fitas-add" style="margin-top:4px">
+          <select id="gm-fita-assign-sel-${char.codename}" class="gm-select gm-fita-assign-sel" style="flex:1;min-width:0">
+            <option value="">alocar da biblioteca...</option>
+          </select>
+          <button class="gm-fita-upload-btn" onclick="App.gmAssignFitaFromLibrary('${char.codename}')">+ ALOCAR</button>
+        </div>
+        <div class="gm-fitas-add" style="margin-top:3px">
           <input type="text" id="gm-fita-nome-${char.codename}" placeholder="nome da fita..." class="gm-text-input" />
           <select id="gm-fita-cat-${char.codename}" class="gm-select">
             <option value="musica">MÚSICA</option>
@@ -4338,11 +4812,14 @@ async function gmSetIntegrity(codename, val) {
   if (firebaseOk) {
     try {
       const snap = await getDoc(doc(db, 'characters', codename));
-      if (snap.exists()) maxBars = 4 + (snap.data().patente ?? 1);
+      if (snap.exists()) {
+        const d = snap.data();
+        maxBars = 4 + getPatenteFromXp(d.xp ?? 0);
+      }
     } catch (_) {}
   } else {
     const char = LocalDB.getChar(codename);
-    if (char) maxBars = 4 + (char.patente ?? 1);
+    if (char) maxBars = 4 + getPatenteFromXp(char.xp ?? 0);
   }
   const newVal = Math.max(0, Math.min(maxBars, val));
   await gmUpdateChar(codename, { integrity: newVal });
@@ -4353,8 +4830,38 @@ async function gmSetStatus(codename, statusAtivo) {
 }
 
 async function gmSetPatente(codename, level) {
-  const p = Math.max(1, Math.min(3, level));
+  const p = Math.max(1, Math.min(4, level));
   await gmUpdateChar(codename, { patente: p });
+}
+
+async function gmAjustarXp(codename, delta) {
+  let currentXp = 0;
+  if (firebaseOk) {
+    try {
+      const snap = await getDoc(doc(db, 'characters', codename));
+      if (snap.exists()) currentXp = snap.data().xp ?? 0;
+    } catch (_) {}
+  } else {
+    const char = LocalDB.getChar(codename);
+    if (char) currentXp = char.xp ?? 0;
+  }
+  const newXp = Math.max(0, currentXp + delta);
+  const newPatente = getPatenteFromXp(newXp);
+  await gmUpdateChar(codename, { xp: newXp, patente: newPatente });
+  showToast(`XP de ${codename}: ${newXp} (${delta >= 0 ? '+' : ''}${delta})`, 'success', 2200);
+  loadGMDashboard();
+}
+
+async function gmSetXpExact(codename) {
+  const inputEl = $('gm-xp-input-' + codename);
+  if (!inputEl) return;
+  const val = parseInt(inputEl.value);
+  if (isNaN(val) || val < 0) { showToast('Valor inv\u00e1lido.', 'error'); return; }
+  const newPatente = getPatenteFromXp(val);
+  await gmUpdateChar(codename, { xp: val, patente: newPatente });
+  showToast(`XP de ${codename}: ${val}`, 'success', 2200);
+  inputEl.value = '';
+  loadGMDashboard();
 }
 
 
@@ -4983,8 +5490,8 @@ function gmToggleSection(sectionId) {
 
 function restoreGMSectionStates() {
   const states   = JSON.parse(localStorage.getItem('vyper_gm_sections') || '{}');
-  const defaults = { npc: true, mald: true, missao: true, loot: true, docs: true, camuflagens: true, videos: true, quadro: true, agents: false };
-  ['npc','mald','missao','loot','docs','camuflagens','videos','quadro','agents'].forEach(id => {
+  const defaults = { npc: true, mald: true, missao: true, loot: true, docs: true, camuflagens: true, videos: true, quadro: true, fitas: true, agents: false };
+  ['npc','mald','missao','loot','docs','camuflagens','videos','quadro','fitas','agents'].forEach(id => {
     const sec = document.getElementById('gmsec-' + id);
     if (!sec) return;
     const collapsed = id in states ? states[id] : defaults[id];
@@ -5768,22 +6275,26 @@ function docsSubtab(tab) {
   if (tab === 'quadro') { _ebSetupBoardEvents(); setTimeout(renderEvidenceBoard, 60); }
 }
 
-// ── Fotos (localStorage) ──────────────────────────────────
+// ── Fotos (Firestore subcollection + localStorage fallback) ─
 const FOTOS_LS_KEY = () => `vyper_fotos_${state.codename || ''}`;
 const MAX_FOTOS = 20;
 
-function _loadDocFotos() {
+async function _loadDocFotos() {
+  if (firebaseOk && state.codename) {
+    try {
+      const snap = await getDocs(collection(db, 'characters', state.codename, 'fotos'));
+      return snap.docs.map(d => d.data()).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    } catch { /* fallback abaixo */ }
+  }
   try { const r = localStorage.getItem(FOTOS_LS_KEY()); return r ? JSON.parse(r) : []; }
   catch { return []; }
 }
-function _saveDocFotos(fotos) {
-  try { localStorage.setItem(FOTOS_LS_KEY(), JSON.stringify(fotos)); } catch {}
-}
 
-function renderFotosGrid() {
+async function renderFotosGrid() {
   const el = $('fotos-grid');
   if (!el) return;
-  const fotos = _loadDocFotos();
+  el.innerHTML = '<div class="docs-empty">Carregando fotos...</div>';
+  const fotos = await _loadDocFotos();
   if (fotos.length === 0) {
     el.innerHTML = '<div class="docs-empty">Nenhuma foto tirada ainda.</div>';
     return;
@@ -5800,8 +6311,19 @@ function renderFotosGrid() {
   `).join('');
 }
 
-function deleteDocFoto(id) {
-  _saveDocFotos(_loadDocFotos().filter(f => f.id !== id));
+async function deleteDocFoto(id) {
+  if (firebaseOk && state.codename) {
+    try {
+      await deleteDoc(doc(db, 'characters', state.codename, 'fotos', id));
+      renderFotosGrid();
+      return;
+    } catch { /* fallback */ }
+  }
+  try {
+    const r = localStorage.getItem(FOTOS_LS_KEY());
+    const fotos = r ? JSON.parse(r) : [];
+    localStorage.setItem(FOTOS_LS_KEY(), JSON.stringify(fotos.filter(f => f.id !== id)));
+  } catch {}
   renderFotosGrid();
 }
 
@@ -5899,11 +6421,22 @@ function _captureDocArea(rx, ry, rw, rh, bodyRect) {
   for (let y2 = 0; y2 < out.height; y2 += 4) ctx.fillRect(0, y2, out.width, 2);
 
   const dataUrl = out.toDataURL('image/jpeg', 0.88);
-  const fotos = _loadDocFotos();
-  if (fotos.length >= MAX_FOTOS) fotos.shift();
+  const fotoId = 'foto_' + Date.now();
   const docDef = DOCUMENTS.find(d => d.id === docViewerState.docId);
-  fotos.push({ id: 'foto_' + Date.now(), docId: docViewerState.docId, docTitle: docDef?.title || '?', dataUrl, ts: Date.now() });
-  _saveDocFotos(fotos);
+  const foto = { id: fotoId, docId: docViewerState.docId, docTitle: docDef?.title || '?', dataUrl, ts: Date.now() };
+  if (firebaseOk && state.codename) {
+    setDoc(doc(db, 'characters', state.codename, 'fotos', fotoId), foto).catch(
+      e => console.error('foto save:', e)
+    );
+  } else {
+    try {
+      const r = localStorage.getItem(FOTOS_LS_KEY());
+      const fotos = r ? JSON.parse(r) : [];
+      if (fotos.length >= MAX_FOTOS) fotos.shift();
+      fotos.push(foto);
+      localStorage.setItem(FOTOS_LS_KEY(), JSON.stringify(fotos));
+    } catch {}
+  }
   showToast('\uD83D\uDCF7 Foto salva na aba FOTOS!', 'success', 2200);
   sfx('select');
 }
@@ -7625,13 +8158,22 @@ window.App = {
   gmSetIntegrity,
   gmSetStatus,
   gmSetPatente,
+  gmAjustarXp,
+  gmSetXpExact,
+  openCaminhoOverlay,
+  closeCaminhoOverlay,
+  showMarcoDetail,
+  caminhoGmAjustar,
+  caminhoGmSetExato,
   playFita,
   fitaTogglePlay,
   fitaToggleLoop,
   fitaSkip,
   fitaSeek,
   gmUploadFita,
-  gmRemoveFita,
+  gmDesalocarFita,
+  gmDeleteFitaFromLibrary,
+  gmAssignFitaFromLibrary,
   radioChangeFreq,
   radioSolicitar,
   radioCancelar,
