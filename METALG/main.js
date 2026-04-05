@@ -84,6 +84,12 @@ const DOCUMENTS = [
     title:   'Estátua de Bailarina',
     image:   'imagens/documentos/estatua1.png',
     uvImage: 'imagens/documentos/estatua2.png'  // ou null se não tiver versão UV
+  },
+  {
+    id:      'doc_mapa_riveria',
+    title:   'Mapa de Rivéria',
+    image:   'imagens/documentos/mapariveria.png',
+    uvImage: 'imagens/documentos/mapariveria_uv.png'
   }
 ];
 
@@ -705,6 +711,7 @@ let _lootPool    = [];         // itens montados pelo GM para distribuição
 let _gmCharsList = [];         // cache de chars para ferramentas do GM
 let _fitasLibrary = [];        // cache de fitas da biblioteca compartilhada
 let _gmDeleteArmed = null;     // codename aguardando confirmação de deleção
+let _fitasSeenCount = 0;             // count de fitas visto pelo jogador (badge)
 let bolsaSelected    = null;   // index into bolsa.items currently selected
 let bolsaDiscardArmed = false; // true after first discard click (confirm step)
 let _bolsaKeyHandler  = null;  // ref to the keydown listener
@@ -883,12 +890,18 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 //  PERSONALIZAÇÃO DO JOGADOR (localStorage)
 // ──────────────────────────────────────────────────────────
 const _PREFS_CORES = [
-  { id: 'vermelho', color: '#cc0000' },
-  { id: 'azul',     color: '#1177dd' },
-  { id: 'verde',    color: '#00bb44' },
-  { id: 'roxo',     color: '#9944cc' },
-  { id: 'dourado',  color: '#cc9900' },
-  { id: 'ciano',    color: '#00aacc' },
+  { id: 'vermelho',  color: '#cc0000' },
+  { id: 'azul',      color: '#1177dd' },
+  { id: 'verde',     color: '#00bb44' },
+  { id: 'roxo',      color: '#9944cc' },
+  { id: 'dourado',   color: '#cc9900' },
+  { id: 'ciano',     color: '#00aacc' },
+  { id: 'laranja',   color: '#dd6600' },
+  { id: 'rosa',      color: '#cc1166' },
+  { id: 'turquesa',  color: '#00cc88' },
+  { id: 'indigo',    color: '#5533dd' },
+  { id: 'vinho',     color: '#990033' },
+  { id: 'prata',     color: '#aaaaaa' },
 ];
 
 function _loadPlayerPrefs() {
@@ -1097,6 +1110,13 @@ async function loginPlayer() {
   await loadDocsState();
   await loadCamoState();
 
+  // Inicializa contagem de fitas para badge
+  _fitasSeenCount = charData.tapes?.length ?? 0;
+
+  // Restore last active tab
+  const _lastTab = localStorage.getItem('vyper_last_tab');
+  if (_lastTab && _lastTab !== 'main') switchTab(_lastTab);
+
   // Realtime listener — character
   if (firebaseOk) {
     if (state.unsubscribe) state.unsubscribe();
@@ -1132,6 +1152,11 @@ async function loginPlayer() {
         updatePatenteDisplay(newPatente, newXp);
         if (old && getPatenteFromXp(oldXp) < newPatente) {
           showPatenteUnlockAnim(newPatente, getPatenteFromXp(oldXp));
+          // Avisa sobre o aumento de capacidade da bolsa
+          const newRows = BOLSA_ROWS_BY_PATENTE[newPatente];
+          if (newRows) {
+            setTimeout(() => showToast(`⊞ BOLSA EXPANDIDA — ${newRows} linhas disponíveis`, 'success', 4000), 2800);
+          }
         }
         // Refresh caminho overlay if open
         if ($('caminho-overlay') && !$('caminho-overlay').classList.contains('hidden')) {
@@ -1159,6 +1184,11 @@ async function loginPlayer() {
 
       // Refresh fitas tab if open
       if (state.currentTab === 'fitas') renderFitasTab();
+      else {
+        // Badge de fitas: detecta nova fita adicionada
+        const newTapeCount = data.tapes?.length ?? 0;
+        if (newTapeCount > _fitasSeenCount) updateNavBadges();
+      }
       // Refresh radio tab if open
       if (state.currentTab === 'radio') renderRadioTab();
       // Refresh bolsa tab if open
@@ -1202,6 +1232,7 @@ async function loginPlayer() {
       const justReleased = newReleased.filter(id => !docsReleasedState.includes(id));
       docsReleasedState = newReleased;
       if (justReleased.length > 0) showNewDocAlert(justReleased[0]);
+      updateNavBadges();
       if (state.currentTab === 'docs') renderDocsTab();
     });
 
@@ -1311,7 +1342,7 @@ function applyAparencia(data) {
   if (!sheet) return;
 
   // Cor de destaque
-  const CORES = ['azul','verde','roxo','dourado','ciano'];
+  const CORES = ['azul','verde','roxo','dourado','ciano','laranja','rosa','turquesa','indigo','vinho','prata'];
   CORES.forEach(c => sheet.classList.remove('theme-' + c));
   if (apar.cor && apar.cor !== 'vermelho') sheet.classList.add('theme-' + apar.cor);
 
@@ -1425,8 +1456,7 @@ function updateSecurityDisplay(security) {
 }
 
 function updateIntegrityDisplay(integrity) {
-  const xp       = state.character?.xp ?? 0;
-  const patente  = getPatenteFromXp(xp);
+  const patente  = state.character?.patente ?? getPatenteFromXp(state.character?.xp ?? 0);
   const maxBars  = 4 + patente; // Venom=5, Snake=6, Vyper=7, Boss=8
   const val      = typeof integrity === 'number' ? Math.min(integrity, maxBars) : maxBars;
   const bars     = document.querySelectorAll('#integrity-bars .integrity-bar');
@@ -2112,8 +2142,7 @@ function closeGradeModal(event) {
 async function toggleIntegrity(index) {
   if (!state.character && state.role !== 'player') return;
 
-  const xp       = state.character?.xp ?? 0;
-  const patente  = getPatenteFromXp(xp);
+  const patente  = state.character?.patente ?? getPatenteFromXp(state.character?.xp ?? 0);
   const maxBars  = 4 + patente;
   const current  = state.character?.integrity ?? maxBars;
   // Clicking a bar sets integrity to index+1 if it was off, or index if it was on (last active)
@@ -2228,7 +2257,8 @@ function renderBolsa() {
   // rebuild grid: background cells first, items on top (absolute)
   const maxRows = bolsaGetMaxRows();
   grid.innerHTML = '';
-  for (let r = 0; r < BOLSA_ROWS; r++)
+  grid.style.gridTemplateRows = `repeat(${maxRows}, 46px)`;
+  for (let r = 0; r < maxRows; r++)
     for (let c = 0; c < BOLSA_COLS; c++) {
       const cell = document.createElement('div');
       cell.className = 'bolsa-gcell' + (r >= maxRows ? ' bolsa-gcell-locked' : '');
@@ -3519,6 +3549,11 @@ function switchTab(tab) {
   }
 
   state.currentTab = tab;
+  if (tab !== 'main') localStorage.setItem('vyper_last_tab', tab);
+
+  // Limpa badge da tab que acabou de ser aberta
+  if (tab === 'docs')  { const d = $('nav-dot-docs');  if (d) d.classList.add('hidden'); }
+  if (tab === 'fitas') { const d = $('nav-dot-fitas'); if (d) d.classList.add('hidden'); _fitasSeenCount = state.character?.tapes?.length ?? 0; }
 
   // Update nav indicators
   document.querySelectorAll('.nav-tab').forEach(el => {
@@ -3577,6 +3612,25 @@ function switchCenterTab(name) {
     if (btn)   btn.classList.toggle('active', t === name);
     if (panel) panel.classList.toggle('active', t === name);
   });
+}
+
+// ──────────────────────────────────────────────────────────
+//  BADGES DE NOTIFICAÇÃO NAS TABS
+// ──────────────────────────────────────────────────────────
+function updateNavBadges() {
+  // Docs badge: há documentos liberados que o jogador ainda não abriu
+  const dotDocs  = $('nav-dot-docs');
+  if (dotDocs) {
+    const hasUnread = docsReleasedState.some(id => !docsReadSet.has(id));
+    dotDocs.classList.toggle('hidden', !hasUnread || state.currentTab === 'docs');
+  }
+  // Fitas badge: novas fitas adicionadas desde a última visita
+  const dotFitas = $('nav-dot-fitas');
+  if (dotFitas) {
+    const currentCount = state.character?.tapes?.length ?? 0;
+    const hasNew = currentCount > _fitasSeenCount;
+    dotFitas.classList.toggle('hidden', !hasNew || state.currentTab === 'fitas');
+  }
 }
 
 // ──────────────────────────────────────────────────────────
@@ -5380,6 +5434,7 @@ function showMensagemCifrada(texto) {
   const overlay = document.getElementById('cifrada-overlay');
   if (!overlay) return;
   overlay.classList.remove('hidden');
+  sfx('open');  // alerta de chegada
   const textEl   = document.getElementById('cifrada-text');
   const labelEl  = document.getElementById('cifrada-label');
   if (!textEl) return;
@@ -5397,10 +5452,9 @@ function showMensagemCifrada(texto) {
     if (progress >= total) {
       clearInterval(interval);
       if (labelEl) labelEl.textContent = '— MENSAGEM —';
-      sfx('open');
+      sfx('select');
     }
   }, 55);
-  sfx('select');
 }
 
 function fecharMensagemCifrada() {
@@ -7112,6 +7166,12 @@ function loadEvidenceBoard() {
     evidenceBoardState = snap.exists() ? snap.data() : { items: [], connections: [] };
     if (!Array.isArray(evidenceBoardState.items))       evidenceBoardState.items = [];
     if (!Array.isArray(evidenceBoardState.connections)) evidenceBoardState.connections = [];
+    // Migração: corrige imageUrls antigos que não tinham o prefixo 'imagens/'
+    evidenceBoardState.items.forEach(item => {
+      if (item.imageUrl && item.imageUrl.startsWith('documentos/')) {
+        item.imageUrl = 'imagens/' + item.imageUrl;
+      }
+    });
     if (_ebDragging) {
       // não recria DOM durante arrasto local — apenas atualiza conexões
       _ebRenderConnections();

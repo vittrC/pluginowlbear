@@ -977,7 +977,7 @@
   <div id="splash">
     <img class="splash-logo" src="icones/logoDA.png" alt="">
     <div class="splash-title">💕 DOCE AMOR 💕</div>
-    <div class="splash-sub">simulador de fecha · edição deluxe · by eleinha_coracao · 2003</div>
+    <div class="splash-sub">simulador de amor verdadeiro · edição deluxe · by eleinha_coracao · 2003</div>
     <button class="splash-enter" onclick="dismissSplash()">✦ ENTRAR ✦</button>
     <div class="splash-warning">
       contém drama adolescente de alta qualidade · pelo menos uma flanela · referências ao crepusculo ·<br>
@@ -1283,14 +1283,14 @@
     const _GHOST_MSGS = [
       'e l a   s a b e .', 'ela não é real.', 'você está sendo observada.',
       'NÃO CONTINUE.', '— ela.', 'eu vi você pausar.',
-      'isto não é um jogo.', 's ó   e l a .', 'gabriel.chr foi modificado.',
+      'isto não é um jogo, é a prisão. DELA', 's ó   e l a .', 'gabriel.chr foi modificado.',
       'você deveria ter saído na intro.', '∞', '...', 'ela está bem.',
       '[arquivos corrompidos]', 'e u   v e j o   v o c ê .', 'saia.', '∅∅∅',
-      'você pausou nessa cena.', 'olha pra trás.', 'não confie na narradora.',
+      'você pausou nessa cena.', 'olha pra trás.', 'se escondendo atrás da tela?.',
     ];
     const _POPUP_MSGS = [
       {
-        body: 'doce_amor.exe não respondeu.\narquivo: sentimento.js\nerro: recursão infinita em\nloop_espera(gabrielAtencao)',
+        body: 'doce_amor.exe não respondeu.\narquivo: main.js\nerro: recursão infinita em\nloop_espera(eleinha.coracao.chr)\n\n',
         ok: 'OK', cancel: 'ignorar'
       },
       {
@@ -1351,7 +1351,7 @@
     const _CORRUPT_TITLES = [
       'ẽrṟo ẗ..', 'S̴Ó ̶E̷L̸A̵', 'doce_amor.exe — sem resposta',
       '██████████', 'NÃO SAIA', '??????????',
-      'ela estava aqui.', '∅∅∅∅∅', '...', 'gabriel.chr — deletado',
+      'ela estava aqui.', '∅∅∅∅∅', '...', 'y.chr — deletado',
     ];
     function _glitchTitle(ms) {
       const t = _CORRUPT_TITLES[Math.floor(Math.random() * _CORRUPT_TITLES.length)];
@@ -1724,7 +1724,7 @@
           <span class="intro-art">💕</span>
           <div class="intro-title">
             bem vinda ao <strong style="color:var(--rosa)">DOCE AMOR</strong><br>
-            ~ simulador de fecha · edição deluxe · by eleinha_coracao ~
+            ~ simulador de amor verdadeiro · edição deluxe · by eleinha_coracao ~
           </div>
           <div class="intro-desc">
             você é <em>VALENTINA</em>, 16 anos. você é <strong>diferente</strong>. você
@@ -2467,8 +2467,8 @@
             <strong>Você ensinou ele a gostar de Nietzsche naquele mês que vocês ficaram sentados na mesma fileira.</strong>`)}
           ${D('VOCÊ',null,'...foi eu que ensinei ele a gostar de nietzsche.','isso não é completamente verdade mas é a verdade que você precisa agora então tudo bem')}
           ${choices('o que fazer com isso:', [
-            { ico:'😐', label:'arquivar. seguir em frente. não pensar mais nisso.', sub:'(estratégia: dissociação produtiva)', next:'end_coward' },
-            { ico:'💀', label:'deixar o loop acontecer. ficar esperando por nada.', sub:'(aviso: destino: colapso)', next:'end_bad_collapse' },
+            { ico:'😐', label:'arquivar. seguir em frente. não pensar mais nisso.', sub:'( dissociação produtiva)', next:'end_coward' },
+            { ico:'💀', label:'deixar o loop acontecer. ficar esperando por nada.', sub:'(colapso)', next:'end_bad_collapse' },
             { ico:'▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓', label:'▓▓▓E▓▓R▓▓R▓▓O▓▓▓▓▓', sub:'404', next:'end_bad_yumi' },
           ])}
         `));
@@ -2566,7 +2566,7 @@
               <span class="bad-ending-badge">╳ fim ruim — ▓▓▓▓▓▓▓▓▓▓▓▓▓ span>
               <span class="bad-ending-title">▓▓ ARQUIVO DELETADO ▓▓</span>
             </div>
-            <span class="heartpulse">🖤</span>
+            <span class="heartpulse">404</span>
             <div class="bad-ending-text">
               Você apagou tudo.<br><br>
               O caderno. As oito páginas de fluxograma.<br>
@@ -3026,7 +3026,7 @@
       _fakeSearchDone = true;
       if (typeof glitchScreen === 'function') glitchScreen(350);
       if (typeof sfxGlitch   === 'function') sfxGlitch();
-      _ghostNearCursor('abrindo pesquisa...', 2000);
+      _ghostNearCursor('hehehehe ...', 2000);
       setTimeout(function() {
         window.open('https://www.google.com/search?q=minha+localiza%C3%A7%C3%A3o', '_blank');
       }, 1200);
@@ -3140,9 +3140,9 @@
         + '\u2588\u2588 cenas_yumi_v1.json \u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7 <span style="color:#660000">DELETADO \u2713</span><br>'
         + '\u2588\u2588 cenas_yumi_v2.json \u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7 <span style="color:#660000">DELETADO \u2713</span><br>'
         + '\u2588\u2588 yumi_sprites.dat \u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7 <span style="color:#660000">DELETADO \u2713</span><br>'
-        + '\u2588\u2588 final_com_yumi.json \u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7 <span style="color:#660000">DELETADO \u2713</span><br>'
-        + '\u2588\u2588 roteiro_yumi_final.txt \u00b7\u00b7\u00b7\u00b7\u00b7 <span style="color:#660000">DELETADO \u2713</span><br>'
-        + '\u2588\u2588 <span style="color:#aa2222">eleinha.chr</span> \u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7 <span style="color:#882222">ATIVO \u00b7 N\u00c3O DELET\u00c1VEL</span>'
+        + '\u2588\u2588 final1yumi.json \u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7 <span style="color:#660000">DELETADO \u2713</span><br>'
+        + '\u2588\u2588 rotadayumi.txt \u00b7\u00b7\u00b7\u00b7\u00b7 <span style="color:#660000">DELETADO \u2713</span><br>'
+        + '\u2588\u2588 <span style="color:#aa2222">eleinha.chr</span> \u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7 <span style="color:#882222">ERRO \u00b7 N\u00c3O DELET\u00c1VEL</span>'
         + '</div>'
 
         + '<div style="border-left:2px solid #660000;padding:14px 18px;background:rgba(12,0,0,0.7);'
@@ -3267,7 +3267,7 @@
       document.title = 'Y U M I';
       setTimeout(function() { document.title = 'yumi'; }, 700);
       setTimeout(function() { document.title = 'você não devia ter digitado isso.'; }, 1500);
-      setTimeout(function() { document.title = '— eleinha_coracao'; }, 4500);
+      setTimeout(function() { document.title = '— Ela está vendo'; }, 4500);
 
       // 6. Ticker do jogo
       var tickerInner = document.querySelector('.ticker-inner');
@@ -3280,7 +3280,7 @@
       ytDiv.id = 'yumi-ticker';
       var ytiDiv = document.createElement('div');
       ytiDiv.id = 'yumi-ticker-inner';
-      ytiDiv.textContent = 'YUMI.chr — DETECTADO · DELETANDO... · ELEINHA_CORACAO.sys — ATIVO · ACESSO NEGADO · VOCÊ NÃO DEVIA ESTAR AQUI · YUMI.chr — DETECTADO · DELETANDO... · ACESSO NEGADO · ELEINHA_CORACAO.sys — ATIVO ·';
+      ytiDiv.textContent = 'YUMI.chr — DELETADO · ERRO - JÁ DELETADO · ELEINHA_CORACAO.sys — ATIVO · ACESSO NEGADO · ( VOCÊ NÃO DEVIA ESTAR AQUI ) · YUMI.chr — DETECTADO · DELETANDO... · ACESSO NEGADO - JÁ DELETADO · ELEINHA_CORACAO.sys — M E  D E I X A  S A I R ·';
       ytDiv.appendChild(ytiDiv);
       document.body.insertBefore(ytDiv, document.body.firstChild);
 
@@ -3321,7 +3321,7 @@
         if (!msn) return;
         msn.style.borderTopColor = '#550000';
         msn.style.borderColor = 'rgba(90,0,0,0.4)';
-        msn.innerHTML = '<strong style="color:#cc0022;font-family:\'Courier New\',monospace">nota de eleinha_coracao:</strong>'
+        msn.innerHTML = '<strong style="color:#cc0022;font-family:\'Courier New\',monospace">nota:</strong>'
           + '<span style="color:#550000;font-family:\'Courier New\',monospace;font-size:11px;display:block;margin-top:6px;line-height:2">'
           + 'você digitou o nome dela.<br>'
           + 'eu sei que você digitou.<br>'

@@ -53,13 +53,13 @@
     </div>
     <div id="login-player" class="lform hidden">
       <label class="lform-label">&#9658; CODINOME DO OPERADOR</label>
-      <input class="lform-input" id="input-codename" type="text" maxlength="20" placeholder="INSIRA SEU CODINOME" autocomplete="off" spellcheck="false" />
+      <input class="lform-input" id="input-codename" type="text" maxlength="20" placeholder="INSIRA SEU CODINOME" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')App.loginPlayer()" />
       <button class="lform-btn" onclick="App.loginPlayer()">[ ACESSAR FICHA ]</button>
       <div class="lform-err hidden" id="login-error-player"></div>
     </div>
     <div id="login-gm" class="lform hidden">
       <label class="lform-label">&#9658; CODIGO DE ACESSO</label>
-      <input class="lform-input" id="input-gm-pass" type="password" maxlength="30" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="off" />
+      <input class="lform-input" id="input-gm-pass" type="password" maxlength="30" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="off" onkeydown="if(event.key==='Enter')App.loginGM()" />
       <button class="lform-btn" onclick="App.loginGM()">[ ACESSO CENTRAL ]</button>
       <div class="lform-err hidden" id="login-error-gm"></div>
     </div>
@@ -550,10 +550,12 @@
     <div class="nav-tab" id="nav-docs" onclick="App.switchTab('docs')">
       <div class="nav-ico-box"><img src="icones/8.png" class="nav-ico" /></div>
       <span class="nav-lbl">/DOCS</span>
+      <span class="nav-notif-dot hidden" id="nav-dot-docs"></span>
     </div>
     <div class="nav-tab" id="nav-fitas" onclick="App.switchTab('fitas')">
       <div class="nav-ico-box"><img src="icones/9.png" class="nav-ico" /></div>
       <span class="nav-lbl">/FITAS</span>
+      <span class="nav-notif-dot hidden" id="nav-dot-fitas"></span>
     </div>
     <div class="nav-tab" id="nav-equip" onclick="App.switchTab('equip')">
       <div class="nav-ico-box"><img src="icones/10.png" class="nav-ico" /></div>
@@ -800,8 +802,8 @@
           <!-- top classification bar -->
           <div class="missao-topbar">
             <span>&#9646; CLASSIFICADO &#9646;</span>
-            <span class="missao-opcode">OP-7742-H</span>
-            <span>&#9646; VYPER EYES ONLY &#9646;</span>
+            <span class="missao-opcode">OP-0413-H</span>
+            <span>&#9646; AGENTE VYPER APENAS &#9646;</span>
           </div>
 
           <!-- operation title -->
